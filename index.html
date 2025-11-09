@@ -245,6 +245,8 @@ const SHEETDB_API_URL = "https://sheetdb.io/api/v1/bczb66wme054a";
         showScreen('login');
         bindEventListeners();
         el.yearSelect.value = new Date().getFullYear() + 543;
+        
+        attachFormListeners(); // <--- เพิ่มบรรทัดนี้ที่นี่
       });
       
       /*
@@ -471,7 +473,6 @@ const SHEETDB_API_URL = "https://sheetdb.io/api/v1/bczb66wme054a";
         showScreen('form');
         showSection('section-1');
         updateProgressBar();
-        attachFormListeners();
         setLoading(false);
       }
       
@@ -544,24 +545,33 @@ const SHEETDB_API_URL = "https://sheetdb.io/api/v1/bczb66wme054a";
       }
 
       function resetFormState() {
-        localStorage.removeItem(`visit_${gState.currentRecordId}`);
-        document.getElementById('visit-form').reset();
-        document.querySelectorAll('.img-thumbnail').forEach(img => {
-          img.src = '';
-          img.style.display = 'none';
-        });
-        gState.currentRecordId = null;
-        gState.selectedStudentId = null;
-        gState.selectedStudentName = null;
-        gState.originalData = {};
-        gState.changesToPush = {};
-        gState.householdMembers = [];
-        el.householdTbody.innerHTML = '';
-        el.studentSelect.value = '';
-        el.saveBtn.textContent = 'บันทึก (0)';
-        el.saveBtn.disabled = true;
-        updateProgressBar(0);
-      }
+        localStorage.removeItem(`visit_${gState.currentRecordId}`);
+        document.getElementById('visit-form').reset();
+        document.querySelectorAll('.img-thumbnail').forEach(img => {
+          img.src = '';
+          img.style.display = 'none';
+        });
+        gState.currentRecordId = null;
+        gState.selectedStudentId = null;
+        gState.selectedStudentName = null;
+        gState.originalData = {};
+        gState.changesToPush = {};
+        gState.householdMembers = [];
+        el.householdTbody.innerHTML = '';
+        
+        // (ส่วนที่เพิ่ม) รีเซ็ต UI ที่ซ่อน/แสดง 
+        if (el.q4Content) el.q4Content.style.display = 'none';
+        const s4Link = document.querySelector('a[href="#section-4"]');
+        if (s4Link) s4Link.style.display = 'none';
+        if (el.q3_1_SubOptions) el.q3_1_SubOptions.style.display = 'none';
+        if (el.q3_4_SubOptions) el.q3_4_SubOptions.style.display = 'none';
+        // (สิ้นสุดส่วนที่เพิ่ม)
+
+        el.studentSelect.value = '';
+        el.saveBtn.textContent = 'บันทึก (0)';
+        el.saveBtn.disabled = true;
+        updateProgressBar(0);
+    }
       
       /*
        * ===================================================================
@@ -982,3 +992,4 @@ const SHEETDB_API_URL = "https://sheetdb.io/api/v1/bczb66wme054a";
     
   </body>
 </html>
+
