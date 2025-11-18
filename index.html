@@ -281,6 +281,7 @@
           <form id="visit-form">
           <div id="section-1" class="form-section active card card-body mb-3">
             <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 1: ข้อมูลนักเรียน</h4>
+            
             <div class="row bg-light p-3 rounded mb-3">
               <div class="col-md-6">
                 <p class="mb-1"><strong>ชื่อ:</strong> <span id="s1-name"></span></p>
@@ -294,16 +295,67 @@
             </div>
 
             <div class="row">
-              <div class="col-md-6 mb-3"><label class="form-label">รูปถ่ายนักเรียน (ถ้ามี)</label><input type="file"
-                  id="file_Q1_PhotoURL" class="form-control file-upload-input" accept="image/*"
-                  data-target-hidden="Q1_PhotoURL"><input type="hidden" id="Q1_PhotoURL" name="Q1_PhotoURL"><img
-                  id="preview_Q1_PhotoURL" src="" class="img-thumbnail mt-2" style="display:none; max-height: 150px;">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">รูปถ่ายนักเรียน (ถ้ามี)</label>
+                <input type="file" id="file_Q1_PhotoURL" class="form-control file-upload-input" accept="image/*" data-target-hidden="Q1_PhotoURL">
+                <input type="hidden" id="Q1_PhotoURL" name="Q1_PhotoURL">
+                <img id="preview_Q1_PhotoURL" src="" class="img-thumbnail mt-2" style="display:none; max-height: 150px;">
               </div>
               <div class="col-md-6 mb-3">
                 <label class="form-label">เบอร์โทรศัพท์นักเรียน</label>
                 <input type="tel" id="Q1_StudentPhone" name="Q1_StudentPhone" class="form-control" placeholder="0xx-xxx-xxxx">
               </div>
             </div>
+
+            <h5 class="mt-3 text-primary">ข้อมูลส่วนตัว</h5>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">วัน/เดือน/ปี เกิด</label>
+                <input type="date" id="Q1_StudentDOB" name="Q1_StudentDOB" class="form-control">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">อายุ (ปี)</label>
+                <input type="number" id="Q1_StudentAge" name="Q1_StudentAge" class="form-control">
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">น้ำหนัก (กก.)</label>
+                <input type="number" id="Q1_StudentWeight" name="Q1_StudentWeight" class="form-control">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">ส่วนสูง (ซม.)</label>
+                <input type="number" id="Q1_StudentHeight" name="Q1_StudentHeight" class="form-control">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">กลุ่มเลือด</label>
+                <select id="Q1_StudentBloodGroup" name="Q1_StudentBloodGroup" class="form-select">
+                  <option value="">-- เลือก --</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="O">O</option>
+                  <option value="AB">AB</option>
+                  <option value="ไม่ทราบ">ไม่ทราบ</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">ศาสนา</label>
+                <input type="text" id="Q1_StudentReligion" name="Q1_StudentReligion" class="form-control" value="พุทธ">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">เชื้อชาติ</label>
+                <input type="text" id="Q1_StudentRace" name="Q1_StudentRace" class="form-control" value="ไทย">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">สัญชาติ</label>
+                <input type="text" id="Q1_StudentNationality" name="Q1_StudentNationality" class="form-control" value="ไทย">
+              </div>
+            </div>
+            <hr>
 
             <div class="row">
               <div class="col-md-6 mb-3"><label class="form-label">สถานภาพครอบครัว</label><select id="Q1_FamilyStatus"
@@ -330,27 +382,27 @@
             
             <h5 class="mt-3">ข้อมูลผู้ปกครอง</h5>
             <div class="row">
-                <div class="col-md-6 mb-3"><label class="form-label">ชื่อผู้ปกครอง</label><input type="text"
-                    id="Q1_GuardianFirstName" name="Q1_GuardianFirstName" class="form-control"></div>
-                <div class="col-md-6 mb-3"><label class="form-label">นามสกุล</label><input type="text"
-                    id="Q1_GuardianLastName" name="Q1_GuardianLastName" class="form-control"></div>
-                <div class="col-md-4 mb-3"><label class="form-label">ความสัมพันธ์กับนักเรียน</label><input type="text"
-                    id="Q1_GuardianRelation" name="Q1_GuardianRelation" class="form-control"></div>
-                <div class="col-md-4 mb-3"><label class="form-label">การศึกษาสูงสุด</label><input type="text"
-                    id="Q1_GuardianEducation" name="Q1_GuardianEducation" class="form-control"></div>
-                <div class="col-md-4 mb-3"><label class="form-label">อาชีพ</label><input type="text"
-                    id="Q1_GuardianOccupation" name="Q1_GuardianOccupation" class="form-control"></div>
-                <div class="col-md-4 mb-3"><label class="form-label">เบอร์โทรศัพท์ผู้ปกครอง</label><input type="text"
-                    id="Q1_GuardianPhone" name="Q1_GuardianPhone" class="form-control"></div>
-                <div class="col-md-5 mb-3"><label class="form-label">เลขประจำตัวประชาชน</label><input type="text"
-                    id="Q1_GuardianCitizenID" name="Q1_GuardianCitizenID" class="form-control"></div>
-                <div class="col-md-3 mb-3 align-self-center">
-                  <div class="form-check form-switch mt-4"><input class="form-check-input" type="checkbox"
-                      id="Q1_GuardianWelfareCard" name="Q1_GuardianWelfareCard"><label class="form-check-label"
-                      for="Q1_GuardianWelfareCard">ได้สวัสดิการแห่งรัฐ</label></div>
-                </div>
+              <div class="col-md-6 mb-3"><label class="form-label">ชื่อผู้ปกครอง</label><input type="text"
+                  id="Q1_GuardianFirstName" name="Q1_GuardianFirstName" class="form-control"></div>
+              <div class="col-md-6 mb-3"><label class="form-label">นามสกุล</label><input type="text"
+                  id="Q1_GuardianLastName" name="Q1_GuardianLastName" class="form-control"></div>
+              <div class="col-md-4 mb-3"><label class="form-label">ความสัมพันธ์กับนักเรียน</label><input type="text"
+                  id="Q1_GuardianRelation" name="Q1_GuardianRelation" class="form-control"></div>
+              <div class="col-md-4 mb-3"><label class="form-label">การศึกษาสูงสุด</label><input type="text"
+                  id="Q1_GuardianEducation" name="Q1_GuardianEducation" class="form-control"></div>
+              <div class="col-md-4 mb-3"><label class="form-label">อาชีพ</label><input type="text"
+                  id="Q1_GuardianOccupation" name="Q1_GuardianOccupation" class="form-control"></div>
+              <div class="col-md-4 mb-3"><label class="form-label">เบอร์โทรศัพท์ผู้ปกครอง</label><input type="text"
+                  id="Q1_GuardianPhone" name="Q1_GuardianPhone" class="form-control"></div>
+              <div class="col-md-5 mb-3"><label class="form-label">เลขประจำตัวประชาชน</label><input type="text"
+                  id="Q1_GuardianCitizenID" name="Q1_GuardianCitizenID" class="form-control"></div>
+              <div class="col-md-3 mb-3 align-self-center">
+                <div class="form-check form-switch mt-4"><input class="form-check-input" type="checkbox"
+                    id="Q1_GuardianWelfareCard" name="Q1_GuardianWelfareCard"><label class="form-check-label"
+                    for="Q1_GuardianWelfareCard">ได้สวัสดิการแห่งรัฐ</label></div>
               </div>
             </div>
+          </div>
             <div id="section-2" class="form-section card card-body mb-3">
               <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 2: จำนวนสมาชิกในครัวเรือน (รวมตัวนักเรียน)</h4>
               <div class="table-responsive">
@@ -1520,5 +1572,6 @@
 </body>
 
 </html>
+
 
 
