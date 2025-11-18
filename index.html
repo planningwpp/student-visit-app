@@ -279,52 +279,57 @@
         </nav>
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-3">
           <form id="visit-form">
-            <div id="section-1" class="form-section active card card-body mb-3">
-              <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 1: ข้อมูลนักเรียน</h4>
-              <div class="row bg-light p-3 rounded mb-3">
-                <div class="col-md-6">
-                  <p class="mb-1"><strong>ชื่อ:</strong> <span id="s1-name"></span></p>
-                </div>
-                <div class="col-md-6">
-                  <p class="mb-1"><strong>ชั้น:</strong> <span id="s1-class"></span></p>
-                </div>
-                <div class="col-md-6">
-                  <p class="mb-1"><strong>เลข ปชช.:</strong> <span id="s1-citizenid"></span></p>
-                </div>
+          <div id="section-1" class="form-section active card card-body mb-3">
+            <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 1: ข้อมูลนักเรียน</h4>
+            <div class="row bg-light p-3 rounded mb-3">
+              <div class="col-md-6">
+                <p class="mb-1"><strong>ชื่อ:</strong> <span id="s1-name"></span></p>
               </div>
+              <div class="col-md-6">
+                <p class="mb-1"><strong>ชั้น:</strong> <span id="s1-class"></span></p>
+              </div>
+              <div class="col-md-6">
+                <p class="mb-1"><strong>เลข ปชช.:</strong> <span id="s1-citizenid"></span></p>
+              </div>
+            </div>
 
-              <div class="row">
-                <div class="col-md-6 mb-3"><label class="form-label">รูปถ่ายนักเรียน (ถ้ามี)</label><input type="file"
-                    id="file_Q1_PhotoURL" class="form-control file-upload-input" accept="image/*"
-                    data-target-hidden="Q1_PhotoURL"><input type="hidden" id="Q1_PhotoURL" name="Q1_PhotoURL"><img
-                    id="preview_Q1_PhotoURL" src="" class="img-thumbnail mt-2" style="display:none; max-height: 150px;">
-                </div>
+            <div class="row">
+              <div class="col-md-6 mb-3"><label class="form-label">รูปถ่ายนักเรียน (ถ้ามี)</label><input type="file"
+                  id="file_Q1_PhotoURL" class="form-control file-upload-input" accept="image/*"
+                  data-target-hidden="Q1_PhotoURL"><input type="hidden" id="Q1_PhotoURL" name="Q1_PhotoURL"><img
+                  id="preview_Q1_PhotoURL" src="" class="img-thumbnail mt-2" style="display:none; max-height: 150px;">
               </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">เบอร์โทรศัพท์นักเรียน</label>
+                <input type="tel" id="Q1_StudentPhone" name="Q1_StudentPhone" class="form-control" placeholder="0xx-xxx-xxxx">
+              </div>
+            </div>
 
-              <div class="row">
-                <div class="col-md-6 mb-3"><label class="form-label">สถานภาพครอบครัว</label><select id="Q1_FamilyStatus"
-                    name="Q1_FamilyStatus" class="form-select">
-                    <option value="">-- เลือก --</option>
-                    <option>พ่อแม่อยู่ด้วยกัน</option>
-                    <option>พ่อแม่แยกกันอยู่</option>
-                    <option>พ่อแม่หย่าร้าง</option>
-                    <option>พ่อเสียชีวิต/สาบสูญ</option>
-                    <option>แม่เสียชีวิต/สาบสูญ</option>
-                    <option>เสียชีวิตทั้งคู่/สาบสูญ</option>
-                    <option>พ่อ/แม่ทอดทิ้ง</option>
-                  </select></div>
-                <div class="col-md-6 mb-3"><label class="form-label">นักเรียนอาศัยอยู่กับ</label><select id="Q1_LivesWith"
-                    name="Q1_LivesWith" class="form-select">
-                    <option value="">-- เลือก --</option>
-                    <option value="พ่อ/แม่">พ่อ/แม่</option>
-                    <option value="ญาติ">ญาติ</option>
-                    <option value="อยู่ลำพัง">อยู่ลำพัง</option>
-                    <option value="ผู้อุปการะ/นายจ้าง">ผู้อุปการะ/นายจ้าง</option>
-                    <option value="ครัวเรือนสถาบัน">ครัวเรือนสถาบัน</option>
-                  </select></div>
-              </div>
-              <h5 class="mt-3">ข้อมูลผู้ปกครอง</h5>
-              <div class="row">
+            <div class="row">
+              <div class="col-md-6 mb-3"><label class="form-label">สถานภาพครอบครัว</label><select id="Q1_FamilyStatus"
+                  name="Q1_FamilyStatus" class="form-select">
+                  <option value="">-- เลือก --</option>
+                  <option>พ่อแม่อยู่ด้วยกัน</option>
+                  <option>พ่อแม่แยกกันอยู่</option>
+                  <option>พ่อแม่หย่าร้าง</option>
+                  <option>พ่อเสียชีวิต/สาบสูญ</option>
+                  <option>แม่เสียชีวิต/สาบสูญ</option>
+                  <option>เสียชีวิตทั้งคู่/สาบสูญ</option>
+                  <option>พ่อ/แม่ทอดทิ้ง</option>
+                </select></div>
+              <div class="col-md-6 mb-3"><label class="form-label">นักเรียนอาศัยอยู่กับ</label><select id="Q1_LivesWith"
+                  name="Q1_LivesWith" class="form-select">
+                  <option value="">-- เลือก --</option>
+                  <option value="พ่อ/แม่">พ่อ/แม่</option>
+                  <option value="ญาติ">ญาติ</option>
+                  <option value="อยู่ลำพัง">อยู่ลำพัง</option>
+                  <option value="ผู้อุปการะ/นายจ้าง">ผู้อุปการะ/นายจ้าง</option>
+                  <option value="ครัวเรือนสถาบัน">ครัวเรือนสถาบัน</option>
+                </select></div>
+            </div>
+            
+            <h5 class="mt-3">ข้อมูลผู้ปกครอง</h5>
+            <div class="row">
                 <div class="col-md-6 mb-3"><label class="form-label">ชื่อผู้ปกครอง</label><input type="text"
                     id="Q1_GuardianFirstName" name="Q1_GuardianFirstName" class="form-control"></div>
                 <div class="col-md-6 mb-3"><label class="form-label">นามสกุล</label><input type="text"
@@ -1515,4 +1520,5 @@
 </body>
 
 </html>
+
 
