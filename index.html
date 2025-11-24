@@ -156,66 +156,114 @@
               <li class="nav-item"><a class="nav-link" data-section="section-5"><i class="bi bi-bus-front-fill me-2"></i> 5. การเดินทาง</a></li>
               <li class="nav-item"><a class="nav-link" data-section="section-6"><i class="bi bi-geo-alt-fill me-2"></i> 6. ที่พักอาศัย</a></li>
               <li class="nav-item"><a class="nav-link" data-section="section-7"><i class="bi bi-camera-fill me-2"></i> 7. ภาพถ่าย</a></li>
-              <li class="nav-item"><a class="nav-link" data-section="section-8-10"><i class="bi bi-check2-circle-fill me-2"></i> 8-10. รับรองข้อมูล</a></li>
+              <li class="nav-item"><a class="nav-link" data-section="section-8"><i class="bi bi-emoji-smile-fill me-2"></i> 8. พฤติกรรม/สัมพันธ์</a></li>
+              <li class="nav-item"><a class="nav-link" data-section="section-9"><i class="bi bi-chat-quote-fill me-2"></i> 9. ข้อเสนอแนะ</a></li>
+              <li class="nav-item"><a class="nav-link" data-section="section-10"><i class="bi bi-check2-circle-fill me-2"></i> 10. รับรองข้อมูล</a></li>
             </ul>
           </div>
         </nav>
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-3">
           <form id="visit-form">
             <div id="section-1" class="form-section active card card-body mb-3">
-                <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 1: ข้อมูลนักเรียน</h4>
-                <div class="row bg-light p-3 rounded mb-3">
-                  <div class="col-md-6"><p class="mb-1"><strong>ชื่อ:</strong> <span id="s1-name"></span></p></div>
-                  <div class="col-md-6"><p class="mb-1"><strong>ชั้น:</strong> <span id="s1-class"></span></p></div>
-                  <div class="col-md-6"><p class="mb-1"><strong>เลข ปชช.:</strong> <span id="s1-citizenid"></span></p></div>
+              <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 1: ข้อมูลนักเรียน</h4>
+              
+              <div class="row bg-light p-3 rounded mb-3">
+                <div class="col-md-6"><p class="mb-1"><strong>ชื่อ-สกุล:</strong> <span id="s1-name"></span></p></div>
+                <div class="col-md-3"><p class="mb-1"><strong>ชั้น:</strong> <span id="s1-class"></span></p></div>
+                <div class="col-md-3"><p class="mb-1"><strong>เลข ปชช.:</strong> <span id="s1-citizenid"></span></p></div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">รูปถ่ายนักเรียน</label>
+                  <input type="file" id="file_Q1_PhotoURL" class="form-control file-upload-input" accept="image/*" data-target-hidden="Q1_PhotoURL">
+                  <input type="hidden" id="Q1_PhotoURL" name="Q1_PhotoURL">
+                  <img id="preview_Q1_PhotoURL" src="" class="img-thumbnail mt-2" style="display:none; max-height: 150px;">
                 </div>
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">รูปถ่ายนักเรียน (ถ้ามี)</label>
-                    <input type="file" id="file_Q1_PhotoURL" class="form-control file-upload-input" accept="image/*" data-target-hidden="Q1_PhotoURL">
-                    <input type="hidden" id="Q1_PhotoURL" name="Q1_PhotoURL">
-                    <img id="preview_Q1_PhotoURL" src="" class="img-thumbnail mt-2" style="display:none; max-height: 150px;">
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">ชื่อเล่น</label> <input type="text" name="Q1_StudentNickname" id="Q1_StudentNickname" class="form-control">
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">เบอร์โทรศัพท์นักเรียน</label>
+                  <input type="tel" id="Q1_StudentPhone" name="Q1_StudentPhone" class="form-control">
+                </div>
+              </div>
+
+              <h5 class="text-primary mt-2">ข้อมูลส่วนตัว</h5>
+              <div class="row">
+                <div class="col-md-4 mb-3"><label class="form-label">วันเกิด</label><input type="date" id="Q1_StudentDOB" name="Q1_StudentDOB" class="form-control"></div>
+                <div class="col-md-2 mb-3"><label class="form-label">อายุ (ปี)</label><input type="number" id="Q1_StudentAge" name="Q1_StudentAge" class="form-control"></div>
+                <div class="col-md-3 mb-3"><label class="form-label">น้ำหนัก (กก.)</label><input type="number" id="Q1_StudentWeight" name="Q1_StudentWeight" class="form-control"></div>
+                <div class="col-md-3 mb-3"><label class="form-label">ส่วนสูง (ซม.)</label><input type="number" id="Q1_StudentHeight" name="Q1_StudentHeight" class="form-control"></div>
+              </div>
+              <div class="row">
+                <div class="col-md-3 mb-3"><label class="form-label">หมู่เลือด</label>
+                  <select id="Q1_StudentBloodGroup" name="Q1_StudentBloodGroup" class="form-select"><option value="">-เลือก-</option><option>A</option><option>B</option><option>O</option><option>AB</option></select>
+                </div>
+                <div class="col-md-3 mb-3"><label class="form-label">ศาสนา</label><input type="text" id="Q1_StudentReligion" name="Q1_StudentReligion" class="form-control" value="พุทธ"></div>
+                <div class="col-md-3 mb-3"><label class="form-label">เชื้อชาติ</label><input type="text" id="Q1_StudentRace" name="Q1_StudentRace" class="form-control" value="ไทย"></div>
+                <div class="col-md-3 mb-3"><label class="form-label">สัญชาติ</label><input type="text" id="Q1_StudentNationality" name="Q1_StudentNationality" class="form-control" value="ไทย"></div>
+              </div>
+
+              <div class="row bg-white border rounded p-2 mb-3">
+                <div class="col-md-4 mb-2"><label class="form-label">เป็นบุตรคนที่</label><input type="number" name="Q1_BirthOrder" id="Q1_BirthOrder" class="form-control"></div>
+                <div class="col-md-4 mb-2"><label class="form-label">พี่น้องชาย (คน)</label><input type="number" name="Q1_SiblingsMale" id="Q1_SiblingsMale" class="form-control"></div>
+                <div class="col-md-4 mb-2"><label class="form-label">พี่น้องหญิง (คน)</label><input type="number" name="Q1_SiblingsFemale" id="Q1_SiblingsFemale" class="form-control"></div>
+              </div>
+
+              <h5 class="text-primary">ที่อยู่ตามบัตรประชาชน</h5>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="use_current_addr">
+                <label class="form-check-label text-muted">ใช้ข้อมูลเดียวกับที่อยู่ปัจจุบัน (ในส่วนที่ 6)</label>
+              </div>
+              <div class="row">
+                <div class="col-md-4 mb-3"><label class="form-label">บ้านเลขที่/หมู่</label><input type="text" name="Q1_Regis_Addr" id="Q1_Regis_Addr" class="form-control"></div>
+                <div class="col-md-4 mb-3"><label class="form-label">ตำบล</label><input type="text" name="Q1_Regis_SubDist" id="Q1_Regis_SubDist" class="form-control"></div>
+                <div class="col-md-4 mb-3"><label class="form-label">อำเภอ/จังหวัด</label><input type="text" name="Q1_Regis_DistProv" id="Q1_Regis_DistProv" class="form-control"></div>
+              </div>
+
+              <hr>
+              <div class="row">
+                <div class="col-md-6 mb-3"><label class="form-label">สถานภาพครอบครัว</label><select id="Q1_FamilyStatus" name="Q1_FamilyStatus" class="form-select"><option value="">-- เลือก --</option><option>พ่อแม่อยู่ด้วยกัน</option><option>พ่อแม่แยกกันอยู่</option><option>พ่อแม่หย่าร้าง</option><option>พ่อเสียชีวิต/สาบสูญ</option><option>แม่เสียชีวิต/สาบสูญ</option><option>เสียชีวิตทั้งคู่/สาบสูญ</option><option>พ่อ/แม่ทอดทิ้ง</option></select></div>
+                <div class="col-md-6 mb-3"><label class="form-label">อาศัยอยู่กับ</label><select id="Q1_LivesWith" name="Q1_LivesWith" class="form-select"><option value="">-- เลือก --</option><option>พ่อ/แม่</option><option>ญาติ</option><option>อยู่ลำพัง</option><option>ผู้อุปการะ/นายจ้าง</option><option>ครัวเรือนสถาบัน</option></select></div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-bold">สถานะบิดา</label>
+                  <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="Q1_FatherStatus" id="fs1" value="มีชีวิต" autocomplete="off" checked>
+                    <label class="btn btn-outline-success" for="fs1">มีชีวิต</label>
+                    <input type="radio" class="btn-check" name="Q1_FatherStatus" id="fs2" value="ถึงแก่กรรม" autocomplete="off">
+                    <label class="btn btn-outline-secondary" for="fs2">ถึงแก่กรรม</label>
+                    <input type="radio" class="btn-check" name="Q1_FatherStatus" id="fs3" value="ขาดการติดต่อ" autocomplete="off">
+                    <label class="btn btn-outline-warning" for="fs3">ติดต่อไม่ได้</label>
                   </div>
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">เบอร์โทรศัพท์นักเรียน</label>
-                    <input type="tel" id="Q1_StudentPhone" name="Q1_StudentPhone" class="form-control" placeholder="0xx-xxx-xxxx">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-bold">สถานะมารดา</label>
+                  <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="Q1_MotherStatus" id="ms1" value="มีชีวิต" autocomplete="off" checked>
+                    <label class="btn btn-outline-success" for="ms1">มีชีวิต</label>
+                    <input type="radio" class="btn-check" name="Q1_MotherStatus" id="ms2" value="ถึงแก่กรรม" autocomplete="off">
+                    <label class="btn btn-outline-secondary" for="ms2">ถึงแก่กรรม</label>
+                    <input type="radio" class="btn-check" name="Q1_MotherStatus" id="ms3" value="ขาดการติดต่อ" autocomplete="off">
+                    <label class="btn btn-outline-warning" for="ms3">ติดต่อไม่ได้</label>
                   </div>
                 </div>
-                <h5 class="mt-3 text-primary">ข้อมูลส่วนตัว</h5>
-                <div class="row">
-                  <div class="col-md-6 mb-3"><label class="form-label">วัน/เดือน/ปี เกิด</label><input type="date" id="Q1_StudentDOB" name="Q1_StudentDOB" class="form-control"></div>
-                  <div class="col-md-6 mb-3"><label class="form-label">อายุ (ปี)</label><input type="number" id="Q1_StudentAge" name="Q1_StudentAge" class="form-control"></div>
-                </div>
-                <div class="row">
-                  <div class="col-md-4 mb-3"><label class="form-label">น้ำหนัก (กก.)</label><input type="number" id="Q1_StudentWeight" name="Q1_StudentWeight" class="form-control"></div>
-                  <div class="col-md-4 mb-3"><label class="form-label">ส่วนสูง (ซม.)</label><input type="number" id="Q1_StudentHeight" name="Q1_StudentHeight" class="form-control"></div>
-                  <div class="col-md-4 mb-3"><label class="form-label">กลุ่มเลือด</label>
-                    <select id="Q1_StudentBloodGroup" name="Q1_StudentBloodGroup" class="form-select">
-                      <option value="">-- เลือก --</option><option value="A">A</option><option value="B">B</option><option value="O">O</option><option value="AB">AB</option><option value="ไม่ทราบ">ไม่ทราบ</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-md-4 mb-3"><label class="form-label">ศาสนา</label><input type="text" id="Q1_StudentReligion" name="Q1_StudentReligion" class="form-control" value="พุทธ"></div>
-                  <div class="col-md-4 mb-3"><label class="form-label">เชื้อชาติ</label><input type="text" id="Q1_StudentRace" name="Q1_StudentRace" class="form-control" value="ไทย"></div>
-                  <div class="col-md-4 mb-3"><label class="form-label">สัญชาติ</label><input type="text" id="Q1_StudentNationality" name="Q1_StudentNationality" class="form-control" value="ไทย"></div>
-                </div>
-                <hr>
-                <div class="row">
-                  <div class="col-md-6 mb-3"><label class="form-label">สถานภาพครอบครัว</label><select id="Q1_FamilyStatus" name="Q1_FamilyStatus" class="form-select"><option value="">-- เลือก --</option><option>พ่อแม่อยู่ด้วยกัน</option><option>พ่อแม่แยกกันอยู่</option><option>พ่อแม่หย่าร้าง</option><option>พ่อเสียชีวิต/สาบสูญ</option><option>แม่เสียชีวิต/สาบสูญ</option><option>เสียชีวิตทั้งคู่/สาบสูญ</option><option>พ่อ/แม่ทอดทิ้ง</option></select></div>
-                  <div class="col-md-6 mb-3"><label class="form-label">นักเรียนอาศัยอยู่กับ</label><select id="Q1_LivesWith" name="Q1_LivesWith" class="form-select"><option value="">-- เลือก --</option><option value="พ่อ/แม่">พ่อ/แม่</option><option value="ญาติ">ญาติ</option><option value="อยู่ลำพัง">อยู่ลำพัง</option><option value="ผู้อุปการะ/นายจ้าง">ผู้อุปการะ/นายจ้าง</option><option value="ครัวเรือนสถาบัน">ครัวเรือนสถาบัน</option></select></div>
-                </div>
-                <h5 class="mt-3">ข้อมูลผู้ปกครอง</h5>
-                <div class="row">
-                  <div class="col-md-6 mb-3"><label class="form-label">ชื่อผู้ปกครอง</label><input type="text" id="Q1_GuardianFirstName" name="Q1_GuardianFirstName" class="form-control"></div>
-                  <div class="col-md-6 mb-3"><label class="form-label">นามสกุล</label><input type="text" id="Q1_GuardianLastName" name="Q1_GuardianLastName" class="form-control"></div>
-                  <div class="col-md-4 mb-3"><label class="form-label">ความสัมพันธ์</label><input type="text" id="Q1_GuardianRelation" name="Q1_GuardianRelation" class="form-control"></div>
-                  <div class="col-md-4 mb-3"><label class="form-label">การศึกษาสูงสุด</label><input type="text" id="Q1_GuardianEducation" name="Q1_GuardianEducation" class="form-control"></div>
-                  <div class="col-md-4 mb-3"><label class="form-label">อาชีพ</label><input type="text" id="Q1_GuardianOccupation" name="Q1_GuardianOccupation" class="form-control"></div>
-                  <div class="col-md-4 mb-3"><label class="form-label">เบอร์โทรศัพท์</label><input type="text" id="Q1_GuardianPhone" name="Q1_GuardianPhone" class="form-control"></div>
-                  <div class="col-md-5 mb-3"><label class="form-label">เลข ปชช. ผปค.</label><input type="text" id="Q1_GuardianCitizenID" name="Q1_GuardianCitizenID" class="form-control"></div>
-                  <div class="col-md-3 mb-3 align-self-center"><div class="form-check form-switch mt-4"><input class="form-check-input" type="checkbox" id="Q1_GuardianWelfareCard" name="Q1_GuardianWelfareCard"><label class="form-check-label">ได้สวัสดิการแห่งรัฐ</label></div></div>
-                </div>
+              </div>
+
+              <h5 class="mt-3">ข้อมูลผู้ปกครอง (หลัก)</h5>
+              <div class="row">
+                <div class="col-md-6 mb-3"><label class="form-label">ชื่อผู้ปกครอง</label><input type="text" id="Q1_GuardianFirstName" name="Q1_GuardianFirstName" class="form-control"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">นามสกุล</label><input type="text" id="Q1_GuardianLastName" name="Q1_GuardianLastName" class="form-control"></div>
+                <div class="col-md-4 mb-3"><label class="form-label">ความสัมพันธ์</label><input type="text" id="Q1_GuardianRelation" name="Q1_GuardianRelation" class="form-control"></div>
+                <div class="col-md-4 mb-3"><label class="form-label">การศึกษา</label><input type="text" id="Q1_GuardianEducation" name="Q1_GuardianEducation" class="form-control"></div>
+                <div class="col-md-4 mb-3"><label class="form-label">อาชีพ</label><input type="text" id="Q1_GuardianOccupation" name="Q1_GuardianOccupation" class="form-control"></div>
+                <div class="col-md-4 mb-3"><label class="form-label">เบอร์โทร</label><input type="text" id="Q1_GuardianPhone" name="Q1_GuardianPhone" class="form-control"></div>
+                <div class="col-md-5 mb-3"><label class="form-label">เลข ปชช.</label><input type="text" id="Q1_GuardianCitizenID" name="Q1_GuardianCitizenID" class="form-control"></div>
+                <div class="col-md-3 mb-3 align-self-center"><div class="form-check form-switch mt-4"><input class="form-check-input" type="checkbox" id="Q1_GuardianWelfareCard" name="Q1_GuardianWelfareCard"><label class="form-check-label">ได้สวัสดิการแห่งรัฐ</label></div></div>
+              </div>
             </div>
             <div id="section-2" class="form-section card card-body mb-3">
               <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 2: จำนวนสมาชิกในครัวเรือน (รวมตัวนักเรียน)</h4>
@@ -235,29 +283,91 @@
                  <div class="col-md-4"><label class="form-label fw-bold">รายได้เฉลี่ยต่อคน (ต่อเดือน)</label><input type="number" id="Q2_HouseholdIncome_PerCapita" name="Q2_HouseholdIncome_PerCapita" class="form-control" readonly></div>
               </div>
             </div>
-            <div id="section-3" class="form-section card card-body mb-3">
-              <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 3: สถานะของครัวเรือน</h4>
+           <div id="section-3" class="form-section card card-body mb-3">
+              <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 3: สถานะของครัวเรือนและที่พักอาศัย</h4>
+              
+              <div class="mb-3">
+                <label class="form-label fw-bold">1. บ้านที่อาศัย</label>
+                <select name="Q3_HouseOwnership" class="form-select">
+                  <option value="">-- เลือก --</option>
+                  <option value="บ้านตนเอง">บ้านตนเอง</option>
+                  <option value="อาศัยผู้อื่น">อาศัยอยู่กับผู้อื่น/เช่า</option>
+                  <option value="หอพัก">อยู่หอพัก</option>
+                  <option value="วัด">วัด/มูลนิธิ</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">2. ลักษณะบ้าน</label>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="ชั้นเดียว" checked><label class="form-check-label">ชั้นเดียว</label></div>
+                    <div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="สองชั้น"><label class="form-check-label">สองชั้น</label></div>
+                    <div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="ตึกแถว"><label class="form-check-label">ตึกแถว/อาคารพาณิชย์</label></div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="Q3_HouseCond_Strong"><label class="form-check-label">มีความแข็งแรง</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="Q3_HouseCond_Safe"><label class="form-check-label">มีความปลอดภัย</label></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">3. สภาพแวดล้อม/ชุมชน</label>
+                <div class="btn-group w-100" role="group">
+                  <input type="radio" class="btn-check" name="Q3_Environment" id="env1" value="ปลอดภัยดี" autocomplete="off" checked>
+                  <label class="btn btn-outline-success" for="env1">ปลอดภัยดี</label>
+                  <input type="radio" class="btn-check" name="Q3_Environment" id="env2" value="พอใช้" autocomplete="off">
+                  <label class="btn btn-outline-warning" for="env2">พอใช้</label>
+                  <input type="radio" class="btn-check" name="Q3_Environment" id="env3" value="เสี่ยง/ไม่ดี" autocomplete="off">
+                  <label class="btn btn-outline-danger" for="env3">เสี่ยง/ไม่ดี</label>
+                </div>
+              </div>
+
+              <hr>
+              
               <h5 class="mt-3">3.1 ครัวเรือนมีภาระพึ่งพิง</h5>
               <div class="mb-3">
-                <div class="form-check"><input class="form-check-input" type="radio" name="Q3_1_DependencyStatus" id="Q3_1_DependencyStatus_No" value="ไม่มี"><label class="form-check-label" for="Q3_1_DependencyStatus_No">ครัวเรือนไม่มีภาระพึ่งพิง</label></div>
-                <div class="form-check"><input class="form-check-input" type="radio" name="Q3_1_DependencyStatus" id="Q3_1_DependencyStatus_Yes" value="มี"><label class="form-check-label" for="Q3_1_DependencyStatus_Yes">ครัวเรือนมีภาระพึ่งพิง</label></div>
+                <div class="form-check"><input class="form-check-input" type="radio" name="Q3_1_DependencyStatus" id="Q3_1_DependencyStatus_No" value="ไม่มี"><label class="form-check-label" for="Q3_1_DependencyStatus_No">ไม่มีภาระ</label></div>
+                <div class="form-check"><input class="form-check-input" type="radio" name="Q3_1_DependencyStatus" id="Q3_1_DependencyStatus_Yes" value="มี"><label class="form-check-label" for="Q3_1_DependencyStatus_Yes">มีภาระ</label></div>
               </div>
               <div id="q3-1-sub-options" class="conditional-subsection ms-4 p-3 rounded mb-3">
-                <div class="form-check"><input class="form-check-input" type="checkbox" id="Q3_1_Sub_Disabled" name="Q3_1_Sub_Disabled"><label>มีความพิการทางร่างกาย/สติปัญญา</label></div>
-                <div class="form-check"><input class="form-check-input" type="checkbox" id="Q3_1_Sub_Chronic" name="Q3_1_Sub_Chronic"><label>มีโรคเรื้อรัง (ยกเว้น ความดัน/เบาหวาน)</label></div>
-                <div class="form-check"><input class="form-check-input" type="checkbox" id="Q3_1_Sub_Elderly" name="Q3_1_Sub_Elderly"><label>ผู้สูงอายุตั้งแต่ 60 ปีขึ้นไป</label></div>
-                <div class="form-check"><input class="form-check-input" type="checkbox" id="Q3_1_Sub_SingleParent" name="Q3_1_Sub_SingleParent"><label>เป็นพ่อ/แม่เลี้ยงเดี่ยว</label></div>
-                <div class="form-check"><input class="form-check-input" type="checkbox" id="Q3_1_Sub_Unemployed" name="Q3_1_Sub_Unemployed"><label>มีคนอายุ 15-65 ปีที่ว่างงาน</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="Q3_1_Sub_Disabled" name="Q3_1_Sub_Disabled"><label>พิการร่างกาย/สติปัญญา</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="Q3_1_Sub_Chronic" name="Q3_1_Sub_Chronic"><label>โรคเรื้อรัง (ยกเว้น ความดัน/เบาหวาน)</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="Q3_1_Sub_Elderly" name="Q3_1_Sub_Elderly"><label>ผู้สูงอายุ 60+</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="Q3_1_Sub_SingleParent" name="Q3_1_Sub_SingleParent"><label>พ่อ/แม่เลี้ยงเดี่ยว</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="Q3_1_Sub_Unemployed" name="Q3_1_Sub_Unemployed"><label>คนอายุ 15-65 ปี ว่างงาน</label></div>
               </div>
-              <h5 class="mt-3">3.4 ที่ดินทำการเกษตรได้ (รวมเช่า)</h5>
+
+              <h5 class="mt-3">3.4 ที่ดินเกษตร (รวมเช่า)</h5>
               <div class="mb-3">
                 <div class="form-check"><input class="form-check-input" type="radio" name="Q3_4_AgricultureStatus" id="Q3_4_AgricultureStatus_No" value="ไม่ทำ"><label class="form-check-label" for="Q3_4_AgricultureStatus_No">ไม่ทำเกษตร</label></div>
                 <div class="form-check"><input class="form-check-input" type="radio" name="Q3_4_AgricultureStatus" id="Q3_4_AgricultureStatus_Yes" value="ทำ"><label class="form-check-label" for="Q3_4_AgricultureStatus_Yes">ทำเกษตร</label></div>
               </div>
               <div id="q3-4-sub-options" class="conditional-subsection ms-4 p-3 rounded mb-3">
-                <select id="Q3_4_LandSize" name="Q3_4_LandSize" class="form-select">
-                  <option value="">-- เลือกขนาดที่ดิน --</option><option value="<1 ไร่">มีที่ดินน้อยกว่า 1 ไร่</option><option value="1-5 ไร่">มีที่ดิน 1 ถึง 5 ไร่</option><option value=">5 ไร่">มีที่ดินมากกว่า 5 ไร่</option>
+                <select id="Q3_4_LandSize" name="Q3_4_LandSize" class="form-select"><option value="">-- ขนาดที่ดิน --</option><option value="<1 ไร่">น้อยกว่า 1 ไร่</option><option value="1-5 ไร่">1-5 ไร่</option><option value=">5 ไร่">มากกว่า 5 ไร่</option></select>
+              </div>
+
+              <div class="mb-3 mt-3">
+                <label class="form-label fw-bold">15. รายได้กับการใช้จ่าย</label>
+                <select name="Q3_IncomeSufficiency" class="form-select">
+                  <option value="">-- เลือก --</option>
+                  <option value="เพียงพอ">เพียงพอ</option>
+                  <option value="ไม่พอในบางครั้ง">ไม่เพียงพอในบางครั้ง</option>
+                  <option value="ขัดสน">ขัดสน</option>
                 </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">16. การหารายได้พิเศษของนักเรียน</label>
+                <div class="input-group">
+                  <div class="input-group-text">
+                    <input class="form-check-input mt-0" type="checkbox" name="Q3_StudentIncome_Has" id="Q3_StudentIncome_Has">
+                  </div>
+                  <input type="text" name="Q3_StudentIncome_Detail" class="form-control" placeholder="ทำงานอะไร (ถ้ามี)" disabled>
+                  <span class="input-group-text">บาท/วัน</span>
+                  <input type="number" name="Q3_StudentIncome_Amount" class="form-control" style="max-width: 100px;" disabled>
+                </div>
               </div>
             </div>
             <div id="section-4" class="form-section card card-body mb-3">
@@ -315,13 +425,141 @@
                 <div class="col-md-6 mb-3"><label class="form-label">รูปที่ 2: ภาพถ่ายภายในที่พักอาศัย</label><input type="file" id="file_Q7_Photo2_URL" class="form-control file-upload-input" accept="image/*" data-target-hidden="Q7_Photo2_URL"><input type="hidden" id="Q7_Photo2_URL" name="Q7_Photo2_URL"><img id="preview_Q7_Photo2_URL" src="" class="img-thumbnail mt-2" style="display:none; max-height: 150px;"></div>
               </div>
             </div>
-            <div id="section-8-10" class="form-section card card-body mb-3">
-              <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 8-10: การรับรองข้อมูล</h4>
-              <div class="form-check form-switch mb-3 fs-5"><input class="form-check-input" type="checkbox" id="Q8_StudentParent_Confirm" name="Q8_StudentParent_Confirm"><label class="form-check-label">ข้าพเจ้า (นักเรียน/ผู้ปกครอง) ขอให้การรับรองว่าข้อมูลถูกต้อง</label></div>
-              <div class="form-check form-switch mb-3 fs-5"><input class="form-check-input" type="checkbox" id="Q9_PDPA_Confirm" name="Q9_PDPA_Confirm"><label class="form-check-label">ข้าพเจ้ารับทราบเรื่องข้อมูลส่วนบุคคล (PDPA)</label></div>
+            <div id="section-8" class="form-section card card-body mb-3">
+              <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 8: ข้อมูลพฤติกรรมและความสัมพันธ์</h4>
+              
+              <div class="mb-3">
+                <label class="form-label fw-bold">8. โรคประจำตัวของนักเรียน</label>
+                <input type="text" name="Q8_ChronicDisease" class="form-control" placeholder="ระบุโรคและการรักษา (ถ้าไม่มี ให้ขีด - )">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">9. ความสัมพันธ์ของสมาชิกในครอบครัว</label>
+                <div class="d-flex gap-3 flex-wrap">
+                  <div class="form-check"><input class="form-check-input" type="radio" name="Q8_FamilyRel" value="อบอุ่น"><label class="form-check-label">อบอุ่น</label></div>
+                  <div class="form-check"><input class="form-check-input" type="radio" name="Q8_FamilyRel" value="เฉยๆ"><label class="form-check-label">เฉยๆ</label></div>
+                  <div class="form-check"><input class="form-check-input" type="radio" name="Q8_FamilyRel" value="ห่างเหิน"><label class="form-check-label">ห่างเหิน</label></div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">10. ความรู้สึกของผู้ปกครองต่อนักเรียน</label>
+                <div class="d-flex gap-3 flex-wrap">
+                  <div class="form-check"><input class="form-check-input" type="radio" name="Q8_ParentFeeling" value="พอใจ"><label class="form-check-label">พอใจ</label></div>
+                  <div class="form-check"><input class="form-check-input" type="radio" name="Q8_ParentFeeling" value="เฉยๆ"><label class="form-check-label">เฉยๆ</label></div>
+                  <div class="form-check"><input class="form-check-input" type="radio" name="Q8_ParentFeeling" value="ไม่พอใจ"><label class="form-check-label">ไม่พอใจ</label></div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">11. วิธีการเลี้ยงดู</label>
+                <select name="Q8_ParentingMethod" class="form-select">
+                  <option value="">-- เลือก --</option>
+                  <option value="เข้มงวดกวดขัน">เข้มงวดกวดขัน</option>
+                  <option value="ใช้เหตุผล">ใช้เหตุผล</option>
+                  <option value="ปล่อยปละละเลย">ปล่อยปละละเลย</option>
+                  <option value="ตามใจ">ตามใจ</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">12. การปฏิบัติตนขณะอยู่บ้าน (ตอบได้มากกว่า 1)</label>
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="Q8_Beh_Homework"><label class="form-check-label">อ่านหนังสือ/ทำการบ้าน</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="Q8_Beh_HelpParent"><label class="form-check-label">ช่วยงานผู้ปกครอง</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="Q8_Beh_Housework"><label class="form-check-label">ทำงานบ้าน</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="Q8_Beh_None"><label class="form-check-label">ไม่ช่วยงานเลย</label></div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">13. หน้าที่รับผิดชอบในบ้าน</label>
+                <input type="text" name="Q8_StudentDuty" class="form-control" placeholder="เช่น ล้างจาน, กวาดบ้าน">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">17. ลักษณะเพื่อนเล่นที่บ้าน</label>
+                <select name="Q8_FriendsAtHome" class="form-select">
+                  <option value="">-- เลือก --</option>
+                  <option value="รุ่นเดียวกัน">เพื่อนรุ่นเดียวกัน</option>
+                  <option value="รุ่นน้อง">เพื่อนรุ่นน้อง</option>
+                  <option value="รุ่นพี่">เพื่อนรุ่นพี่</option>
+                  <option value="ทุกรุ่น">เพื่อนทุกรุ่น</option>
+                  <option value="ไม่มี">ไม่มีเพื่อนเล่นแถวบ้าน</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">19. ความต้องการเมื่อจบหลักสูตร</label>
+                <div class="input-group">
+                  <div class="input-group-text">
+                    <input class="form-check-input mt-0" type="radio" name="Q8_FutureGoal" value="ศึกษาต่อ" checked> ศึกษาต่อ
+                  </div>
+                  <div class="input-group-text">
+                    <input class="form-check-input mt-0" type="radio" name="Q8_FutureGoal" value="ทำงาน"> ประกอบอาชีพ
+                  </div>
+                  <input type="text" name="Q8_FutureGoal_Job" class="form-control" placeholder="ระบุอาชีพ (ถ้าเลือกทำงาน)">
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-bold">20. สนิทสนมกับใครมากที่สุด</label>
+                  <select name="Q8_ClosestPerson" class="form-select">
+                    <option value="">-- เลือก --</option><option>พ่อ</option><option>แม่</option><option>พี่</option><option>น้อง</option><option>ครูที่ปรึกษา</option><option>เพื่อน</option><option>ญาติ</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-bold">21. เมื่อมีปัญหาปรึกษาใคร</label>
+                  <select name="Q8_Consultant" class="form-select">
+                    <option value="">-- เลือก --</option><option>พ่อ</option><option>แม่</option><option>พี่</option><option>น้อง</option><option>ครูที่ปรึกษา</option><option>เพื่อน</option><option>ญาติ</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div id="section-9" class="form-section card card-body mb-3">
+              <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 9: ข้อเสนอแนะ</h4>
+              
+              <h5 class="text-primary">22. ข้อเสนอแนะของผู้ปกครอง</h5>
+              <div class="mb-3">
+                <label class="form-label">ด้านพฤติกรรมนักเรียน</label>
+                <textarea name="Q9_Suggest_Behavior" class="form-control" rows="2"></textarea>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">ด้านการจัดการเรียนการสอน</label>
+                <textarea name="Q9_Suggest_Learning" class="form-control" rows="2"></textarea>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">ด้านสถานที่และสิ่งแวดล้อม</label>
+                <textarea name="Q9_Suggest_Env" class="form-control" rows="2"></textarea>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">ด้านความเอาใจใส่ของครูที่ปรึกษา</label>
+                <textarea name="Q9_Suggest_Teacher" class="form-control" rows="2"></textarea>
+              </div>
+
+              <hr>
+              <h5 class="text-danger">23. ความคิดเห็นของครู (สรุปการเยี่ยมบ้าน)</h5>
+              <div class="mb-3">
+                <label class="form-label fw-bold">สรุปผล/ข้อสังเกต/แนวทางช่วยเหลือ</label>
+                <textarea name="Q9_TeacherOpinion" class="form-control" rows="4" placeholder="บันทึกสรุปผลการเยี่ยมบ้าน..."></textarea>
+              </div>
+            </div>
+
+            <div id="section-10" class="form-section card card-body mb-3">
+              <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 10: การรับรองข้อมูล</h4>
+              <div class="form-check form-switch mb-3 fs-5">
+                <input class="form-check-input" type="checkbox" id="Q10_StudentParent_Confirm" name="Q8_StudentParent_Confirm"> <label class="form-check-label">ข้าพเจ้า (นักเรียน/ผู้ปกครอง) ขอให้การรับรองว่าข้อมูลถูกต้อง</label>
+              </div>
+              <div class="form-check form-switch mb-3 fs-5">
+                <input class="form-check-input" type="checkbox" id="Q10_PDPA_Confirm" name="Q9_PDPA_Confirm">
+                <label class="form-check-label">ข้าพเจ้ารับทราบเรื่องข้อมูลส่วนบุคคล (PDPA)</label>
+              </div>
               <hr>
               <h5>ส่วนของเจ้าหน้าที่ (ครูผู้เยี่ยมบ้าน)</h5>
-              <div class="form-check form-switch mb-3 fs-5"><input class="form-check-input" type="checkbox" id="Q10_Teacher_Confirm" name="Q10_Teacher_Confirm"><label class="form-check-label">ข้าพเจ้า (ครูผู้เยี่ยม) ขอรับรองว่าข้อมูลถูกต้อง</label></div>
+              <div class="form-check form-switch mb-3 fs-5">
+                <input class="form-check-input" type="checkbox" id="Q10_Teacher_Confirm" name="Q10_Teacher_Confirm">
+                <label class="form-check-label">ข้าพเจ้า (ครูผู้เยี่ยม) ขอรับรองว่าข้อมูลถูกต้อง</label>
+              </div>
             </div>
           </form>
         </main>
@@ -1027,3 +1265,4 @@
   </script>
 </body>
 </html>
+
