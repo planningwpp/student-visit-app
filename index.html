@@ -793,6 +793,7 @@
     }
 
     // (แก้บัค) ใส่ Safety Check ให้ prefillForm
+// (แก้ไข) ใส่ Safety Check + แก้บัควันเกิดหาย
     function prefillForm(master, visit) {
       if (!master) { handleError({ message: "ไม่พบข้อมูลหลักของนักเรียน" }); return; }
       
@@ -807,14 +808,25 @@
       
       // New fields defaults
       if(document.getElementById('Q1_StudentNickname')) document.getElementById('Q1_StudentNickname').value = (visit && visit.Q1_StudentNickname) || (master && master.Nickname) || '';
+      
+      // --- (จุดที่แก้) แปลงวันเกิดให้ถูกต้อง ---
+      if(document.getElementById('Q1_StudentDOB')) {
+         const rawDOB = (visit && visit.Q1_StudentDOB) || (master && master.DOB) || '';
+         document.getElementById('Q1_StudentDOB').value = formatDateForInput(rawDOB);
+      }
+      // -------------------------------------
+
       if(document.getElementById('Q1_StudentDOB')) document.getElementById('Q1_StudentDOB').value = (visit && visit.Q1_StudentDOB) || (master && master.DOB) || '';
-      // ... (สามารถเพิ่ม field อื่นๆ ได้ตามต้องการ)
+      // (หมายเหตุ: บรรทัดข้างบนนี้ซ้ำกับโค้ดที่แก้แล้ว ให้ลบบรรทัดนี้ทิ้งได้เลยครับ หรือใช้บล็อก if ด้านบนแทน)
 
       if (visit) {
         const form = document.getElementById('visit-form');
         for (const key in visit) {
           const input = form.elements[key];
           if (input) {
+            // ข้ามวันเกิดไป เพราะเราจัดการข้างบนแล้ว
+            if (key === 'Q1_StudentDOB') continue; 
+
             if (input.type === 'checkbox') {
                input.checked = (visit[key] === "TRUE");
             } else if (input.type === 'radio' || (input.length > 0 && input[0].type === 'radio')) {
@@ -823,14 +835,10 @@
             } else if (input.type === 'hidden' && key.includes('PhotoURL')) {
                input.value = visit[key];
                if(visit[key]) {
-                 // แสดงรูปภาพ
                  const previewImg = document.getElementById(`preview_${key}`);
                  if (previewImg) { previewImg.src = visit[key]; previewImg.style.display = 'block'; }
-                 
-                 // แสดงกล่องรูปและปุ่มลบ
                  const wrapper = document.getElementById(`wrapper_${key}`);
                  if(wrapper) wrapper.style.display = 'inline-block';
-                 
                  const deleteBtn = wrapper ? wrapper.querySelector('.btn-delete-img') : null;
                  if(deleteBtn) deleteBtn.style.display = 'block';
                }
@@ -838,16 +846,10 @@
                input.value = visit[key];
             }
 
-            // *** แก้บัค: Trigger การเปลี่ยนแปลง UI อย่างปลอดภัย ***
-            if(key === 'Q3_1_DependencyStatus' && el.q3_1_SubOptions) {
-               el.q3_1_SubOptions.style.display = (visit[key] === 'มี') ? 'block' : 'none';
-            }
-            if(key === 'Q3_4_AgricultureStatus' && el.q3_4_SubOptions) {
-               el.q3_4_SubOptions.style.display = (visit[key] === 'ทำ') ? 'block' : 'none';
-            }
-            if(key === 'Q1_LivesWith' && el.q4Content) {
-               el.q4Content.style.display = (visit[key] === 'ครัวเรือนสถาบัน') ? 'block' : 'none';
-            }
+            // Trigger UI updates
+            if(key === 'Q3_1_DependencyStatus' && el.q3_1_SubOptions) el.q3_1_SubOptions.style.display = (visit[key] === 'มี') ? 'block' : 'none';
+            if(key === 'Q3_4_AgricultureStatus' && el.q3_4_SubOptions) el.q3_4_SubOptions.style.display = (visit[key] === 'ทำ') ? 'block' : 'none';
+            if(key === 'Q1_LivesWith' && el.q4Content) el.q4Content.style.display = (visit[key] === 'ครัวเรือนสถาบัน') ? 'block' : 'none';
             if(key === 'Q3_StudentIncome_Has') {
                 const hasIncome = (visit[key] === "TRUE");
                 const detail = document.getElementsByName('Q3_StudentIncome_Detail')[0];
@@ -1388,5 +1390,6 @@
   </script>
 </body>
 </html>
+
 
 
