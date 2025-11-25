@@ -41,13 +41,12 @@
     .delete-row-btn { width: 40px; height: 40px; }
     .swal2-popup { font-size: 0.9rem !important; }
 
-    /* (ใหม่) สไตล์กรอบรูปภาพและปุ่มลบ */
     .img-wrapper { position: relative; display: inline-block; margin-top: 10px; }
     .btn-delete-img {
       position: absolute; top: -10px; right: -10px;
       width: 25px; height: 25px; border-radius: 50%;
       padding: 0; font-size: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      display: none; /* ซ่อนไว้ก่อนถ้าไม่มีรูป */
+      display: none; 
     }
     .img-preview { max-height: 150px; display: none; border: 1px solid #ddd; padding: 2px; border-radius: 4px; }
   </style>
@@ -283,6 +282,18 @@
               <div class="mb-3"><label class="form-label fw-bold">1. บ้านที่อาศัย</label><select name="Q3_HouseOwnership" class="form-select"><option value="">-- เลือก --</option><option value="บ้านตนเอง">บ้านตนเอง</option><option value="อาศัยผู้อื่น">อาศัยผู้อื่น/เช่า</option><option value="หอพัก">หอพัก</option><option value="วัด">วัด/มูลนิธิ</option></select></div>
               <div class="mb-3"><label class="form-label fw-bold">2. ลักษณะบ้าน</label><div class="row"><div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="ชั้นเดียว" checked><label>ชั้นเดียว</label></div><div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="สองชั้น"><label>สองชั้น</label></div><div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="ตึกแถว"><label>ตึกแถว</label></div></div><div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q3_HouseCond_Strong"><label>มีความแข็งแรง</label></div><div class="form-check"><input class="form-check-input" type="checkbox" name="Q3_HouseCond_Safe"><label>มีความปลอดภัย</label></div></div></div></div>
               <div class="mb-3"><label class="form-label fw-bold">3. สภาพแวดล้อม</label><div class="btn-group w-100" role="group"><input type="radio" class="btn-check" name="Q3_Environment" id="env1" value="ปลอดภัยดี" checked><label class="btn btn-outline-success" for="env1">ปลอดภัยดี</label><input type="radio" class="btn-check" name="Q3_Environment" id="env2" value="พอใช้"><label class="btn btn-outline-warning" for="env2">พอใช้</label><input type="radio" class="btn-check" name="Q3_Environment" id="env3" value="เสี่ยง/ไม่ดี"><label class="btn btn-outline-danger" for="env3">เสี่ยง/ไม่ดี</label></div></div>
+              
+              <div class="mb-3">
+                  <label class="form-label fw-bold">6. สถานที่ทำงานของบิดามารดา</label>
+                  <select name="Q3_ParentsWorkPlace" class="form-select">
+                    <option value="">-- เลือก --</option>
+                    <option value="ในอำเภอเดียวกัน">ในอำเภอเดียวกัน</option>
+                    <option value="ต่างอำเภอในจังหวัด">ต่างอำเภอในจังหวัดเดียวกัน</option>
+                    <option value="ต่างจังหวัด">ต่างจังหวัด</option>
+                    <option value="ต่างประเทศ">ต่างประเทศ</option>
+                  </select>
+              </div>
+              
               <hr>
               <h5 class="mt-3">3.1 ภาระพึ่งพิง</h5>
               <div class="mb-3"><div class="form-check"><input class="form-check-input" type="radio" name="Q3_1_DependencyStatus" id="Q3_1_DependencyStatus_No" value="ไม่มี"><label for="Q3_1_DependencyStatus_No">ไม่มี</label></div><div class="form-check"><input class="form-check-input" type="radio" name="Q3_1_DependencyStatus" id="Q3_1_DependencyStatus_Yes" value="มี"><label for="Q3_1_DependencyStatus_Yes">มี</label></div></div>
@@ -410,7 +421,7 @@
     const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
     
     // ********** สำคัญ! ใส่ URL ของ Google Apps Script ที่ Deploy แล้วตรงนี้ **********
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyZBFYUglarDmKqt_uvubHyjbd7cByHviNcfwOhMWCVT7eDwQyfEwEoMR2ISoMGgE-h/exec"; 
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzTSpzfnrQTijsWa_XN8WlUyeesNDf1VsWw3QxNjQ57OUNFXTnBD_TXA8ZV7QojSF-/exec"; 
 
     /* * ===================================================================
      * STATE MANAGEMENT
@@ -1313,6 +1324,3 @@
   </script>
 </body>
 </html>
-
-
-
