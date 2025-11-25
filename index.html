@@ -281,19 +281,32 @@
 
             <div id="section-3" class="form-section card card-body mb-3">
               <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 3: สถานะครัวเรือน/ที่พักอาศัย</h4>
-              <div class="mb-3"><label class="form-label fw-bold">1. บ้านที่อาศัย</label><select name="Q3_HouseOwnership" class="form-select"><option value="">-- เลือก --</option><option value="บ้านตนเอง">บ้านตนเอง</option><option value="อาศัยผู้อื่น">อาศัยผู้อื่น/เช่า</option><option value="หอพัก">หอพัก</option><option value="วัด">วัด/มูลนิธิ</option></select></div>
-              <div class="mb-3"><label class="form-label fw-bold">2. ลักษณะบ้าน</label><div class="row"><div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="ชั้นเดียว" checked><label>ชั้นเดียว</label></div><div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="สองชั้น"><label>สองชั้น</label></div><div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="ตึกแถว"><label>ตึกแถว</label></div></div><div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q3_HouseCond_Strong"><label>มีความแข็งแรง</label></div><div class="form-check"><input class="form-check-input" type="checkbox" name="Q3_HouseCond_Safe"><label>มีความปลอดภัย</label></div></div></div></div>
-              <div class="mb-3"><label class="form-label fw-bold">3. สภาพแวดล้อม</label><div class="btn-group w-100" role="group"><input type="radio" class="btn-check" name="Q3_Environment" id="env1" value="ปลอดภัยดี" checked><label class="btn btn-outline-success" for="env1">ปลอดภัยดี</label><input type="radio" class="btn-check" name="Q3_Environment" id="env2" value="พอใช้"><label class="btn btn-outline-warning" for="env2">พอใช้</label><input type="radio" class="btn-check" name="Q3_Environment" id="env3" value="เสี่ยง/ไม่ดี"><label class="btn btn-outline-danger" for="env3">เสี่ยง/ไม่ดี</label></div></div>
               
               <div class="mb-3">
-                  <label class="form-label fw-bold">6. สถานที่ทำงานของบิดามารดา</label>
-                  <select name="Q3_ParentsWorkPlace" class="form-select">
-                    <option value="">-- เลือก --</option>
-                    <option value="ในอำเภอเดียวกัน">ในอำเภอเดียวกัน</option>
-                    <option value="ต่างอำเภอในจังหวัด">ต่างอำเภอในจังหวัดเดียวกัน</option>
-                    <option value="ต่างจังหวัด">ต่างจังหวัด</option>
-                    <option value="ต่างประเทศ">ต่างประเทศ</option>
-                  </select>
+                <label class="form-label fw-bold">1. บ้านที่อาศัย</label>
+                <select name="Q3_HouseOwnership" class="form-select">
+                  <option value="">-- เลือก --</option>
+                  <option value="บ้านตนเอง">บ้านตนเอง</option>
+                  <option value="อาศัยผู้อื่น">อาศัยผู้อื่น/เช่า</option>
+                  <option value="หอพัก">หอพัก</option>
+                  <option value="วัด">วัด/มูลนิธิ</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">2. ลักษณะบ้าน</label>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="ชั้นเดียว" checked><label>ชั้นเดียว</label></div>
+                    <div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="สองชั้น"><label>สองชั้น</label></div>
+                    <div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="ตึกแถว"><label>ตึกแถว/อาคารพาณิชย์</label></div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="Q3_HouseCond_Strong"><label>มีความแข็งแรง</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="Q3_HouseCond_Safe"><label>มีความปลอดภัย</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="Q3_HouseCond_Unsafe"><label class="text-danger">ไม่ปลอดภัย/ทรุดโทรม</label></div>
+                  </div>
+                </div>
               </div>
 
               <hr>
@@ -1326,3 +1339,4 @@
   </script>
 </body>
 </html>
+
