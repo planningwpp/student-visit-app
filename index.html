@@ -560,10 +560,9 @@
           handleLoginFailure("อีเมล หรือ รหัสผ่านไม่ถูกต้อง");
         }
       } catch (error) {
-        handleLoginFailure(error.message);
+        handleLoginFailure(error.message); // ถ้า Error จะเด้งไปปิด Loading ให้
       }
     }
-
     async function handleLoginSuccess(user) {
       if (user && user.Email) {
         gState.currentUser = user;
@@ -1390,6 +1389,7 @@
   </script>
 </body>
 </html>
+
 
 
 
