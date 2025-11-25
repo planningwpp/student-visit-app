@@ -24,7 +24,6 @@
       z-index: 9999; flex-direction: column;
     }
 
-    /* ซ่อนหน้าจอทั้งหมดก่อน */
     #login-screen, #student-selection-screen, #dashboard-screen, #main-form-screen, #print-screen {
       display: none; padding-top: 60px;
     }
@@ -42,7 +41,6 @@
     .delete-row-btn { width: 40px; height: 40px; }
     .swal2-popup { font-size: 0.9rem !important; }
 
-    /* สไตล์รูปภาพ */
     .img-wrapper { position: relative; display: inline-block; margin-top: 10px; }
     .btn-delete-img {
       position: absolute; top: -10px; right: -10px;
@@ -281,32 +279,19 @@
 
             <div id="section-3" class="form-section card card-body mb-3">
               <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 3: สถานะครัวเรือน/ที่พักอาศัย</h4>
+              <div class="mb-3"><label class="form-label fw-bold">1. บ้านที่อาศัย</label><select name="Q3_HouseOwnership" class="form-select"><option value="">-- เลือก --</option><option value="บ้านตนเอง">บ้านตนเอง</option><option value="อาศัยผู้อื่น">อาศัยผู้อื่น/เช่า</option><option value="หอพัก">หอพัก</option><option value="วัด">วัด/มูลนิธิ</option></select></div>
+              <div class="mb-3"><label class="form-label fw-bold">2. ลักษณะบ้าน</label><div class="row"><div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="ชั้นเดียว" checked><label>ชั้นเดียว</label></div><div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="สองชั้น"><label>สองชั้น</label></div><div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="ตึกแถว"><label>ตึกแถว</label></div></div><div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q3_HouseCond_Strong"><label>มีความแข็งแรง</label></div><div class="form-check"><input class="form-check-input" type="checkbox" name="Q3_HouseCond_Safe"><label>มีความปลอดภัย</label></div><div class="form-check"><input class="form-check-input" type="checkbox" name="Q3_HouseCond_Unsafe"><label class="text-danger">ไม่ปลอดภัย/ทรุดโทรม</label></div></div></div></div>
+              <div class="mb-3"><label class="form-label fw-bold">3. สภาพแวดล้อม</label><div class="btn-group w-100" role="group"><input type="radio" class="btn-check" name="Q3_Environment" id="env1" value="ปลอดภัยดี" checked><label class="btn btn-outline-success" for="env1">ปลอดภัยดี</label><input type="radio" class="btn-check" name="Q3_Environment" id="env2" value="พอใช้"><label class="btn btn-outline-warning" for="env2">พอใช้</label><input type="radio" class="btn-check" name="Q3_Environment" id="env3" value="เสี่ยง/ไม่ดี"><label class="btn btn-outline-danger" for="env3">เสี่ยง/ไม่ดี</label></div></div>
               
               <div class="mb-3">
-                <label class="form-label fw-bold">1. บ้านที่อาศัย</label>
-                <select name="Q3_HouseOwnership" class="form-select">
-                  <option value="">-- เลือก --</option>
-                  <option value="บ้านตนเอง">บ้านตนเอง</option>
-                  <option value="อาศัยผู้อื่น">อาศัยผู้อื่น/เช่า</option>
-                  <option value="หอพัก">หอพัก</option>
-                  <option value="วัด">วัด/มูลนิธิ</option>
-                </select>
-              </div>
-
-              <div class="mb-3">
-                <label class="form-label fw-bold">2. ลักษณะบ้าน</label>
-                <div class="row">
-                  <div class="col-md-6">
-                    <div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="ชั้นเดียว" checked><label>ชั้นเดียว</label></div>
-                    <div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="สองชั้น"><label>สองชั้น</label></div>
-                    <div class="form-check"><input class="form-check-input" type="radio" name="Q3_HouseType" value="ตึกแถว"><label>ตึกแถว/อาคารพาณิชย์</label></div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="form-check"><input class="form-check-input" type="checkbox" name="Q3_HouseCond_Strong"><label>มีความแข็งแรง</label></div>
-                    <div class="form-check"><input class="form-check-input" type="checkbox" name="Q3_HouseCond_Safe"><label>มีความปลอดภัย</label></div>
-                    <div class="form-check"><input class="form-check-input" type="checkbox" name="Q3_HouseCond_Unsafe"><label class="text-danger">ไม่ปลอดภัย/ทรุดโทรม</label></div>
-                  </div>
-                </div>
+                  <label class="form-label fw-bold">6. สถานที่ทำงานของบิดามารดา</label>
+                  <select name="Q3_ParentsWorkPlace" class="form-select">
+                    <option value="">-- เลือก --</option>
+                    <option value="ในอำเภอเดียวกัน">ในอำเภอเดียวกัน</option>
+                    <option value="ต่างอำเภอในจังหวัด">ต่างอำเภอในจังหวัดเดียวกัน</option>
+                    <option value="ต่างจังหวัด">ต่างจังหวัด</option>
+                    <option value="ต่างประเทศ">ต่างประเทศ</option>
+                  </select>
               </div>
 
               <hr>
@@ -435,7 +420,7 @@
     const CLOUDINARY_UPLOAD_PRESET = "ml_default"; 
     const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
     
-    // ********** สำคัญ! ใส่ URL ของ Google Apps Script ที่ Deploy แล้วตรงนี้ **********
+    // 🔴 แก้ไข URL GAS ของคุณที่นี่ 🔴
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyZBFYUglarDmKqt_uvubHyjbd7cByHviNcfwOhMWCVT7eDwQyfEwEoMR2ISoMGgE-h/exec"; 
 
     /* * ===================================================================
@@ -456,84 +441,79 @@
     let SCREENS = {};
     let el = {};
 
-    // เริ่มทำงานเมื่อโหลดหน้าเว็บเสร็จ
+    // เริ่มทำงานเมื่อโหลดหน้าเว็บเสร็จ (เพิ่ม Try-Catch กันค้าง)
     document.addEventListener("DOMContentLoaded", () => {
-      // 1. จับคู่ Element HTML กับตัวแปร
-      SCREENS = {
-        loading: document.getElementById('loading-screen'),
-        login: document.getElementById('login-screen'),
-        selection: document.getElementById('student-selection-screen'),
-        dashboard: document.getElementById('dashboard-screen'), 
-        print: document.getElementById('print-screen'),
-        form: document.getElementById('main-form-screen')
-      };
+      try {
+          // 1. จับคู่ Element
+          SCREENS = {
+            loading: document.getElementById('loading-screen'),
+            login: document.getElementById('login-screen'),
+            selection: document.getElementById('student-selection-screen'),
+            dashboard: document.getElementById('dashboard-screen'), 
+            print: document.getElementById('print-screen'),
+            form: document.getElementById('main-form-screen')
+          };
 
-      el = {
-        // Navbar
-        mainNavbar: document.getElementById('main-navbar'), 
-        navHomeLink: document.getElementById('nav-home-link'), 
-        navDashboardLink: document.getElementById('nav-dashboard-link'),
-        navPrintLink: document.getElementById('nav-print-link'),
-        navLogoutBtn: document.getElementById('nav-logout-btn'), 
-        navUserEmail: document.getElementById('nav-user-email'),
-        
-        // Print Screen
-        printClassSelect: document.getElementById('print-class-select'),
-        printSemester: document.getElementById('print-semester'),
-        printYear: document.getElementById('print-year'),
-        loadPrintListBtn: document.getElementById('load-print-list-btn'),
-        printListContainer: document.getElementById('print-list-container'),
-        printTableBody: document.getElementById('print-table-body'),
-        printAllBtn: document.getElementById('print-all-btn'),
-        backFromPrintBtn: document.getElementById('back-from-print-btn'),
+          el = {
+            mainNavbar: document.getElementById('main-navbar'), 
+            navHomeLink: document.getElementById('nav-home-link'), 
+            navDashboardLink: document.getElementById('nav-dashboard-link'),
+            navPrintLink: document.getElementById('nav-print-link'),
+            navLogoutBtn: document.getElementById('nav-logout-btn'), 
+            navUserEmail: document.getElementById('nav-user-email'),
+            printClassSelect: document.getElementById('print-class-select'),
+            printSemester: document.getElementById('print-semester'),
+            printYear: document.getElementById('print-year'),
+            loadPrintListBtn: document.getElementById('load-print-list-btn'),
+            printListContainer: document.getElementById('print-list-container'),
+            printTableBody: document.getElementById('print-table-body'),
+            printAllBtn: document.getElementById('print-all-btn'),
+            backFromPrintBtn: document.getElementById('back-from-print-btn'),
+            loginForm: document.getElementById('manual-login-form'),
+            loginEmailInput: document.getElementById('login-email'),
+            loginPasswordInput: document.getElementById('login-password'),
+            loginBtn: document.getElementById('login-btn'),
+            loginErrorMessage: document.getElementById('login-error-message'),
+            classSelect: document.getElementById('class-select'),
+            studentSelect: document.getElementById('student-select'),
+            semesterSelect: document.getElementById('semester-select'),
+            yearSelect: document.getElementById('year-select'),
+            startFormBtn: document.getElementById('start-form-btn'),
+            backBtn: document.getElementById('back-to-selection-btn'),
+            saveBtn: document.getElementById('save-to-sheets-btn'),
+            studentNameHeader: document.getElementById('student-name-header'),
+            sidebarLinks: document.querySelectorAll('#form-sidebar .nav-link'),
+            formSections: document.querySelectorAll('.form-section'),
+            gpsBtn: document.getElementById('get-gps-btn'),
+            livesWithSelect: document.getElementById('Q1_LivesWith'),
+            q4Content: document.getElementById('q4-content'),
+            q3_1_Status: document.querySelectorAll('input[name="Q3_1_DependencyStatus"]'),
+            q3_1_SubOptions: document.getElementById('q3-1-sub-options'),
+            q3_4_Status: document.querySelectorAll('input[name="Q3_4_AgricultureStatus"]'),
+            q3_4_SubOptions: document.getElementById('q3-4-sub-options'),
+            householdTbody: document.getElementById('household-member-list'),
+            addMemberBtn: document.getElementById('add-member-btn'),
+            totalMembersInput: document.getElementById('Q2_TotalMembers'),
+            totalIncomeInput: document.getElementById('Q2_HouseholdIncome_Total'),
+            perCapitaIncomeInput: document.getElementById('Q2_HouseholdIncome_PerCapita'),
+            progressBar: document.getElementById('progress-bar'),
+            progressText: document.getElementById('progress-text')
+          };
 
-        // Login Form
-        loginForm: document.getElementById('manual-login-form'),
-        loginEmailInput: document.getElementById('login-email'),
-        loginPasswordInput: document.getElementById('login-password'),
-        loginBtn: document.getElementById('login-btn'),
-        loginErrorMessage: document.getElementById('login-error-message'),
-        
-        // Selection Screen
-        classSelect: document.getElementById('class-select'),
-        studentSelect: document.getElementById('student-select'),
-        semesterSelect: document.getElementById('semester-select'),
-        yearSelect: document.getElementById('year-select'),
-        startFormBtn: document.getElementById('start-form-btn'),
-        
-        // Main Form
-        backBtn: document.getElementById('back-to-selection-btn'),
-        saveBtn: document.getElementById('save-to-sheets-btn'),
-        studentNameHeader: document.getElementById('student-name-header'),
-        sidebarLinks: document.querySelectorAll('#form-sidebar .nav-link'),
-        formSections: document.querySelectorAll('.form-section'),
-        
-        // Form Inputs (Specific)
-        gpsBtn: document.getElementById('get-gps-btn'),
-        livesWithSelect: document.getElementById('Q1_LivesWith'),
-        q4Content: document.getElementById('q4-content'),
-        q3_1_Status: document.querySelectorAll('input[name="Q3_1_DependencyStatus"]'),
-        q3_1_SubOptions: document.getElementById('q3-1-sub-options'),
-        q3_4_Status: document.querySelectorAll('input[name="Q3_4_AgricultureStatus"]'),
-        q3_4_SubOptions: document.getElementById('q3-4-sub-options'),
-        
-        // Household Table
-        householdTbody: document.getElementById('household-member-list'),
-        addMemberBtn: document.getElementById('add-member-btn'),
-        totalMembersInput: document.getElementById('Q2_TotalMembers'),
-        totalIncomeInput: document.getElementById('Q2_HouseholdIncome_Total'),
-        perCapitaIncomeInput: document.getElementById('Q2_HouseholdIncome_PerCapita'),
-        
-        // Progress Bar
-        progressBar: document.getElementById('progress-bar'),
-        progressText: document.getElementById('progress-text')
-      };
+          // 2. เริ่มต้นระบบ
+          showScreen('login');
+          bindEventListeners();
+          if(el.yearSelect) el.yearSelect.value = new Date().getFullYear() + 543;
+          
+          // Safety Attach
+          try { attachFormListeners(); } catch(e) { console.warn("Attach listener warning:", e); }
 
-      // 2. เริ่มต้นระบบ
-      showScreen('login');
-      bindEventListeners();
-      if(el.yearSelect) el.yearSelect.value = new Date().getFullYear() + 543;
-      attachFormListeners(); 
+      } catch (err) {
+          // ถ้าพังตรงนี้ แสดงว่า HTML ไม่ครบ หรือ ID ผิด
+          alert("เกิดข้อผิดพลาดในการเริ่มระบบ: " + err.message);
+          console.error(err);
+          if(SCREENS.loading) SCREENS.loading.style.display = 'none'; // บังคับปิด Loading
+      }
     });
 
     /* * ===================================================================
@@ -543,7 +523,8 @@
     async function handleManualLogin(event) {
       event.preventDefault();
       setLoading(true, 'กำลังตรวจสอบข้อมูล...');
-      el.loginBtn.disabled = true; el.loginErrorMessage.style.display = 'none';
+      if(el.loginBtn) el.loginBtn.disabled = true; 
+      if(el.loginErrorMessage) el.loginErrorMessage.style.display = 'none';
 
       try {
         const email = el.loginEmailInput.value;
@@ -551,7 +532,7 @@
         const url = `${SHEETDB_API_URL}/search?Email=${encodeURIComponent(email)}&Password=${encodeURIComponent(password)}&sheet=Users`;
 
         const response = await fetch(url);
-        if (!response.ok) throw new Error("เชื่อมต่อฐานข้อมูลไม่ได้");
+        if (!response.ok) throw new Error("เชื่อมต่อฐานข้อมูลไม่ได้ (API Error)");
         const data = await response.json();
 
         if (data && data.length > 0) {
@@ -560,9 +541,10 @@
           handleLoginFailure("อีเมล หรือ รหัสผ่านไม่ถูกต้อง");
         }
       } catch (error) {
-        handleLoginFailure(error.message); // ถ้า Error จะเด้งไปปิด Loading ให้
+        handleLoginFailure(error.message);
       }
     }
+
     async function handleLoginSuccess(user) {
       if (user && user.Email) {
         gState.currentUser = user;
@@ -575,10 +557,9 @@
           if (!response.ok) throw new Error("โหลดข้อมูลนักเรียนไม่สำเร็จ");
           const allStudents = await response.json();
 
-          const allClassesSet = new Set(allStudents.map(s => s.Class.trim()));
-          let filteredClasses = Array.from(allClassesSet).sort();
+          const allClassesSet = new Set(allStudents.map(s => s.Class ? s.Class.trim() : ""));
+          let filteredClasses = Array.from(allClassesSet).filter(c => c !== "").sort();
           
-          // เช็คสิทธิ์ (Super User เห็นทุกห้อง)
           const superRoles = ['Admin', 'Director', 'Head', 'ผอ.', 'หัวหน้างาน']; 
           const isSuperUser = superRoles.includes(user.Role);
 
@@ -600,56 +581,53 @@
       setLoading(false);
       gState.currentUser = null;
       showScreen('login');
-      el.loginBtn.disabled = false;
-      el.loginErrorMessage.textContent = String(error);
-      el.loginErrorMessage.style.display = 'block';
+      if(el.loginBtn) el.loginBtn.disabled = false;
+      if(el.loginErrorMessage) {
+          el.loginErrorMessage.textContent = String(error);
+          el.loginErrorMessage.style.display = 'block';
+      } else {
+          alert(error);
+      }
     }
 
-    // แก้บัค Logout: ใช้รีเฟรชหน้าจอเพื่อล้างค่าทุกอย่าง
     function handleLogout() {
       Swal.fire({
         title: 'ออกจากระบบ?',
-        text: "คุณต้องการออกจากระบบใช่หรือไม่",
         icon: 'question',
         showCancelButton: true,
-        confirmButtonText: 'ใช่, ออกจากระบบ',
+        confirmButtonText: 'ใช่',
         cancelButtonText: 'ยกเลิก'
       }).then((result) => {
         if (result.isConfirmed) {
-           window.location.reload(); // รีเฟรชหน้าจอ
+           localStorage.removeItem(`visit_${gState.currentRecordId}`); // Clear current draft
+           window.location.reload(); 
         }
       });
     }
 
     /* * ===================================================================
-     * NAVIGATION & UI
+     * NAVIGATION
      * ===================================================================
      */
     function showScreen(screenId) {
-      // ป้องกัน Error ถ้าหาหน้าจอไม่เจอ (Null Check)
-      if (!SCREENS.loading) return;
+      if (!SCREENS || !SCREENS.loading) return;
 
-      // จัดการ Navbar
       if (el.mainNavbar) {
          el.mainNavbar.style.display = (screenId === 'login' || screenId === 'loading') ? 'none' : 'block';
       }
 
-      // ซ่อนทุกหน้า
       Object.values(SCREENS).forEach(screen => {
         if(screen) screen.style.display = 'none';
       });
 
-      // แสดงหน้าเป้าหมาย
       if (SCREENS[screenId]) {
         SCREENS[screenId].style.display = 'block';
       }
-
-      // อัปเดตเมนู Active
-      if (el.navHomeLink) {
-        el.navHomeLink.classList.toggle('active', screenId === 'selection' || screenId === 'form');
-        el.navDashboardLink.classList.toggle('active', screenId === 'dashboard');
-        if(el.navPrintLink) el.navPrintLink.classList.toggle('active', screenId === 'print');
-      }
+      
+      // Update Active Menu
+      if (el.navHomeLink) el.navHomeLink.classList.toggle('active', screenId === 'selection' || screenId === 'form');
+      if (el.navDashboardLink) el.navDashboardLink.classList.toggle('active', screenId === 'dashboard');
+      if (el.navPrintLink) el.navPrintLink.classList.toggle('active', screenId === 'print');
     }
 
     function setLoading(isLoading, message = 'กำลังโหลด...') {
@@ -663,6 +641,7 @@
 
     function handleError(error) {
       setLoading(false);
+      console.error(error);
       Swal.fire('เกิดข้อผิดพลาด', error.message || error, 'error');
       if(el.loginBtn) el.loginBtn.disabled = false;
       if(el.saveBtn) {
@@ -672,7 +651,7 @@
     }
 
     /* * ===================================================================
-     * DATA SELECTION
+     * DATA & FORM
      * ===================================================================
      */
     function populateClassDropdown(classes) {
@@ -699,11 +678,11 @@
         if (!response.ok) throw new Error("NetworkError");
         const students = await response.json();
         
-        students.sort((a, b) => parseInt(a.StudentNumber, 10) - parseInt(b.StudentNumber, 10));
+        students.sort((a, b) => parseInt(a.StudentNumber||0) - parseInt(b.StudentNumber||0));
         
         el.studentSelect.innerHTML = '<option value="">-- กรุณาเลือก --</option>';
         students.forEach(student => {
-          const name = `${student.Prefix} ${student.FirstName} ${student.LastName} (เลขที่ ${student.StudentNumber})`;
+          const name = `${student.Prefix||''} ${student.FirstName||''} ${student.LastName||''} (เลขที่ ${student.StudentNumber||'-'})`;
           el.studentSelect.add(new Option(name, student.StudentID));
         });
         el.studentSelect.disabled = false;
@@ -718,10 +697,6 @@
       el.startFormBtn.disabled = !(el.classSelect.value && el.studentSelect.value && el.semesterSelect.value && el.yearSelect.value);
     }
 
-    /* * ===================================================================
-     * FORM HANDLING
-     * ===================================================================
-     */
     async function handleStartForm() {
       try {
         gState.selectedStudentId = el.studentSelect.value;
@@ -732,29 +707,28 @@
         
         if(el.studentNameHeader) el.studentNameHeader.textContent = `${gState.selectedStudentName} (ภาคเรียน ${semester}/${year})`;
 
-        const localData = loadFromLocalStorage();
+        // Try load local first
+        let localData = null;
+        try { localData = loadFromLocalStorage(); } catch(e) { console.warn("Local storage error", e); }
         
-        if (localData) {
-          setLoading(true, 'กำลังโหลดข้อมูลที่บันทึกไว้...');
-          if (!localData.studentMaster) throw new Error("ข้อมูลแคชไม่สมบูรณ์");
-          
+        if (localData && localData.studentMaster) {
+          setLoading(true, 'โหลดข้อมูลเก่า...');
           gState.originalData = JSON.parse(JSON.stringify(localData));
           prefillForm(localData.studentMaster, localData.visitData);
           renderHouseholdTable(localData.householdData || []);
-          
           showScreen('form');
           calculateProgress();
           setLoading(false);
           attachFormListeners();
         } else {
-          setLoading(true, 'กำลังโหลดข้อมูลนักเรียน...');
+          setLoading(true, 'กำลังโหลดข้อมูลใหม่...');
           const [studentRes, visitRes, householdRes] = await Promise.all([
              fetch(`${SHEETDB_API_URL}/search?StudentID=${gState.selectedStudentId}&sheet=Students`),
              fetch(`${SHEETDB_API_URL}/search?RecordID=${gState.currentRecordId}&sheet=VisitData`),
              fetch(`${SHEETDB_API_URL}/search?RecordID=${gState.currentRecordId}&sheet=HouseholdMembers`)
           ]);
 
-          if (!studentRes.ok || !visitRes.ok || !householdRes.ok) throw new Error("เชื่อมต่อฐานข้อมูลไม่สำเร็จ");
+          if (!studentRes.ok || !visitRes.ok || !householdRes.ok) throw new Error("ดึงข้อมูลไม่สำเร็จ");
 
           const studentData = await studentRes.json();
           const visitData = await visitRes.json();
@@ -769,8 +743,9 @@
         }
       } catch (error) {
         console.error("StartForm Error:", error);
-        localStorage.removeItem(`visit_${gState.currentRecordId}`); // ล้างแคชตัวปัญหา
-        handleError(new Error("พบข้อมูลเก่าเสียหาย ระบบได้ทำการล้างค่าแล้ว กรุณากด 'เริ่มกรอกข้อมูล' ใหม่อีกครั้งครับ"));
+        // Clear potential corrupt data
+        localStorage.removeItem(`visit_${gState.currentRecordId}`);
+        handleError(error);
       }
     }
 
@@ -790,41 +765,51 @@
       calculateProgress();
       setLoading(false);
     }
+    
+    // ฟังก์ชันช่วยแปลงวันที่ให้เป็น YYYY-MM-DD (เพื่อให้ใส่ใน input type="date" ได้)
+    function formatDateForInput(dateString) {
+      if (!dateString) return '';
+      // ถ้าเป็น YYYY-MM-DD อยู่แล้ว ให้ใช้เลย
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
+      
+      // ถ้ามาเป็นรูปแบบอื่น (เช่น Date Object) ลองแปลง
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return ''; 
+      
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
 
-    // (แก้บัค) ใส่ Safety Check ให้ prefillForm
-// (แก้ไข) ใส่ Safety Check + แก้บัควันเกิดหาย
     function prefillForm(master, visit) {
-      if (!master) { handleError({ message: "ไม่พบข้อมูลหลักของนักเรียน" }); return; }
+      if (!master) { handleError({ message: "ไม่พบข้อมูลหลักของนักเรียน (ตรวจสอบ StudentID ในชีต Students)" }); return; }
       
       document.getElementById('s1-name').textContent = `${master.Prefix || ''} ${master.FirstName} ${master.LastName}`;
       document.getElementById('s1-class').textContent = master.Class;
       document.getElementById('s1-citizenid').textContent = master.CitizenID || 'N/A';
       
       // Default values
-      document.getElementById('Q1_GuardianFirstName').value = (visit && visit.Q1_GuardianFirstName) || master.DefaultGuardianName || '';
-      document.getElementById('Q1_GuardianPhone').value = (visit && visit.Q1_GuardianPhone) || master.DefaultGuardianPhone || '';
-      if(document.getElementById('Q1_StudentPhone')) document.getElementById('Q1_StudentPhone').value = (visit && visit.Q1_StudentPhone) || (master && master.Phone) || ''; 
+      const safeVal = (v) => (v === undefined || v === null) ? "" : v;
+
+      document.getElementById('Q1_GuardianFirstName').value = safeVal((visit && visit.Q1_GuardianFirstName) || master.DefaultGuardianName);
+      document.getElementById('Q1_GuardianPhone').value = safeVal((visit && visit.Q1_GuardianPhone) || master.DefaultGuardianPhone);
+      if(document.getElementById('Q1_StudentPhone')) document.getElementById('Q1_StudentPhone').value = safeVal((visit && visit.Q1_StudentPhone) || master.Phone); 
       
-      // New fields defaults
-      if(document.getElementById('Q1_StudentNickname')) document.getElementById('Q1_StudentNickname').value = (visit && visit.Q1_StudentNickname) || (master && master.Nickname) || '';
+      if(document.getElementById('Q1_StudentNickname')) document.getElementById('Q1_StudentNickname').value = safeVal((visit && visit.Q1_StudentNickname) || master.Nickname);
       
-      // --- (จุดที่แก้) แปลงวันเกิดให้ถูกต้อง ---
+      // (แก้ไข) แปลงวันที่ก่อนใส่
       if(document.getElementById('Q1_StudentDOB')) {
-         const rawDOB = (visit && visit.Q1_StudentDOB) || (master && master.DOB) || '';
+         const rawDOB = (visit && visit.Q1_StudentDOB) || master.DOB;
          document.getElementById('Q1_StudentDOB').value = formatDateForInput(rawDOB);
       }
-      // -------------------------------------
-
-      if(document.getElementById('Q1_StudentDOB')) document.getElementById('Q1_StudentDOB').value = (visit && visit.Q1_StudentDOB) || (master && master.DOB) || '';
-      // (หมายเหตุ: บรรทัดข้างบนนี้ซ้ำกับโค้ดที่แก้แล้ว ให้ลบบรรทัดนี้ทิ้งได้เลยครับ หรือใช้บล็อก if ด้านบนแทน)
 
       if (visit) {
         const form = document.getElementById('visit-form');
         for (const key in visit) {
           const input = form.elements[key];
           if (input) {
-            // ข้ามวันเกิดไป เพราะเราจัดการข้างบนแล้ว
-            if (key === 'Q1_StudentDOB') continue; 
+            if (key === 'Q1_StudentDOB') continue; // ข้ามวันที่เพราะทำแล้ว
 
             if (input.type === 'checkbox') {
                input.checked = (visit[key] === "TRUE");
@@ -861,19 +846,19 @@
       }
     }
 
-    function handleBackToSelection(callbackOnConfirm = null) {
+    function handleBackToSelection(cb = null) {
       if (Object.keys(gState.changesToPush).length > 0) {
         Swal.fire({
-          title: 'ยังไม่ไดบันทึก!', text: 'มีการเปลี่ยนแปลงยังไม่ได้บันทึก ยืนยันการออก?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ออกเลย', cancelButtonText: 'ยกเลิก'
+          title: 'ยังไม่บันทึก', text: 'ข้อมูลจะหาย ยืนยัน?', icon: 'warning', showCancelButton: true
         }).then((result) => {
           if (result.isConfirmed) {
             resetFormState();
-            if (typeof callbackOnConfirm === 'function') callbackOnConfirm(); else showScreen('selection');
+            if (typeof cb === 'function') cb(); else showScreen('selection');
           }
         });
       } else {
         resetFormState();
-        if (typeof callbackOnConfirm === 'function') callbackOnConfirm(); else showScreen('selection');
+        if (typeof cb === 'function') cb(); else showScreen('selection');
       }
     }
 
@@ -890,7 +875,6 @@
       gState.currentRecordId = null; gState.changesToPush = {}; gState.householdMembers = [];
       el.householdTbody.innerHTML = '';
       
-      // Reset UI visibility safely
       if (el.q4Content) el.q4Content.style.display = 'none';
       if (el.q3_1_SubOptions) el.q3_1_SubOptions.style.display = 'none';
       if (el.q3_4_SubOptions) el.q3_4_SubOptions.style.display = 'none';
@@ -901,81 +885,58 @@
       updateProgressBar(0);
     }
 
-    // (แก้บัค) คำนวณ Progress Bar อย่างปลอดภัย
+    // --- Progress ---
     function calculateProgress() {
-        let total = 0;
-        let filled = 0;
+        let total = 0, filled = 0;
         const form = document.getElementById('visit-form');
-        
         form.querySelectorAll('input:not([type=hidden]):not([type=file]), select, textarea').forEach(input => {
             if(input.type === 'radio' || input.type === 'checkbox') return;
-            
-            // เช็คว่าอยู่ในส่วนที่ถูกซ่อนหรือไม่ (ปลอดภัยกว่าเดิม)
             const parentSub = input.closest('.conditional-subsection');
             if (parentSub && window.getComputedStyle(parentSub).display === 'none') return;
-
             total++;
             if (input.value && input.value.trim() !== '') filled++;
         });
-        
-        // Checkbox/Radio groups manual check
         ['Q3_1_DependencyStatus', 'Q3_4_AgricultureStatus'].forEach(name => {
-            total++;
-            if(document.querySelector(`input[name="${name}"]:checked`)) filled++;
+            total++; if(document.querySelector(`input[name="${name}"]:checked`)) filled++;
         });
         ['Q8_StudentParent_Confirm', 'Q10_Teacher_Confirm'].forEach(id => {
-            total++;
-            if(document.getElementById(id) && document.getElementById(id).checked) filled++;
+            total++; if(document.getElementById(id) && document.getElementById(id).checked) filled++;
         });
-        
         const percent = (total === 0) ? 0 : Math.round((filled / total) * 100);
         updateProgressBar(percent);
     }
 
     function updateProgressBar(percent) {
-      if(el.progressBar) {
-          el.progressBar.style.width = `${percent}%`;
-          el.progressBar.textContent = `${percent}%`;
-      }
+      if(el.progressBar) { el.progressBar.style.width = `${percent}%`; el.progressBar.textContent = `${percent}%`; }
       if(el.progressText) el.progressText.textContent = `${percent}%`;
     }
 
-    /* * ===================================================================
-     * EVENT BINDING
-     * ===================================================================
-     */
+    // --- Event Listeners ---
     function bindEventListeners() {
-      // Navbar
       if(el.navHomeLink) el.navHomeLink.addEventListener('click', (e) => { e.preventDefault(); if (SCREENS.form.style.display === 'block') handleBackToSelection(); else showScreen('selection'); });
       if(el.navDashboardLink) el.navDashboardLink.addEventListener('click', (e) => { e.preventDefault(); if (SCREENS.form.style.display === 'block') handleBackToSelection(() => showScreen('dashboard')); else showScreen('dashboard'); });
       if(el.navPrintLink) el.navPrintLink.addEventListener('click', (e) => { 
           e.preventDefault();
-          if (SCREENS.form.style.display === 'block') handleBackToSelection(() => showScreen('print')); 
-          else showScreen('print'); 
-          // Copy Options
+          if (SCREENS.form.style.display === 'block') handleBackToSelection(() => showScreen('print')); else showScreen('print'); 
           if(el.classSelect.options.length > 1 && el.printClassSelect.options.length <= 1) el.printClassSelect.innerHTML = el.classSelect.innerHTML;
       });
       if(el.navLogoutBtn) el.navLogoutBtn.addEventListener('click', handleLogout);
 
-      // Form Controls
       if(el.loginForm) el.loginForm.addEventListener('submit', handleManualLogin);
       if(el.classSelect) el.classSelect.addEventListener('change', handleClassChange);
       if(el.studentSelect) el.studentSelect.addEventListener('change', validateStartButton);
-      if(el.semesterSelect) el.semesterSelect.addEventListener('input', validateStartButton);
-      if(el.yearSelect) el.yearSelect.addEventListener('input', validateStartButton);
       if(el.startFormBtn) el.startFormBtn.addEventListener('click', handleStartForm);
       if(el.backBtn) el.backBtn.addEventListener('click', handleBackToSelection);
       if(el.saveBtn) el.saveBtn.addEventListener('click', handleSaveToSheets);
       if(el.gpsBtn) el.gpsBtn.addEventListener('click', handleGPSButton);
       if(el.addMemberBtn) el.addMemberBtn.addEventListener('click', () => editHouseholdMember(-1));
 
-      // Print Screen Controls
+      // Print
       if(el.backFromPrintBtn) el.backFromPrintBtn.addEventListener('click', () => showScreen('selection'));
       if(el.loadPrintListBtn) el.loadPrintListBtn.addEventListener('click', handleLoadPrintList);
       if(el.printAllBtn) el.printAllBtn.addEventListener('click', handleBatchPrint);
       if(el.printTableBody) el.printTableBody.addEventListener('click', handlePrintTableClick);
 
-      // Sidebar
       el.sidebarLinks.forEach(link => {
         link.addEventListener('click', (e) => {
           e.preventDefault();
@@ -984,19 +945,18 @@
         });
       });
 
-      // Conditionals
       if(el.livesWithSelect) el.livesWithSelect.addEventListener('change', (e) => el.q4Content.style.display = (e.target.value === 'ครัวเรือนสถาบัน') ? 'block' : 'none');
       el.q3_1_Status.forEach(radio => radio.addEventListener('change', (e) => el.q3_1_SubOptions.style.display = (e.target.value === 'มี') ? 'block' : 'none'));
       el.q3_4_Status.forEach(radio => radio.addEventListener('change', (e) => el.q3_4_SubOptions.style.display = (e.target.value === 'ทำ') ? 'block' : 'none'));
       
-      // Special Checkboxes
       const addrChk = document.getElementById('use_current_addr');
       if(addrChk) addrChk.addEventListener('change', (e) => { 
           if(e.target.checked) {
              const addr = document.getElementById('Q6_Addr_Number').value + " หมู่ " + document.getElementById('Q6_Addr_Moo').value + " " + document.getElementById('Q6_Addr_Village').value;
              document.getElementById('Q1_Regis_Addr').value = addr;
-             // ... (Map other fields)
-             trackChange('Q1_Regis_Addr', addr); 
+             document.getElementById('Q1_Regis_SubDist').value = document.getElementById('Q6_Addr_SubDistrict').value;
+             document.getElementById('Q1_Regis_DistProv').value = document.getElementById('Q6_Addr_District').value + " " + document.getElementById('Q6_Addr_Province').value;
+             trackChange('Q1_Regis_Addr', addr); trackChange('Q1_Regis_SubDist', document.getElementById('Q1_Regis_SubDist').value); trackChange('Q1_Regis_DistProv', document.getElementById('Q1_Regis_DistProv').value);
              saveToLocalStorage();
           }
       });
@@ -1008,41 +968,36 @@
          saveToLocalStorage();
       });
 
-      // File Upload
       document.querySelectorAll('.file-upload-input').forEach(input => input.addEventListener('change', handleFileUpload));
       
-      // Change Password
-      const cpModalEl = document.getElementById('changePasswordModal');
-      if(cpModalEl) {
-          const cpModal = new bootstrap.Modal(cpModalEl);
-          document.getElementById('open-change-pwd-btn').addEventListener('click', (e)=>{ e.preventDefault(); cpModal.show(); });
-          document.getElementById('save-new-pass-btn').addEventListener('click', async ()=>{
-              // Logic เปลี่ยนรหัสผ่าน (เหมือนเดิม)
-              const [em, op, np] = [document.getElementById('cp-email').value, document.getElementById('cp-old-pass').value, document.getElementById('cp-new-pass').value];
-              if(!em || !op || !np) return Swal.fire('Error','กรอกให้ครบ','error');
-              try {
-                 setLoading(true);
-                 const res = await fetch(`${SHEETDB_API_URL}/search?Email=${encodeURIComponent(em)}&Password=${encodeURIComponent(op)}&sheet=Users`);
-                 const u = await res.json();
-                 if(u && u.length > 0) {
-                     await fetch(`${SHEETDB_API_URL}/Email/${encodeURIComponent(em)}?sheet=Users`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:{Password:np}}) });
-                     cpModal.hide(); Swal.fire('สำเร็จ','เปลี่ยนรหัสแล้ว','success');
-                 } else throw new Error('ข้อมูลเดิมไม่ถูกต้อง');
-              } catch(e){ Swal.fire('Error',e.message,'error'); } finally { setLoading(false); }
-          });
-      }
+      // Change Password (Simple version)
+      const cpBtn = document.getElementById('open-change-pwd-btn');
+      if(cpBtn) cpBtn.addEventListener('click', (e) => { e.preventDefault(); new bootstrap.Modal(document.getElementById('changePasswordModal')).show(); });
+      document.getElementById('save-new-pass-btn').addEventListener('click', async () => {
+           const [em, op, np] = [document.getElementById('cp-email').value, document.getElementById('cp-old-pass').value, document.getElementById('cp-new-pass').value];
+           if(!em || !op || !np) return Swal.fire('Error','กรอกให้ครบ','error');
+           try {
+               setLoading(true);
+               const res = await fetch(`${SHEETDB_API_URL}/search?Email=${encodeURIComponent(em)}&Password=${encodeURIComponent(op)}&sheet=Users`);
+               const u = await res.json();
+               if(u.length > 0) {
+                   await fetch(`${SHEETDB_API_URL}/Email/${encodeURIComponent(em)}?sheet=Users`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:{Password:np}}) });
+                   Swal.fire('สำเร็จ', 'เปลี่ยนรหัสแล้ว', 'success');
+               } else throw new Error('รหัสเดิมผิด');
+           } catch(e) { Swal.fire('Error', e.message, 'error'); } finally { setLoading(false); }
+      });
     }
     
-    // --- Print Logic Handlers ---
+    // --- Print Handlers ---
     async function handleLoadPrintList() {
          const cls = el.printClassSelect.value;
-         if(!cls) { Swal.fire('แจ้งเตือน', 'กรุณาเลือกชั้นเรียน', 'warning'); return; }
+         if(!cls) { Swal.fire('เตือน', 'เลือกชั้นก่อน', 'warning'); return; }
          setLoading(true, 'ดึงรายชื่อ...');
          el.printListContainer.style.display = 'none'; el.printTableBody.innerHTML = '';
          try {
             const res = await fetch(`${SHEETDB_API_URL}/search?Class=${encodeURIComponent(cls)}&sheet=Students`);
             const students = await res.json();
-            students.sort((a,b) => parseInt(a.StudentNumber)-parseInt(b.StudentNumber));
+            students.sort((a,b) => parseInt(a.StudentNumber||0)-parseInt(b.StudentNumber||0));
             students.forEach(s => {
                 const rid = `${s.StudentID}_${el.printSemester.value}_${el.printYear.value}`;
                 el.printTableBody.innerHTML += `<tr><td class="text-center">${s.StudentNumber}</td><td>${s.Prefix}${s.FirstName} ${s.LastName}</td><td class="text-center"><button class="btn btn-sm btn-danger print-single-btn" data-rid="${rid}" data-name="${s.FirstName}"><i class="bi bi-printer"></i> PDF</button></td></tr>`;
@@ -1059,39 +1014,31 @@
     async function handleBatchPrint() {
          const btns = document.querySelectorAll('.print-single-btn');
          if(btns.length === 0) return;
-         const conf = await Swal.fire({ title: `พิมพ์ ${btns.length} รายการ?`, text: 'ระบบจะสร้าง PDF ทีละคน', showCancelButton: true, confirmButtonText: 'เริ่มพิมพ์' });
-         if(conf.isConfirmed) {
+         if((await Swal.fire({ title: `พิมพ์ ${btns.length} คน?`, showCancelButton: true })).isConfirmed) {
              for(let i=0; i<btns.length; i++) {
                  const btn = btns[i];
                  btn.scrollIntoView({behavior:'smooth', block:'center'});
-                 btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-                 try { 
-                     await generateSinglePDF(btn.dataset.rid, btn.dataset.name, true); 
-                     btn.className = 'btn btn-sm btn-success'; btn.innerHTML = '<i class="bi bi-check"></i>';
-                 } catch(e) { 
-                     btn.className = 'btn btn-sm btn-secondary'; btn.innerHTML = 'X'; 
-                 }
+                 btn.disabled = true; btn.innerHTML = '...';
+                 try { await generateSinglePDF(btn.dataset.rid, btn.dataset.name, true); btn.className = 'btn btn-sm btn-success'; btn.innerHTML = '<i class="bi bi-check"></i>'; } 
+                 catch(e) { btn.className = 'btn btn-sm btn-secondary'; btn.innerHTML = 'X'; }
                  await new Promise(r => setTimeout(r, 1000));
              }
-             Swal.fire('เสร็จสิ้น', 'ดำเนินการครบแล้ว', 'success');
+             Swal.fire('เสร็จสิ้น', '', 'success');
          }
     }
 
     async function generateSinglePDF(recordId, name, isBatch=false) {
-        if(!GAS_API_URL || GAS_API_URL.includes('xxxx')) { Swal.fire('Error', 'กรุณาใส่ GAS_API_URL', 'error'); return; }
-        if(!isBatch) setLoading(true, `กำลังสร้าง PDF ${name}...`);
+        if(!GAS_API_URL) return Swal.fire('Error', 'No API URL', 'error');
+        if(!isBatch) setLoading(true, `สร้าง PDF ${name}...`);
         try {
             const res = await fetch(GAS_API_URL, { method:'POST', body:JSON.stringify({ action:'generatePDF', recordId: recordId }) });
             const data = await res.json();
             if(data.success) {
                 window.open(data.url, '_blank');
-                if(!isBatch) { setLoading(false); Swal.fire('สำเร็จ', 'เปิดไฟล์แล้ว', 'success'); }
+                if(!isBatch) { setLoading(false); Swal.fire('สำเร็จ', '', 'success'); }
                 return true;
             } else throw new Error(data.error);
-        } catch(e) {
-            if(!isBatch) handleError(e);
-            throw e;
-        }
+        } catch(e) { if(!isBatch) handleError(e); throw e; }
     }
 
     function showSection(sectionId) {
@@ -1101,295 +1048,178 @@
     }
 
     function handleGPSButton() {
-      if (!navigator.geolocation) { Swal.fire('Error', 'เบราว์เซอร์ไม่รองรับ GPS', 'error'); return; }
-      setLoading(true, 'กำลังดึงพิกัด...');
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
+      if (!navigator.geolocation) return Swal.fire('Error', 'No GPS', 'error');
+      setLoading(true);
+      navigator.geolocation.getCurrentPosition(p => {
           setLoading(false);
-          const lat = position.coords.latitude.toFixed(6);
-          const lon = position.coords.longitude.toFixed(6);
+          const [lat, lon] = [p.coords.latitude.toFixed(6), p.coords.longitude.toFixed(6)];
           document.getElementById('Q6_Addr_Latitude').value = lat;
           document.getElementById('Q6_Addr_Longitude').value = lon;
           trackChange('Q6_Addr_Latitude', lat); trackChange('Q6_Addr_Longitude', lon);
-          saveToLocalStorage(); calculateProgress();
-        },
-        (err) => { setLoading(false); Swal.fire('Error', err.message, 'error'); }
-      );
+          saveToLocalStorage();
+      }, e => { setLoading(false); Swal.fire('Error', e.message, 'error'); });
     }
 
-    // (ใหม่) ฟังก์ชันลบรูปภาพ
-    function deleteImage(inputName) {
-        const hiddenInput = document.getElementById(inputName);
-        const wrapper = document.getElementById(`wrapper_${inputName}`);
-        const preview = document.getElementById(`preview_${inputName}`);
-        const fileInput = document.getElementById(`file_${inputName}`);
-
-        if(hiddenInput) {
-            hiddenInput.value = ""; // เคลียร์ค่า URL
-            trackChange(inputName, ""); // สั่งบันทึกว่าลบแล้ว
-        }
-        if(wrapper) wrapper.style.display = 'none';
-        if(preview) preview.src = "";
-        if(fileInput) fileInput.value = ""; // เคลียร์ไฟล์ที่เลือกไว้
-        
-        saveToLocalStorage();
-        calculateProgress();
+    function deleteImage(name) {
+        document.getElementById(name).value = "";
+        document.getElementById(`wrapper_${name}`).style.display = 'none';
+        document.getElementById(`preview_${name}`).src = "";
+        document.getElementById(`file_${name}`).value = "";
+        trackChange(name, ""); saveToLocalStorage();
     }
-    // Expose function to global scope so HTML button can call it
     window.deleteImage = deleteImage;
 
-    async function handleFileUpload(event) {
-      const fileInput = event.target;
-      const file = fileInput.files[0]; if (!file) return;
+    async function handleFileUpload(e) {
+      const f = e.target.files[0]; if (!f) return;
+      const id = e.target.dataset.targetHidden;
+      const prev = document.getElementById(`preview_${id}`);
+      const wrap = document.getElementById(`wrapper_${id}`);
+      const del = wrap.querySelector('.btn-delete-img');
       
-      const hiddenInputId = fileInput.dataset.targetHidden; // เช่น Q1_PhotoURL
-      const hiddenInput = document.getElementById(hiddenInputId);
-      const previewImg = document.getElementById(`preview_${hiddenInputId}`);
-      const wrapper = document.getElementById(`wrapper_${hiddenInputId}`);
-      const deleteBtn = wrapper ? wrapper.querySelector('.btn-delete-img') : null;
-
-      // แสดง Loading
-      if(wrapper) wrapper.style.display = 'inline-block';
-      if(previewImg) { previewImg.style.display = 'block'; previewImg.src = 'https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif'; }
-      if(deleteBtn) deleteBtn.style.display = 'none'; // ซ่อนปุ่มลบตอนกำลังโหลด
-
-      setLoading(true, 'กำลังอัปโหลด...');
-      
+      wrap.style.display='inline-block'; prev.style.display='block'; prev.src='https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif'; del.style.display='none';
+      setLoading(true, 'อัปโหลด...');
       try {
-        const formData = new FormData(); formData.append('file', file); formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-        const response = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
-        if (!response.ok) throw new Error('Upload failed');
-        
-        const data = await response.json();
+        const fd = new FormData(); fd.append('file', f); fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: fd });
+        const d = await res.json();
         setLoading(false);
-        
-        // อัปโหลดสำเร็จ
-        if(previewImg) previewImg.src = data.secure_url;
-        if(deleteBtn) deleteBtn.style.display = 'block'; // โชว์ปุ่มลบ
-        
-        hiddenInput.value = data.secure_url;
-        trackChange(hiddenInput.name, data.secure_url); 
-        saveToLocalStorage(); 
-        calculateProgress();
-
-      } catch (error) { 
-         handleError(error); 
-         if(previewImg) previewImg.style.display = 'none';
-         if(wrapper) wrapper.style.display = 'none';
-      }
+        prev.src = d.secure_url; del.style.display='block';
+        document.getElementById(id).value = d.secure_url;
+        trackChange(id, d.secure_url); saveToLocalStorage();
+      } catch (err) { handleError(err); prev.style.display='none'; wrap.style.display='none'; }
     }
 
     /* * ===================================================================
-     * HOUSEHOLD & SAVE LOGIC
+     * HOUSEHOLD & SAVE
      * ===================================================================
      */
     function renderHouseholdTable(members = []) {
       gState.householdMembers = members;
       el.householdTbody.innerHTML = '';
-      
-      // Logic เพิ่มพ่อแม่อัตโนมัติ
-      if (gState.householdMembers.length === 0 && gState.originalData.studentMaster) {
+      // Auto Add Logic
+      if (members.length === 0 && gState.originalData.studentMaster) {
         const sm = gState.originalData.studentMaster;
-        // 1. นักเรียน
-        gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName} ${sm.LastName}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Salary: 0, Income_Agriculture: 0, Income_Business: 0, Income_Welfare: 0, Income_Other: 0, Income_Total: 0 });
-        
-        // 2. บิดา (ถ้ามีข้อมูล)
-        if (sm.FatherName || sm.FatherPhone) {
-             gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 2, MemberName: sm.FatherName || 'ไม่ระบุ', Relation: 'บิดา', Phone: sm.FatherPhone || '', Education: sm.FatherJob || '', CitizenID: '', Age: '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Salary: 0, Income_Agriculture: 0, Income_Business: 0, Income_Welfare: 0, Income_Other: 0, Income_Total: 0 });
-        } else {
-             // สร้างแถวว่าง
-             gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 2, MemberName: '', Relation: 'บิดา', Phone: '', Education: '', CitizenID: '', Age: '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0, Income_Salary: 0, Income_Agriculture: 0, Income_Business: 0, Income_Welfare: 0, Income_Other: 0 });
-        }
-
-        // 3. มารดา (ถ้ามีข้อมูล)
-        if (sm.MotherName || sm.MotherPhone) {
-            gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: sm.MotherName || 'ไม่ระบุ', Relation: 'มารดา', Phone: sm.MotherPhone || '', Education: sm.MotherJob || '', CitizenID: '', Age: '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Salary: 0, Income_Agriculture: 0, Income_Business: 0, Income_Welfare: 0, Income_Other: 0, Income_Total: 0 });
-        } else {
-             // สร้างแถวว่าง
-             gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: '', Relation: 'มารดา', Phone: '', Education: '', CitizenID: '', Age: '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0, Income_Salary: 0, Income_Agriculture: 0, Income_Business: 0, Income_Welfare: 0, Income_Other: 0 });
-        }
+        gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix} ${sm.FirstName} ${sm.LastName}`, Relation: 'นักเรียน', Phone: sm.Phone, Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age, IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 });
+        if(sm.FatherName) gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 2, MemberName: sm.FatherName, Relation: 'บิดา', Phone: sm.FatherPhone, Education: sm.FatherJob, IsDisabledOrChronic: "FALSE", Income_Total: 0 });
+        else gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 2, MemberName: '', Relation: 'บิดา', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
+        if(sm.MotherName) gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: sm.MotherName, Relation: 'มารดา', Phone: sm.MotherPhone, Education: sm.MotherJob, IsDisabledOrChronic: "FALSE", Income_Total: 0 });
+        else gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: '', Relation: 'มารดา', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
       }
       
-      gState.householdMembers.forEach((member, index) => {
-        member.MemberNo = index + 1;
-        const row = document.createElement('tr');
-        row.innerHTML = `<td>${member.MemberNo}</td><td class="text-start">${member.MemberName || ''}</td><td>${member.Relation || ''}</td><td>${member.Phone || '-'}</td><td>${member.Education || '-'}</td><td>${member.CitizenID || '-'}</td><td>${member.Age || '-'}</td><td>${member.IsDisabledOrChronic === "TRUE" ? 'ใช่' : 'ไม่'}</td><td>${member.Got10kDigitalWallet === "TRUE" ? 'ได้' : 'ไม่ได้'}</td><td class="text-end">${(member.Income_Total || 0).toLocaleString()}</td><td><button type="button" class="btn btn-sm btn-outline-primary edit-member-btn" data-index="${index}"><i class="bi bi-pencil"></i></button></td><td>${member.Relation === 'นักเรียน' ? '' : `<button type="button" class="btn btn-sm btn-danger delete-row-btn" data-index="${index}"><i class="bi bi-trash"></i></button>`}</td>`;
-        el.householdTbody.appendChild(row);
+      gState.householdMembers.forEach((m, i) => {
+        el.householdTbody.innerHTML += `<tr><td>${i+1}</td><td>${m.MemberName||''}</td><td>${m.Relation||''}</td><td>${m.Phone||'-'}</td><td>${m.MemberEducation||m.Education||'-'}</td><td>${m.CitizenID||'-'}</td><td>${m.Age||'-'}</td><td>${m.IsDisabledOrChronic=='TRUE'?'/':''}</td><td>${m.Got10kDigitalWallet=='TRUE'?'/':''}</td><td class="text-end">${m.Income_Total||0}</td><td><button class="btn btn-sm btn-primary" onclick="editHouseholdMember(${i})">แก้</button></td><td>${m.Relation!='นักเรียน'?`<button class="btn btn-sm btn-danger" onclick="removeHouseholdMember(${i})">ลบ</button>`:''}</td></tr>`;
       });
-      el.householdTbody.querySelectorAll('.edit-member-btn').forEach(btn => btn.addEventListener('click', (e) => editHouseholdMember(e.currentTarget.dataset.index)));
-      el.householdTbody.querySelectorAll('.delete-row-btn').forEach(btn => btn.addEventListener('click', (e) => removeHouseholdMember(e.currentTarget.dataset.index)));
       calculateHouseholdIncome();
     }
-
-    function addHouseholdMember() { editHouseholdMember(-1); }
-
-และแก้ฟังก์ชัน **`editHouseholdMember`** (ใน Script) ให้มีแยกอาชีพ/การศึกษา:
-
-```javascript
-    function editHouseholdMember(index) {
+    
+    window.editHouseholdMember = function(index) {
       const isNew = index == -1;
-      const member = isNew ? { RecordID: gState.currentRecordId, MemberNo: gState.householdMembers.length + 1 } : gState.householdMembers[index];
-      const isStudent = member.Relation === 'นักเรียน';
+      const member = isNew ? { RecordID: gState.currentRecordId } : gState.householdMembers[index];
       
-      // สร้างตัวเลือกการศึกษา
-      const eduOptions = ["ไม่ได้เรียน", "ประถมศึกษา", "มัธยมศึกษา", "ปวช./ปวส.", "ปริญญาตรี", "ปริญญาโท/เอก", "อื่นๆ"];
-      let eduSelect = `<select id="swal-Education" class="form-select"><option value="">-- การศึกษา --</option>`;
-      eduOptions.forEach(opt => {
-          const sel = (member.MemberEducation === opt) ? "selected" : "";
-          eduSelect += `<option value="${opt}" ${sel}>${opt}</option>`;
-      });
-      eduSelect += `</select>`;
+      const eduOpts = ["ไม่ได้เรียน", "ประถมศึกษา", "มัธยมศึกษา", "ปวช./ปวส.", "ปริญญาตรี", "ปริญญาโท/เอก", "อื่นๆ"];
+      let eduSel = `<select id="swal-Edu" class="form-select"><option value="">-การศึกษา-</option>`;
+      eduOpts.forEach(o => eduSel += `<option value="${o}" ${member.MemberEducation==o?'selected':''}>${o}</option>`);
+      eduSel += `</select>`;
 
-      // สร้างตัวเลือกอาชีพ
-      const jobOptions = ["ไม่ได้ทำงาน", "ข้าราชการ/รัฐวิสาหกิจ", "พนักงานบริษัท", "รับจ้างทั่วไป", "เกษตรกร", "ค้าขาย", "ธุรกิจส่วนตัว"];
-      let jobSelect = `<select id="swal-Occupation" class="form-select mb-2" onchange="toggleOtherJob(this)"><option value="">-- อาชีพ --</option>`;
-      jobOptions.forEach(opt => {
-          const sel = (member.MemberOccupation === opt) ? "selected" : "";
-          jobSelect += `<option value="${opt}" ${sel}>${opt}</option>`;
-      });
-      jobSelect += `<option value="อื่นๆ">อื่นๆ (ระบุ)</option></select>`;
-      jobSelect += `<input type="text" id="swal-Occupation-Other" class="form-control" placeholder="ระบุอาชีพ..." style="display:none;">`;
+      const jobOpts = ["ไม่ได้ทำงาน", "ข้าราชการ/รัฐวิสาหกิจ", "พนักงานบริษัท", "รับจ้างทั่วไป", "เกษตรกร", "ค้าขาย", "ธุรกิจส่วนตัว", "อื่นๆ"];
+      let jobSel = `<select id="swal-Job" class="form-select" onchange="document.getElementById('swal-Job-Other').style.display=(this.value=='อื่นๆ'?'block':'none')"><option value="">-อาชีพ-</option>`;
+      jobOpts.forEach(o => jobSel += `<option value="${o}" ${member.MemberOccupation==o?'selected':''}>${o}</option>`);
+      jobSel += `</select><input id="swal-Job-Other" class="form-control mt-1" style="display:none" placeholder="ระบุ...">`;
 
       Swal.fire({
-        title: isNew ? 'เพิ่มสมาชิก' : 'แก้ไขข้อมูล', width: '700px',
-        html: `
-          <div class="row g-2 text-start">
-             <div class="col-6"><label>ชื่อ-สกุล</label><input id="swal-Name" class="form-control" value="${member.MemberName||''}"></div>
-             <div class="col-6"><label>ความสัมพันธ์</label><input id="swal-Rel" class="form-control" value="${member.Relation||''}"></div>
-             
-             <div class="col-6"><label>ระดับการศึกษา</label>${eduSelect}</div>
-             <div class="col-6"><label>อาชีพ</label>${jobSelect}</div>
-             
-             <div class="col-6"><label>เบอร์โทร</label><input id="swal-Phone" class="form-control" value="${member.Phone||''}"></div>
-             <div class="col-6"><label>เลข ปชช.</label><input id="swal-CitizenID" class="form-control" value="${member.CitizenID||''}"></div>
-             <div class="col-4"><label>อายุ</label><input id="swal-Age" class="form-control" value="${member.Age||''}"></div>
-             
-             <div class="col-12"><hr class="my-2"></div>
-             
-             <div class="col-6"><label>รายได้รวม (บาท/เดือน)</label><input id="swal-Inc" type="number" class="form-control" value="${member.Income_Total||0}"></div>
-             
-             <div class="col-6 d-flex align-items-center gap-3 mt-4">
-                <div class="form-check"><input type="checkbox" class="form-check-input" id="swal-Dis" ${member.IsDisabledOrChronic=='TRUE'?'checked':''}><label>พิการ/ป่วย</label></div>
-                <div class="form-check"><input type="checkbox" class="form-check-input" id="swal-10k" ${member.Got10kDigitalWallet=='TRUE'?'checked':''}><label>ได้ 10k</label></div>
-             </div>
-          </div>
-          <script>
-            function toggleOtherJob(el) {
-               document.getElementById('swal-Occupation-Other').style.display = (el.value === 'อื่นๆ') ? 'block' : 'none';
-            }
-          <\/script>
-        `,
+        title: isNew ? 'เพิ่ม' : 'แก้ไข', width: '600px',
+        html: `<div class="row g-2 text-start">
+           <div class="col-6"><label>ชื่อ</label><input id="swal-Name" class="form-control" value="${member.MemberName||''}"></div>
+           <div class="col-6"><label>สัมพันธ์</label><input id="swal-Rel" class="form-control" value="${member.Relation||''}"></div>
+           <div class="col-6"><label>อาชีพ</label>${jobSel}</div>
+           <div class="col-6"><label>การศึกษา</label>${eduSel}</div>
+           <div class="col-6"><label>เบอร์</label><input id="swal-Phone" class="form-control" value="${member.Phone||''}"></div>
+           <div class="col-6"><label>ปชช</label><input id="swal-Cit" class="form-control" value="${member.CitizenID||''}"></div>
+           <div class="col-4"><label>อายุ</label><input id="swal-Age" class="form-control" value="${member.Age||''}"></div>
+           <div class="col-8"><label>รายได้รวม</label><input id="swal-Inc" type="number" class="form-control" value="${member.Income_Total||0}"></div>
+           <div class="col-12"><input type="checkbox" id="swal-Dis" ${member.IsDisabledOrChronic=='TRUE'?'checked':''}> พิการ <input type="checkbox" id="swal-10k" ${member.Got10kDigitalWallet=='TRUE'?'checked':''}> 10k</div>
+        </div>`,
         preConfirm: () => {
-           let job = document.getElementById('swal-Occupation').value;
-           if(job === 'อื่นๆ') job = document.getElementById('swal-Occupation-Other').value;
-           
+           let job = document.getElementById('swal-Job').value;
+           if(job=='อื่นๆ') job = document.getElementById('swal-Job-Other').value;
            return {
-              MemberName: document.getElementById('swal-Name').value,
-              Relation: document.getElementById('swal-Rel').value,
-              MemberEducation: document.getElementById('swal-Education').value, // ค่าใหม่
-              MemberOccupation: job, // ค่าใหม่
-              Phone: document.getElementById('swal-Phone').value,
-              CitizenID: document.getElementById('swal-CitizenID').value,
-              Age: document.getElementById('swal-Age').value,
-              Income_Total: document.getElementById('swal-Inc').value,
-              IsDisabledOrChronic: document.getElementById('swal-Dis').checked ? "TRUE" : "FALSE",
-              Got10kDigitalWallet: document.getElementById('swal-10k').checked ? "TRUE" : "FALSE"
-           }
+              MemberName: document.getElementById('swal-Name').value, Relation: document.getElementById('swal-Rel').value,
+              MemberOccupation: job, MemberEducation: document.getElementById('swal-Edu').value,
+              Phone: document.getElementById('swal-Phone').value, CitizenID: document.getElementById('swal-Cit').value, Age: document.getElementById('swal-Age').value,
+              Income_Total: document.getElementById('swal-Inc').value, IsDisabledOrChronic: document.getElementById('swal-Dis').checked?"TRUE":"FALSE", Got10kDigitalWallet: document.getElementById('swal-10k').checked?"TRUE":"FALSE"
+           };
         }
       }).then(r => {
-          if(r.isConfirmed) {
-             const up = {...member, ...r.value};
-             if(isNew) gState.householdMembers.push(up); else gState.householdMembers[index]=up;
-             trackChange('household_changed', true); renderHouseholdTable(gState.householdMembers); saveToLocalStorage();
-          }
+         if(r.isConfirmed) {
+            const up = {...member, ...r.value};
+            if(isNew) gState.householdMembers.push(up); else gState.householdMembers[index] = up;
+            trackChange('household_changed', true); renderHouseholdTable(gState.householdMembers); saveToLocalStorage();
+         }
       });
-    }
-
-    function removeHouseholdMember(index) {
-      if (gState.householdMembers[index].Relation === 'นักเรียน') { Swal.fire('Error', 'ลบนักเรียนไม่ได้', 'error'); return; }
-      Swal.fire({ title: 'ยืนยันลบ', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', confirmButtonColor: '#d33' }).then((r) => {
-        if (r.isConfirmed) { gState.householdMembers.splice(index, 1); trackChange('household_changed', true); renderHouseholdTable(gState.householdMembers); saveToLocalStorage(); }
-      });
-    }
+    };
+    window.removeHouseholdMember = function(i) { gState.householdMembers.splice(i,1); trackChange('household_changed',true); renderHouseholdTable(gState.householdMembers); saveToLocalStorage(); };
 
     function calculateHouseholdIncome() {
-      const total = gState.householdMembers.length;
-      const income = gState.householdMembers.reduce((s, m) => s + (parseFloat(m.Income_Total) || 0), 0);
-      el.totalMembersInput.value = total; el.totalIncomeInput.value = income;
-      el.perCapitaIncomeInput.value = total > 0 ? (income / total).toFixed(2) : 0;
-      trackChange('Q2_TotalMembers', total); trackChange('Q2_HouseholdIncome_Total', income); trackChange('Q2_HouseholdIncome_PerCapita', (income/total).toFixed(2));
+      const t = gState.householdMembers.length; const s = gState.householdMembers.reduce((a,b)=>a+(parseFloat(b.Income_Total)||0),0);
+      el.totalMembersInput.value = t; el.totalIncomeInput.value = s; el.perCapitaIncomeInput.value = t>0?(s/t).toFixed(2):0;
     }
 
     function attachFormListeners() {
-      document.querySelectorAll('#visit-form input, #visit-form select, #visit-form textarea').forEach(el => {
-        if (el.type === 'file') return;
-        el.addEventListener('change', (e) => {
-          const val = (e.target.type === 'checkbox') ? (e.target.checked ? "TRUE" : "FALSE") : e.target.value;
-          trackChange(e.target.name, val); saveToLocalStorage(); calculateProgress();
+      document.querySelectorAll('#visit-form input, select, textarea').forEach(e => {
+        if(e.type!='file') e.addEventListener('change', (ev) => {
+           trackChange(ev.target.name, ev.target.type=='checkbox'?(ev.target.checked?"TRUE":"FALSE"):ev.target.value);
+           saveToLocalStorage(); calculateProgress();
         });
       });
     }
 
-    function trackChange(fieldName, newValue) {
-      if (!fieldName) return;
-      if (fieldName === 'household_changed') gState.changesToPush['householdData'] = true;
-      else {
-        const orig = gState.originalData.visitData ? gState.originalData.visitData[fieldName] : undefined;
-        if (String(newValue) !== String(orig)) gState.changesToPush[fieldName] = newValue; else delete gState.changesToPush[fieldName];
-      }
-      const count = Object.keys(gState.changesToPush).length;
-      el.saveBtn.disabled = (count === 0); el.saveBtn.innerHTML = `<i class="bi bi-cloud-arrow-up me-2"></i> บันทึก (${count})`;
+    function trackChange(n, v) {
+      if(!n) return;
+      if(n=='household_changed') gState.changesToPush['householdData']=true;
+      else gState.changesToPush[n]=v;
+      el.saveBtn.disabled=false; el.saveBtn.innerHTML = `บันทึก (${Object.keys(gState.changesToPush).length})`;
     }
 
     function saveToLocalStorage() {
-      const data = { studentMaster: gState.originalData.studentMaster, visitData: {}, householdData: gState.householdMembers };
-      const fd = new FormData(document.getElementById('visit-form'));
-      fd.forEach((v,k) => data.visitData[k] = v);
-      // Manual Checkbox
-      document.querySelectorAll('#visit-form input[type=checkbox]').forEach(c => data.visitData[c.name] = c.checked ? "TRUE" : "FALSE");
-      localStorage.setItem(`visit_${gState.currentRecordId}`, JSON.stringify(data));
+       const d = { studentMaster: gState.originalData.studentMaster, visitData: {}, householdData: gState.householdMembers };
+       const fd = new FormData(document.getElementById('visit-form'));
+       fd.forEach((v,k) => d.visitData[k] = v);
+       document.querySelectorAll('input[type=checkbox]').forEach(c => d.visitData[c.name] = c.checked ? "TRUE" : "FALSE");
+       localStorage.setItem(`visit_${gState.currentRecordId}`, JSON.stringify(d));
     }
 
-    function loadFromLocalStorage() {
-      const d = localStorage.getItem(`visit_${gState.currentRecordId}`); return d ? JSON.parse(d) : null;
-    }
+    function loadFromLocalStorage() { const d = localStorage.getItem(`visit_${gState.currentRecordId}`); return d ? JSON.parse(d) : null; }
 
     async function handleSaveToSheets() {
-      el.saveBtn.disabled = true; el.saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span>`;
-      try {
-        const data = {};
-        const fd = new FormData(document.getElementById('visit-form'));
-        fd.forEach((v,k) => data[k] = v);
-        document.querySelectorAll('#visit-form input[type=checkbox]').forEach(c => data[c.name] = c.checked ? "TRUE" : "FALSE");
-        
-        data["RecordID"] = gState.currentRecordId; data["UpdatedBy"] = gState.currentUser.Email;
-
-        let method = 'POST'; let url = `${SHEETDB_API_URL}?sheet=VisitData`;
-        if (gState.originalData.visitData) { method = 'PATCH'; url = `${SHEETDB_API_URL}/RecordID/${gState.currentRecordId}?sheet=VisitData`; }
-
-        const res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: data }) });
-        if (!res.ok) throw new Error("Save Failed");
-
-        if (gState.changesToPush['householdData']) {
-          await fetch(`${SHEETDB_API_URL}/RecordID/${gState.currentRecordId}?sheet=HouseholdMembers`, { method: 'DELETE' });
-          const members = gState.householdMembers.map(m => ({ ...m, RecordID: gState.currentRecordId }));
-          await fetch(`${SHEETDB_API_URL}?sheet=HouseholdMembers`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: members }) });
-        }
-        onSaveSuccess();
-      } catch (e) { handleError(e); }
+       el.saveBtn.disabled = true; el.saveBtn.innerHTML = '...';
+       try {
+         const d = {};
+         const fd = new FormData(document.getElementById('visit-form'));
+         fd.forEach((v,k) => d[k] = v);
+         document.querySelectorAll('input[type=checkbox]').forEach(c => d[c.name] = c.checked ? "TRUE" : "FALSE");
+         d.RecordID = gState.currentRecordId; d.UpdatedBy = gState.currentUser.Email;
+         
+         let m = 'POST', u = `${SHEETDB_API_URL}?sheet=VisitData`;
+         if(gState.originalData.visitData) { m='PATCH'; u=`${SHEETDB_API_URL}/RecordID/${gState.currentRecordId}?sheet=VisitData`; }
+         
+         const r = await fetch(u, { method:m, headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:d}) });
+         if(!r.ok) throw new Error('Save Failed');
+         
+         if(gState.changesToPush['householdData']) {
+             await fetch(`${SHEETDB_API_URL}/RecordID/${gState.currentRecordId}?sheet=HouseholdMembers`, { method:'DELETE' });
+             const h = gState.householdMembers.map(x=>({...x, RecordID:gState.currentRecordId}));
+             await fetch(`${SHEETDB_API_URL}?sheet=HouseholdMembers`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:h}) });
+         }
+         onSaveSuccess();
+       } catch(e) { handleError(e); }
     }
 
     function onSaveSuccess() {
-      setLoading(false); Swal.fire({ title: 'บันทึกสำเร็จ', icon: 'success', timer: 1500, showConfirmButton: false });
-      gState.changesToPush = {};
-      gState.originalData = JSON.parse(JSON.stringify(loadFromLocalStorage()));
-      el.saveBtn.disabled = true; el.saveBtn.innerHTML = `<i class="bi bi-cloud-arrow-up me-2"></i> บันทึก (0)`;
+       setLoading(false); Swal.fire('สำเร็จ','','success');
+       gState.changesToPush={}; gState.originalData=JSON.parse(JSON.stringify(loadFromLocalStorage()));
+       el.saveBtn.disabled=true; el.saveBtn.innerHTML='บันทึก (0)';
     }
 
   </script>
 </body>
 </html>
-
-
-
-
