@@ -41,6 +41,7 @@
     .delete-row-btn { width: 40px; height: 40px; }
     .swal2-popup { font-size: 0.9rem !important; }
 
+    /* สไตล์กรอบรูปภาพและปุ่มลบ */
     .img-wrapper { position: relative; display: inline-block; margin-top: 10px; }
     .btn-delete-img {
       position: absolute; top: -10px; right: -10px;
@@ -293,7 +294,7 @@
                     <option value="ต่างประเทศ">ต่างประเทศ</option>
                   </select>
               </div>
-              
+
               <hr>
               <h5 class="mt-3">3.1 ภาระพึ่งพิง</h5>
               <div class="mb-3"><div class="form-check"><input class="form-check-input" type="radio" name="Q3_1_DependencyStatus" id="Q3_1_DependencyStatus_No" value="ไม่มี"><label for="Q3_1_DependencyStatus_No">ไม่มี</label></div><div class="form-check"><input class="form-check-input" type="radio" name="Q3_1_DependencyStatus" id="Q3_1_DependencyStatus_Yes" value="มี"><label for="Q3_1_DependencyStatus_Yes">มี</label></div></div>
@@ -421,7 +422,7 @@
     const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
     
     // ********** สำคัญ! ใส่ URL ของ Google Apps Script ที่ Deploy แล้วตรงนี้ **********
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzTSpzfnrQTijsWa_XN8WlUyeesNDf1VsWw3QxNjQ57OUNFXTnBD_TXA8ZV7QojSF-/exec"; 
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyZBFYUglarDmKqt_uvubHyjbd7cByHviNcfwOhMWCVT7eDwQyfEwEoMR2ISoMGgE-h/exec"; 
 
     /* * ===================================================================
      * STATE MANAGEMENT
