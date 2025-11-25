@@ -24,7 +24,6 @@
       z-index: 9999; flex-direction: column;
     }
 
-    /* ซ่อนทุกหน้าจอก่อน */
     #login-screen, #student-selection-screen, #dashboard-screen, #main-form-screen, #print-screen {
       display: none; padding-top: 60px;
     }
@@ -41,6 +40,16 @@
     #household-member-list input { min-width: 100px; }
     .delete-row-btn { width: 40px; height: 40px; }
     .swal2-popup { font-size: 0.9rem !important; }
+
+    /* (ใหม่) สไตล์กรอบรูปภาพและปุ่มลบ */
+    .img-wrapper { position: relative; display: inline-block; margin-top: 10px; }
+    .btn-delete-img {
+      position: absolute; top: -10px; right: -10px;
+      width: 25px; height: 25px; border-radius: 50%;
+      padding: 0; font-size: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      display: none; /* ซ่อนไว้ก่อนถ้าไม่มีรูป */
+    }
+    .img-preview { max-height: 150px; display: none; border: 1px solid #ddd; padding: 2px; border-radius: 4px; }
   </style>
 </head>
 
@@ -78,21 +87,11 @@
             <div class="card shadow border-0 p-4">
               <h3 class="text-center mb-4 fw-bold text-primary">ระบบเยี่ยมบ้านนักเรียน</h3>
               <form id="manual-login-form">
-                <div class="mb-3">
-                  <label for="login-email" class="form-label">Email (ที่ลงทะเบียน)</label>
-                  <input type="email" class="form-control" id="login-email" required>
-                </div>
-                <div class="mb-3">
-                  <label for="login-password" class="form-label">Password</label>
-                  <input type="password" class="form-control" id="login-password" required>
-                </div>
+                <div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" id="login-email" required></div>
+                <div class="mb-3"><label class="form-label">Password</label><input type="password" class="form-control" id="login-password" required></div>
                 <div id="login-error-message" class="alert alert-danger" style="display: none;"></div>
-                <button type="submit" id="login-btn" class="btn btn-primary btn-lg w-100 mb-3">
-                  <i class="bi bi-box-arrow-in-right me-2"></i> เข้าสู่ระบบ
-                </button>
-                <div class="text-center">
-                   <a href="#" id="open-change-pwd-btn" class="text-decoration-none text-secondary"><i class="bi bi-key"></i> เปลี่ยนรหัสผ่าน</a>
-                </div>
+                <button type="submit" id="login-btn" class="btn btn-primary btn-lg w-100 mb-3"><i class="bi bi-box-arrow-in-right me-2"></i> เข้าสู่ระบบ</button>
+                <div class="text-center"><a href="#" id="open-change-pwd-btn" class="text-decoration-none text-secondary"><i class="bi bi-key"></i> เปลี่ยนรหัสผ่าน</a></div>
               </form>
             </div>
           </div>
@@ -104,9 +103,7 @@
       <div class="row justify-content-center">
         <div class="col-md-10 col-lg-8">
           <div class="card shadow border-0 p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h4 class="mb-0">ยินดีต้อนรับ, <span id="user-name-display" class="text-primary"></span></h4>
-            </div>
+            <div class="d-flex justify-content-between align-items-center mb-3"><h4 class="mb-0">ยินดีต้อนรับ, <span id="user-name-display" class="text-primary"></span></h4></div>
             <div class="row g-3">
               <div class="col-md-6"><label class="form-label fw-bold">1. เลือกระดับชั้น</label><select id="class-select" class="form-select form-select-lg"><option value="">-- กรุณาเลือก --</option></select></div>
               <div class="col-md-6"><label class="form-label fw-bold">2. เลือกนักเรียน</label><select id="student-select" class="form-select form-select-lg" disabled><option value="">-- กรุณาเลือกระดับชั้นก่อน --</option></select></div>
@@ -205,7 +202,15 @@
                 <div class="col-md-3"><p class="mb-1"><strong>เลข ปชช.:</strong> <span id="s1-citizenid"></span></p></div>
               </div>
               <div class="row">
-                <div class="col-md-6 mb-3"><label class="form-label">รูปถ่ายนักเรียน</label><input type="file" id="file_Q1_PhotoURL" class="form-control file-upload-input" accept="image/*" data-target-hidden="Q1_PhotoURL"><input type="hidden" id="Q1_PhotoURL" name="Q1_PhotoURL"><img id="preview_Q1_PhotoURL" src="" class="img-thumbnail mt-2" style="display:none; max-height: 150px;"></div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">รูปถ่ายนักเรียน</label>
+                  <input type="file" id="file_Q1_PhotoURL" class="form-control file-upload-input" accept="image/*" data-target-hidden="Q1_PhotoURL">
+                  <input type="hidden" id="Q1_PhotoURL" name="Q1_PhotoURL">
+                  <div class="img-wrapper" id="wrapper_Q1_PhotoURL" style="display:none;">
+                     <img id="preview_Q1_PhotoURL" class="img-preview">
+                     <button type="button" class="btn btn-danger btn-delete-img" onclick="deleteImage('Q1_PhotoURL')">X</button>
+                  </div>
+                </div>
                 <div class="col-md-3 mb-3"><label class="form-label">ชื่อเล่น</label> <input type="text" name="Q1_StudentNickname" id="Q1_StudentNickname" class="form-control"></div>
                 <div class="col-md-3 mb-3"><label class="form-label">เบอร์โทรนักเรียน</label><input type="tel" id="Q1_StudentPhone" name="Q1_StudentPhone" class="form-control"></div>
               </div>
@@ -311,8 +316,24 @@
             <div id="section-7" class="form-section card card-body mb-3">
               <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 7: ภาพถ่ายที่พักอาศัย</h4>
               <div class="row">
-                <div class="col-md-6 mb-3"><label class="form-label">รูปที่ 1: ภาพถ่ายนอกที่พักอาศัย</label><input type="file" id="file_Q7_Photo1_URL" class="form-control file-upload-input" accept="image/*" data-target-hidden="Q7_Photo1_URL"><input type="hidden" id="Q7_Photo1_URL" name="Q7_Photo1_URL"><img id="preview_Q7_Photo1_URL" src="" class="img-thumbnail mt-2" style="display:none; max-height: 150px;"></div>
-                <div class="col-md-6 mb-3"><label class="form-label">รูปที่ 2: ภาพถ่ายภายในที่พักอาศัย</label><input type="file" id="file_Q7_Photo2_URL" class="form-control file-upload-input" accept="image/*" data-target-hidden="Q7_Photo2_URL"><input type="hidden" id="Q7_Photo2_URL" name="Q7_Photo2_URL"><img id="preview_Q7_Photo2_URL" src="" class="img-thumbnail mt-2" style="display:none; max-height: 150px;"></div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">รูปที่ 1: ภาพถ่ายนอกที่พักอาศัย</label>
+                  <input type="file" id="file_Q7_Photo1_URL" class="form-control file-upload-input" accept="image/*" data-target-hidden="Q7_Photo1_URL">
+                  <input type="hidden" id="Q7_Photo1_URL" name="Q7_Photo1_URL">
+                  <div class="img-wrapper" id="wrapper_Q7_Photo1_URL" style="display:none;">
+                     <img id="preview_Q7_Photo1_URL" class="img-preview">
+                     <button type="button" class="btn btn-danger btn-delete-img" onclick="deleteImage('Q7_Photo1_URL')">X</button>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">รูปที่ 2: ภาพถ่ายภายในที่พักอาศัย</label>
+                  <input type="file" id="file_Q7_Photo2_URL" class="form-control file-upload-input" accept="image/*" data-target-hidden="Q7_Photo2_URL">
+                  <input type="hidden" id="Q7_Photo2_URL" name="Q7_Photo2_URL">
+                  <div class="img-wrapper" id="wrapper_Q7_Photo2_URL" style="display:none;">
+                     <img id="preview_Q7_Photo2_URL" class="img-preview">
+                     <button type="button" class="btn btn-danger btn-delete-img" onclick="deleteImage('Q7_Photo2_URL')">X</button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -389,7 +410,7 @@
     const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
     
     // ********** สำคัญ! ใส่ URL ของ Google Apps Script ที่ Deploy แล้วตรงนี้ **********
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyZBFYUglarDmKqt_uvubHyjbd7cByHviNcfwOhMWCVT7eDwQyfEwEoMR2ISoMGgE-h/exec"; 
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycby_36h-3Y877Jg73ySl9Jt_Z8J-X78K8Y-X8J8/exec"; 
 
     /* * ===================================================================
      * STATE MANAGEMENT
@@ -677,50 +698,53 @@
      * ===================================================================
      */
     async function handleStartForm() {
-      gState.selectedStudentId = el.studentSelect.value;
-      gState.selectedStudentName = el.studentSelect.options[el.studentSelect.selectedIndex].text;
-      const semester = el.semesterSelect.value;
-      const year = el.yearSelect.value;
-      gState.currentRecordId = `${gState.selectedStudentId}_${semester}_${year}`;
-      
-      if(el.studentNameHeader) el.studentNameHeader.textContent = `${gState.selectedStudentName} (ภาคเรียน ${semester}/${year})`;
-
-      // (แก้ไข) เพิ่ม try...catch คลุมทั้งหมด เพื่อกันบัคข้อมูลเก่าพัง 
       try {
+        gState.selectedStudentId = el.studentSelect.value;
+        gState.selectedStudentName = el.studentSelect.options[el.studentSelect.selectedIndex].text;
+        const semester = el.semesterSelect.value;
+        const year = el.yearSelect.value;
+        gState.currentRecordId = `${gState.selectedStudentId}_${semester}_${year}`;
+        
+        if(el.studentNameHeader) el.studentNameHeader.textContent = `${gState.selectedStudentName} (ภาคเรียน ${semester}/${year})`;
+
         const localData = loadFromLocalStorage();
+        
         if (localData) {
-            setLoading(true, 'กำลังโหลดข้อมูลที่บันทึกไว้...');
-            if (!localData.studentMaster) throw new Error("ข้อมูลแคชไม่สมบูรณ์");
-            
-            gState.originalData = JSON.parse(JSON.stringify(localData));
-            prefillForm(localData.studentMaster, localData.visitData);
-            renderHouseholdTable(localData.householdData || []);
-            showScreen('form');
-            calculateProgress();
-            setLoading(false);
-            attachFormListeners();
+          setLoading(true, 'กำลังโหลดข้อมูลที่บันทึกไว้...');
+          if (!localData.studentMaster) throw new Error("ข้อมูลแคชไม่สมบูรณ์");
+          
+          gState.originalData = JSON.parse(JSON.stringify(localData));
+          prefillForm(localData.studentMaster, localData.visitData);
+          renderHouseholdTable(localData.householdData || []);
+          
+          showScreen('form');
+          calculateProgress();
+          setLoading(false);
+          attachFormListeners();
         } else {
-            setLoading(true, 'กำลังโหลดข้อมูลนักเรียน...');
-            const [studentRes, visitRes, householdRes] = await Promise.all([
-                fetch(`${SHEETDB_API_URL}/search?StudentID=${gState.selectedStudentId}&sheet=Students`),
-                fetch(`${SHEETDB_API_URL}/search?RecordID=${gState.currentRecordId}&sheet=VisitData`),
-                fetch(`${SHEETDB_API_URL}/search?RecordID=${gState.currentRecordId}&sheet=HouseholdMembers`)
-            ]);
+          setLoading(true, 'กำลังโหลดข้อมูลนักเรียน...');
+          const [studentRes, visitRes, householdRes] = await Promise.all([
+             fetch(`${SHEETDB_API_URL}/search?StudentID=${gState.selectedStudentId}&sheet=Students`),
+             fetch(`${SHEETDB_API_URL}/search?RecordID=${gState.currentRecordId}&sheet=VisitData`),
+             fetch(`${SHEETDB_API_URL}/search?RecordID=${gState.currentRecordId}&sheet=HouseholdMembers`)
+          ]);
 
-            const studentData = await studentRes.json();
-            const visitData = await visitRes.json();
-            const householdData = await householdRes.json();
+          if (!studentRes.ok || !visitRes.ok || !householdRes.ok) throw new Error("เชื่อมต่อฐานข้อมูลไม่สำเร็จ");
 
-            const data = {
-                studentMaster: (studentData.length > 0) ? studentData[0] : null,
-                visitData: (visitData.length > 0) ? visitData[0] : null,
-                householdData: householdData
-            };
-            loadStudentDataSuccess(data);
+          const studentData = await studentRes.json();
+          const visitData = await visitRes.json();
+          const householdData = await householdRes.json();
+
+          const data = {
+            studentMaster: (studentData.length > 0) ? studentData[0] : null,
+            visitData: (visitData.length > 0) ? visitData[0] : null,
+            householdData: householdData
+          };
+          loadStudentDataSuccess(data);
         }
       } catch (error) {
         console.error("StartForm Error:", error);
-        localStorage.removeItem(`visit_${gState.currentRecordId}`); 
+        localStorage.removeItem(`visit_${gState.currentRecordId}`); // ล้างแคชตัวปัญหา
         handleError(new Error("พบข้อมูลเก่าเสียหาย ระบบได้ทำการล้างค่าแล้ว กรุณากด 'เริ่มกรอกข้อมูล' ใหม่อีกครั้งครับ"));
       }
     }
@@ -773,8 +797,16 @@
             } else if (input.type === 'hidden' && key.includes('PhotoURL')) {
                input.value = visit[key];
                if(visit[key]) {
+                 // แสดงรูปภาพ
                  const previewImg = document.getElementById(`preview_${key}`);
                  if (previewImg) { previewImg.src = visit[key]; previewImg.style.display = 'block'; }
+                 
+                 // แสดงกล่องรูปและปุ่มลบ
+                 const wrapper = document.getElementById(`wrapper_${key}`);
+                 if(wrapper) wrapper.style.display = 'inline-block';
+                 
+                 const deleteBtn = wrapper ? wrapper.querySelector('.btn-delete-img') : null;
+                 if(deleteBtn) deleteBtn.style.display = 'block';
                }
             } else if (input.type !== 'file') {
                input.value = visit[key];
@@ -821,7 +853,13 @@
     function resetFormState() {
       localStorage.removeItem(`visit_${gState.currentRecordId}`);
       document.getElementById('visit-form').reset();
-      document.querySelectorAll('.img-thumbnail').forEach(img => { img.src = ''; img.style.display = 'none'; });
+      
+      // Reset Image UI
+      document.querySelectorAll('.img-preview').forEach(img => { img.src = ''; img.style.display = 'none'; });
+      document.querySelectorAll('.img-wrapper').forEach(div => div.style.display = 'none');
+      document.querySelectorAll('.btn-delete-img').forEach(btn => btn.style.display = 'none');
+      document.querySelectorAll('input[type="hidden"][name*="PhotoURL"]').forEach(inp => inp.value = "");
+
       gState.currentRecordId = null; gState.changesToPush = {}; gState.householdMembers = [];
       el.householdTbody.innerHTML = '';
       
@@ -1052,25 +1090,66 @@
       );
     }
 
+    // (ใหม่) ฟังก์ชันลบรูปภาพ
+    function deleteImage(inputName) {
+        const hiddenInput = document.getElementById(inputName);
+        const wrapper = document.getElementById(`wrapper_${inputName}`);
+        const preview = document.getElementById(`preview_${inputName}`);
+        const fileInput = document.getElementById(`file_${inputName}`);
+
+        if(hiddenInput) {
+            hiddenInput.value = ""; // เคลียร์ค่า URL
+            trackChange(inputName, ""); // สั่งบันทึกว่าลบแล้ว
+        }
+        if(wrapper) wrapper.style.display = 'none';
+        if(preview) preview.src = "";
+        if(fileInput) fileInput.value = ""; // เคลียร์ไฟล์ที่เลือกไว้
+        
+        saveToLocalStorage();
+        calculateProgress();
+    }
+    // Expose function to global scope so HTML button can call it
+    window.deleteImage = deleteImage;
+
     async function handleFileUpload(event) {
       const fileInput = event.target;
       const file = fileInput.files[0]; if (!file) return;
-      const hiddenInputId = fileInput.dataset.targetHidden;
+      
+      const hiddenInputId = fileInput.dataset.targetHidden; // เช่น Q1_PhotoURL
       const hiddenInput = document.getElementById(hiddenInputId);
       const previewImg = document.getElementById(`preview_${hiddenInputId}`);
+      const wrapper = document.getElementById(`wrapper_${hiddenInputId}`);
+      const deleteBtn = wrapper ? wrapper.querySelector('.btn-delete-img') : null;
 
+      // แสดง Loading
+      if(wrapper) wrapper.style.display = 'inline-block';
       if(previewImg) { previewImg.style.display = 'block'; previewImg.src = 'https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif'; }
+      if(deleteBtn) deleteBtn.style.display = 'none'; // ซ่อนปุ่มลบตอนกำลังโหลด
+
       setLoading(true, 'กำลังอัปโหลด...');
+      
       try {
         const formData = new FormData(); formData.append('file', file); formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
         const response = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
         if (!response.ok) throw new Error('Upload failed');
+        
         const data = await response.json();
         setLoading(false);
+        
+        // อัปโหลดสำเร็จ
         if(previewImg) previewImg.src = data.secure_url;
+        if(deleteBtn) deleteBtn.style.display = 'block'; // โชว์ปุ่มลบ
+        
         hiddenInput.value = data.secure_url;
-        trackChange(hiddenInput.name, data.secure_url); saveToLocalStorage(); calculateProgress();
-      } catch (error) { handleError(error); if(previewImg) previewImg.style.display = 'none'; }
+        trackChange(hiddenInput.name, data.secure_url); 
+        saveToLocalStorage(); 
+        calculateProgress();
+
+      } catch (error) { 
+         handleError(error); 
+         if(previewImg) previewImg.style.display = 'none';
+         if(wrapper) wrapper.style.display = 'none';
+      }
     }
 
     /* * ===================================================================
@@ -1234,6 +1313,3 @@
   </script>
 </body>
 </html>
-
-
-
