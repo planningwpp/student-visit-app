@@ -1342,31 +1342,70 @@
       const d = localStorage.getItem(`visit_${gState.currentRecordId}`); return d ? JSON.parse(d) : null;
     }
 
+// (ฉบับอัปเกรด) ใช้ GAS บันทึกข้อมูลแทน SheetDB (แม่นยำกว่า รองรับคอลัมน์ใหม่ทันที)
     async function handleSaveToSheets() {
-      el.saveBtn.disabled = true; el.saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span>`;
-      try {
-        const data = {};
-        const fd = new FormData(document.getElementById('visit-form'));
-        fd.forEach((v,k) => data[k] = v);
-        document.querySelectorAll('#visit-form input[type=checkbox]').forEach(c => data[c.name] = c.checked ? "TRUE" : "FALSE");
-        
-        data["RecordID"] = gState.currentRecordId; data["UpdatedBy"] = gState.currentUser.Email;
+       el.saveBtn.disabled = true; 
+       el.saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
+       
+       try {
+         // 1. รวบรวมข้อมูลจากฟอร์ม
+         const formData = {};
+         const fd = new FormData(document.getElementById('visit-form'));
+         fd.forEach((v,k) => formData[k] = v);
+         
+         // เก็บค่า Checkbox (เพราะ FormData จะไม่ส่งค่าถ้าไม่ได้ติ๊ก)
+         document.querySelectorAll('#visit-form input[type=checkbox]').forEach(c => {
+            formData[c.name] = c.checked ? "TRUE" : "FALSE";
+         });
+         
+         // 2. ส่งไปบันทึกที่ VisitData (ผ่าน GAS)
+         const visitPayload = {
+            action: "saveDeltaChanges",
+            recordId: gState.currentRecordId,
+            userEmail: gState.currentUser.Email,
+            changes: formData
+         };
+         
+         const resVisit = await fetch(GAS_API_URL, {
+            method: "POST",
+            body: JSON.stringify(visitPayload)
+         });
+         const jsonVisit = await resVisit.json();
+         if(jsonVisit.error) throw new Error("บันทึกข้อมูลหลักไม่สำเร็จ: " + jsonVisit.error);
 
-        let method = 'POST'; let url = `${SHEETDB_API_URL}?sheet=VisitData`;
-        if (gState.originalData.visitData) { method = 'PATCH'; url = `${SHEETDB_API_URL}/RecordID/${gState.currentRecordId}?sheet=VisitData`; }
+         // 3. ส่งข้อมูล Household (ผ่าน GAS) - ทำเฉพาะเมื่อมีการเปลี่ยนแปลง
+         if (gState.changesToPush['householdData']) {
+             const members = gState.householdMembers.map(m => ({
+                 ...m, 
+                 RecordID: gState.currentRecordId
+             }));
 
-        const res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: data }) });
-        if (!res.ok) throw new Error("Save Failed");
+             const householdPayload = {
+                action: "overwriteHouseholdData",
+                recordId: gState.currentRecordId,
+                members: members
+             };
 
-        if (gState.changesToPush['householdData']) {
-          await fetch(`${SHEETDB_API_URL}/RecordID/${gState.currentRecordId}?sheet=HouseholdMembers`, { method: 'DELETE' });
-          const members = gState.householdMembers.map(m => ({ ...m, RecordID: gState.currentRecordId }));
-          await fetch(`${SHEETDB_API_URL}?sheet=HouseholdMembers`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: members }) });
-        }
-        onSaveSuccess();
-      } catch (e) { handleError(e); }
+             const resHousehold = await fetch(GAS_API_URL, {
+                method: "POST",
+                body: JSON.stringify(householdPayload)
+             });
+             const jsonHousehold = await resHousehold.json();
+             if(jsonHousehold.error) throw new Error("บันทึกสมาชิกครัวเรือนไม่สำเร็จ: " + jsonHousehold.error);
+         }
+         
+         onSaveSuccess();
+
+       } catch (e) { 
+         handleError(e); 
+       } finally {
+         // คืนค่าปุ่ม
+         if(el.saveBtn) {
+            el.saveBtn.disabled = false;
+            el.saveBtn.innerHTML = `<i class="bi bi-cloud-arrow-up me-2"></i> บันทึก (0)`;
+         }
+       }
     }
-
     function onSaveSuccess() {
       setLoading(false); Swal.fire({ title: 'บันทึกสำเร็จ', icon: 'success', timer: 1500, showConfirmButton: false });
       gState.changesToPush = {};
@@ -1377,3 +1416,4 @@
   </script>
 </body>
 </html>
+
