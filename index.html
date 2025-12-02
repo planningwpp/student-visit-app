@@ -1342,64 +1342,83 @@
       const d = localStorage.getItem(`visit_${gState.currentRecordId}`); return d ? JSON.parse(d) : null;
     }
 
-// (ฉบับอัปเกรด) ใช้ GAS บันทึกข้อมูลแทน SheetDB (แม่นยำกว่า รองรับคอลัมน์ใหม่ทันที)
+// (ฉบับอัปเกรด: ดูดข้อมูลจากตารางสมาชิก -> ยัดลง VisitData อัตโนมัติ)
     async function handleSaveToSheets() {
        el.saveBtn.disabled = true; 
        el.saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
        
        try {
-         // 1. รวบรวมข้อมูลจากฟอร์ม
-         const formData = {};
+         // 1. เตรียมข้อมูลพื้นฐานจากฟอร์ม
+         const data = {};
          const fd = new FormData(document.getElementById('visit-form'));
-         fd.forEach((v,k) => formData[k] = v);
+         fd.forEach((v,k) => data[k] = v);
          
-         // เก็บค่า Checkbox (เพราะ FormData จะไม่ส่งค่าถ้าไม่ได้ติ๊ก)
+         // เก็บค่า Checkbox
          document.querySelectorAll('#visit-form input[type=checkbox]').forEach(c => {
-            formData[c.name] = c.checked ? "TRUE" : "FALSE";
+            data[c.name] = c.checked ? "TRUE" : "FALSE";
          });
+
+         // -----------------------------------------------------------------------
+         // 2. (ไฮไลท์) ดูดข้อมูลจากตารางสมาชิก (Section 2) มาใส่ VisitData (Section 1)
+         // -----------------------------------------------------------------------
+         const members = gState.householdMembers || [];
          
-         // 2. ส่งไปบันทึกที่ VisitData (ผ่าน GAS)
-         const visitPayload = {
+         // ค้นหาพ่อในตาราง
+         const dad = members.find(m => m.Relation === 'บิดา');
+         if (dad) {
+             data['Q1_FatherName'] = dad.MemberName || "";
+             data['Q1_FatherAge'] = dad.Age || "";
+             data['Q1_FatherPhone'] = dad.Phone || "";
+             data['Q1_FatherCitizenID'] = dad.CitizenID || "";
+             // รวมอาชีพและการศึกษา (ถ้ามี)
+             data['Q1_FatherJob'] = dad.MemberOccupation || dad.Education || "";
+             // (ถ้าต้องการ) ดึงสถานะมาด้วย ถ้าในตารางมีระบุ
+         }
+
+         // ค้นหาแม่ในตาราง
+         const mom = members.find(m => m.Relation === 'มารดา');
+         if (mom) {
+             data['Q1_MotherName'] = mom.MemberName || "";
+             data['Q1_MotherAge'] = mom.Age || "";
+             data['Q1_MotherPhone'] = mom.Phone || "";
+             data['Q1_MotherCitizenID'] = mom.CitizenID || "";
+             data['Q1_MotherJob'] = mom.MemberOccupation || mom.Education || "";
+         }
+
+         // (เสริม) แปลงข้อมูลสมาชิกทั้งหมดเป็น JSON เก็บไว้ในช่องเดียว (เผื่อใช้)
+         // *ต้องสร้างคอลัมน์ Q2_Household_JSON ใน Sheet ก่อนนะครับ ถึงจะเก็บได้
+         data['Q2_Household_JSON'] = JSON.stringify(members);
+         // -----------------------------------------------------------------------
+         
+         // 3. ข้อมูลระบบ
+         data["RecordID"] = gState.currentRecordId; 
+         data["UpdatedBy"] = gState.currentUser.Email;
+         data["LastUpdated"] = new Date().toISOString(); // ส่งเวลาไปเผื่อด้วย
+
+         // 4. ส่งไปบันทึก (ใช้ Apps Script เป็นตัวกลาง)
+         const payload = {
             action: "saveDeltaChanges",
             recordId: gState.currentRecordId,
             userEmail: gState.currentUser.Email,
-            changes: formData
+            changes: data
          };
          
-         const resVisit = await fetch(GAS_API_URL, {
+         const res = await fetch(GAS_API_URL, {
             method: "POST",
-            body: JSON.stringify(visitPayload)
+            body: JSON.stringify(payload)
          });
-         const jsonVisit = await resVisit.json();
-         if(jsonVisit.error) throw new Error("บันทึกข้อมูลหลักไม่สำเร็จ: " + jsonVisit.error);
-
-         // 3. ส่งข้อมูล Household (ผ่าน GAS) - ทำเฉพาะเมื่อมีการเปลี่ยนแปลง
-         if (gState.changesToPush['householdData']) {
-             const members = gState.householdMembers.map(m => ({
-                 ...m, 
-                 RecordID: gState.currentRecordId
-             }));
-
-             const householdPayload = {
-                action: "overwriteHouseholdData",
-                recordId: gState.currentRecordId,
-                members: members
-             };
-
-             const resHousehold = await fetch(GAS_API_URL, {
-                method: "POST",
-                body: JSON.stringify(householdPayload)
-             });
-             const jsonHousehold = await resHousehold.json();
-             if(jsonHousehold.error) throw new Error("บันทึกสมาชิกครัวเรือนไม่สำเร็จ: " + jsonHousehold.error);
-         }
          
+         const json = await res.json();
+         if (json.error) throw new Error("บันทึกไม่สำเร็จ: " + json.error);
+
+         // (Optional) ถ้าอยากล้างบาง HouseholdMembers เก่าทิ้ง ก็ส่งคำสั่ง delete ไปได้
+         // แต่ตอนนี้เราเน้นบันทึกทับลง VisitData แล้ว จึงไม่จำเป็นต้องทำอะไรกับชีตนั้นแล้วครับ
+
          onSaveSuccess();
 
        } catch (e) { 
          handleError(e); 
        } finally {
-         // คืนค่าปุ่ม
          if(el.saveBtn) {
             el.saveBtn.disabled = false;
             el.saveBtn.innerHTML = `<i class="bi bi-cloud-arrow-up me-2"></i> บันทึก (0)`;
@@ -1416,3 +1435,4 @@
   </script>
 </body>
 </html>
+
