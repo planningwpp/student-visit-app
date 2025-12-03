@@ -412,7 +412,6 @@
      * CONFIGURATION 
      * ===================================================================
      */
-    const SHEETDB_API_URL = "https://sheetdb.io/api/v1/n37n9bjcruye6";
     const CLOUDINARY_CLOUD_NAME = "dzzdmlei5"; 
     const CLOUDINARY_UPLOAD_PRESET = "ml_default"; 
     const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
@@ -522,60 +521,55 @@
      * LOGIN SYSTEM
      * ===================================================================
      */
+    // ปรับปรุง: ใช้ GAS ตรวจสอบ Login แทน SheetDB
     async function handleManualLogin(event) {
       event.preventDefault();
       setLoading(true, 'กำลังตรวจสอบข้อมูล...');
-      el.loginBtn.disabled = true; el.loginErrorMessage.style.display = 'none';
+      if(el.loginBtn) el.loginBtn.disabled = true; 
+      if(el.loginErrorMessage) el.loginErrorMessage.style.display = 'none';
 
       try {
-        const email = el.loginEmailInput.value;
-        const password = el.loginPasswordInput.value;
-        const url = `${SHEETDB_API_URL}/search?Email=${encodeURIComponent(email)}&Password=${encodeURIComponent(password)}&sheet=Users`;
-
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("เชื่อมต่อฐานข้อมูลไม่ได้");
-        const data = await response.json();
-
-        if (data && data.length > 0) {
-          handleLoginSuccess(data[0]); 
+        const body = { 
+           action: 'checkLogin', 
+           email: el.loginEmailInput.value, 
+           password: el.loginPasswordInput.value 
+        };
+        
+        const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify(body) });
+        const json = await res.json();
+        
+        if (json.email) { // ถ้า GAS ส่งข้อมูลผู้ใช้กลับมา
+           handleLoginSuccess(json);
         } else {
-          handleLoginFailure("อีเมล หรือ รหัสผ่านไม่ถูกต้อง");
+           throw new Error("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
         }
       } catch (error) {
         handleLoginFailure(error.message);
       }
     }
-
+    // ปรับปรุง: ใช้ GAS ดึงรายชื่อห้อง (getInitialData)
     async function handleLoginSuccess(user) {
-      if (user && user.Email) {
-        gState.currentUser = user;
-        if(el.navUserEmail) el.navUserEmail.textContent = user.Email; 
-        showScreen('selection');
+      gState.currentUser = user;
+      if(el.navUserEmail) el.navUserEmail.textContent = user.email;
+      showScreen('selection');
 
-        try {
-          setLoading(true, 'กำลังโหลดข้อมูลชั้นเรียน...');
-          const response = await fetch(`${SHEETDB_API_URL}?sheet=Students`);
-          if (!response.ok) throw new Error("โหลดข้อมูลนักเรียนไม่สำเร็จ");
-          const allStudents = await response.json();
-
-          const allClassesSet = new Set(allStudents.map(s => s.Class.trim()));
-          let filteredClasses = Array.from(allClassesSet).sort();
-          
-          // เช็คสิทธิ์ (Super User เห็นทุกห้อง)
-          const superRoles = ['Admin', 'Director', 'Head', 'ผอ.', 'หัวหน้างาน']; 
-          const isSuperUser = superRoles.includes(user.Role);
-
-          if (!isSuperUser && user.AssignedClasses && user.AssignedClasses.trim() !== "") {
-            const allowedClassesSet = new Set(user.AssignedClasses.split(',').map(c => c.trim().toLowerCase()));
-            filteredClasses = filteredClasses.filter(c => allowedClassesSet.has(c.toLowerCase()));
-          }
-          populateClassDropdown(filteredClasses);
-          setLoading(false);
-        } catch (error) {
-          handleError(error);
+      try {
+        setLoading(true, 'กำลังโหลดข้อมูลห้องเรียน...');
+        // ส่ง action ไปขอรายชื่อห้องจาก GAS
+        const res = await fetch(GAS_API_URL, { 
+            method: 'POST', 
+            body: JSON.stringify({ action: 'getInitialData', assignedClasses: user.assignedClasses }) 
+        });
+        const json = await res.json(); // json ควรจะเป็น Array รายชื่อห้อง
+        
+        if (Array.isArray(json)) {
+           populateClassDropdown(json);
+        } else {
+           throw new Error("ไม่สามารถดึงข้อมูลห้องเรียนได้");
         }
-      } else {
-        handleLoginFailure("ข้อมูลผู้ใช้ผิดพลาด");
+        setLoading(false);
+      } catch (error) {
+        handleError(error);
       }
     }
 
@@ -665,6 +659,7 @@
       });
     }
 
+    // ปรับปรุง: ใช้ GAS ดึงรายชื่อนักเรียนในห้อง (getStudentsByClass)
     async function handleClassChange() {
       const className = el.classSelect.value;
       if (!className) {
@@ -677,18 +672,20 @@
       setLoading(true, 'กำลังโหลดรายชื่อนักเรียน...');
 
       try {
-        const url = `${SHEETDB_API_URL}/search?Class=${encodeURIComponent(className)}&sheet=Students`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("NetworkError");
-        const students = await response.json();
-        
-        students.sort((a, b) => parseInt(a.StudentNumber, 10) - parseInt(b.StudentNumber, 10));
+        const res = await fetch(GAS_API_URL, { 
+            method: 'POST', 
+            body: JSON.stringify({ action: 'getStudentsByClass', className: className }) 
+        });
+        const students = await res.json();
         
         el.studentSelect.innerHTML = '<option value="">-- กรุณาเลือก --</option>';
-        students.forEach(student => {
-          const name = `${student.Prefix} ${student.FirstName} ${student.LastName} (เลขที่ ${student.StudentNumber})`;
-          el.studentSelect.add(new Option(name, student.StudentID));
-        });
+        if (Array.isArray(students)) {
+            students.forEach(s => {
+              // GAS ส่งมาเป็น object {id, name, studentNumber} แล้ว
+              el.studentSelect.add(new Option(s.name, s.id));
+            });
+        }
+        
         el.studentSelect.disabled = false;
         validateStartButton();
         setLoading(false);
@@ -696,7 +693,6 @@
         handleError(error);
       }
     }
-
     function validateStartButton() {
       el.startFormBtn.disabled = !(el.classSelect.value && el.studentSelect.value && el.semesterSelect.value && el.yearSelect.value);
     }
@@ -705,6 +701,7 @@
      * FORM HANDLING
      * ===================================================================
      */
+    // ปรับปรุง: ใช้ GAS ดึงข้อมูลนักเรียน+เยี่ยมบ้าน+สมาชิก ในครั้งเดียว (getStudentVisitData)
     async function handleStartForm() {
       try {
         gState.selectedStudentId = el.studentSelect.value;
@@ -717,46 +714,42 @@
 
         const localData = loadFromLocalStorage();
         
-        if (localData) {
-          setLoading(true, 'กำลังโหลดข้อมูลที่บันทึกไว้...');
-          if (!localData.studentMaster) throw new Error("ข้อมูลแคชไม่สมบูรณ์");
-          
+        if (localData && localData.studentMaster) {
+          setLoading(true, 'โหลดข้อมูลจากแคช...');
           gState.originalData = JSON.parse(JSON.stringify(localData));
           prefillForm(localData.studentMaster, localData.visitData);
           renderHouseholdTable(localData.householdData || []);
-          
           showScreen('form');
           calculateProgress();
           setLoading(false);
           attachFormListeners();
         } else {
-          setLoading(true, 'กำลังโหลดข้อมูลนักเรียน...');
-          const [studentRes, visitRes, householdRes] = await Promise.all([
-             fetch(`${SHEETDB_API_URL}/search?StudentID=${gState.selectedStudentId}&sheet=Students`),
-             fetch(`${SHEETDB_API_URL}/search?RecordID=${gState.currentRecordId}&sheet=VisitData`),
-             fetch(`${SHEETDB_API_URL}/search?RecordID=${gState.currentRecordId}&sheet=HouseholdMembers`)
-          ]);
+          setLoading(true, 'กำลังดึงข้อมูลจาก Server...');
+          
+          // เรียก GAS ครั้งเดียว ได้ข้อมูลครบ 3 ก้อน
+          const res = await fetch(GAS_API_URL, { 
+              method: 'POST', 
+              body: JSON.stringify({ action: 'getStudentVisitData', recordId: gState.currentRecordId }) 
+          });
+          const json = await res.json();
 
-          if (!studentRes.ok || !visitRes.ok || !householdRes.ok) throw new Error("เชื่อมต่อฐานข้อมูลไม่สำเร็จ");
-
-          const studentData = await studentRes.json();
-          const visitData = await visitRes.json();
-          const householdData = await householdRes.json();
-
-          const data = {
-            studentMaster: (studentData.length > 0) ? studentData[0] : null,
-            visitData: (visitData.length > 0) ? visitData[0] : null,
-            householdData: householdData
-          };
-          loadStudentDataSuccess(data);
+          if (json.studentMaster) {
+             const data = {
+                studentMaster: json.studentMaster,
+                visitData: json.visitData,
+                householdData: json.householdData
+             };
+             loadStudentDataSuccess(data);
+          } else {
+             throw new Error("ไม่พบข้อมูลนักเรียนในฐานข้อมูล");
+          }
         }
       } catch (error) {
         console.error("StartForm Error:", error);
-        localStorage.removeItem(`visit_${gState.currentRecordId}`); // ล้างแคชตัวปัญหา
-        handleError(new Error("พบข้อมูลเก่าเสียหาย ระบบได้ทำการล้างค่าแล้ว กรุณากด 'เริ่มกรอกข้อมูล' ใหม่อีกครั้งครับ"));
+        localStorage.removeItem(`visit_${gState.currentRecordId}`);
+        handleError(new Error("เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่อีกครั้ง"));
       }
     }
-
     function loadStudentDataSuccess(data) {
       gState.originalData = JSON.parse(JSON.stringify(data));
       prefillForm(data.studentMaster, data.visitData);
@@ -1026,36 +1019,53 @@
       if(cpModalEl) {
           const cpModal = new bootstrap.Modal(cpModalEl);
           document.getElementById('open-change-pwd-btn').addEventListener('click', (e)=>{ e.preventDefault(); cpModal.show(); });
-          document.getElementById('save-new-pass-btn').addEventListener('click', async ()=>{
-              // Logic เปลี่ยนรหัสผ่าน (เหมือนเดิม)
-              const [em, op, np] = [document.getElementById('cp-email').value, document.getElementById('cp-old-pass').value, document.getElementById('cp-new-pass').value];
-              if(!em || !op || !np) return Swal.fire('Error','กรอกให้ครบ','error');
-              try {
-                 setLoading(true);
-                 const res = await fetch(`${SHEETDB_API_URL}/search?Email=${encodeURIComponent(em)}&Password=${encodeURIComponent(op)}&sheet=Users`);
-                 const u = await res.json();
-                 if(u && u.length > 0) {
-                     await fetch(`${SHEETDB_API_URL}/Email/${encodeURIComponent(em)}?sheet=Users`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:{Password:np}}) });
-                     cpModal.hide(); Swal.fire('สำเร็จ','เปลี่ยนรหัสแล้ว','success');
-                 } else throw new Error('ข้อมูลเดิมไม่ถูกต้อง');
-              } catch(e){ Swal.fire('Error',e.message,'error'); } finally { setLoading(false); }
-          });
-      }
-    }
+      // ปรับปรุง: เปลี่ยนรหัสผ่านผ่าน GAS (changePassword)
+       document.getElementById('save-new-pass-btn').onclick = async ()=>{
+           const [em, o, n] = [document.getElementById('cp-email').value, document.getElementById('cp-old-pass').value, document.getElementById('cp-new-pass').value];
+           if(!em||!o||!n) return Swal.fire('Error','กรอกให้ครบ','error');
+           
+           try { 
+               setLoading(true);
+               const res = await fetch(GAS_API_URL, { 
+                   method: 'POST', 
+                   body: JSON.stringify({ action: 'changePassword', email: em, oldPass: o, newPass: n }) 
+               });
+               const json = await res.json();
+               
+               if(json.success) { 
+                   Swal.fire('สำเร็จ','เปลี่ยนรหัสแล้ว','success'); 
+                   const modal = bootstrap.Modal.getInstance(document.getElementById('changePasswordModal'));
+                   if(modal) modal.hide();
+               } else { 
+                   throw new Error(json.error || 'เปลี่ยนรหัสไม่สำเร็จ'); 
+               }
+           } catch(err){
+               Swal.fire('Error',err.message,'error');
+           } finally{
+               setLoading(false);
+           }
+       };
     
-    // --- Print Logic Handlers ---
+    // ปรับปรุง: ดึงรายชื่อเพื่อพิมพ์ผ่าน GAS
     async function handleLoadPrintList() {
-         const cls = el.printClassSelect.value;
+         const cls = el.printClassSelect.value; 
          if(!cls) { Swal.fire('แจ้งเตือน', 'กรุณาเลือกชั้นเรียน', 'warning'); return; }
+         
          setLoading(true, 'ดึงรายชื่อ...');
-         el.printListContainer.style.display = 'none'; el.printTableBody.innerHTML = '';
+         el.printListContainer.style.display = 'none'; 
+         el.printTableBody.innerHTML = '';
+         
          try {
-            const res = await fetch(`${SHEETDB_API_URL}/search?Class=${encodeURIComponent(cls)}&sheet=Students`);
-            const students = await res.json();
-            students.sort((a,b) => parseInt(a.StudentNumber)-parseInt(b.StudentNumber));
+            // ใช้ getStudentsByClass เหมือนตอนเลือกห้อง
+            const res = await fetch(GAS_API_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({ action: 'getStudentsByClass', className: cls }) 
+            });
+            const students = await res.json(); // ได้ Array กลับมาเลย
+            
             students.forEach(s => {
-                const rid = `${s.StudentID}_${el.printSemester.value}_${el.printYear.value}`;
-                el.printTableBody.innerHTML += `<tr><td class="text-center">${s.StudentNumber}</td><td>${s.Prefix}${s.FirstName} ${s.LastName}</td><td class="text-center"><button class="btn btn-sm btn-danger print-single-btn" data-rid="${rid}" data-name="${s.FirstName}"><i class="bi bi-printer"></i> PDF</button></td></tr>`;
+                const rid = `${s.id}_${el.printSemester.value}_${el.printYear.value}`;
+                el.printTableBody.innerHTML += `<tr><td class="text-center">${s.studentNumber}</td><td>${s.name}</td><td class="text-center"><button class="btn btn-sm btn-danger print-single-btn" data-rid="${rid}" data-name="${s.name}"><i class="bi bi-printer"></i> PDF</button></td></tr>`;
             });
             el.printListContainer.style.display = 'block';
          } catch(e) { handleError(e); } finally { setLoading(false); }
@@ -1454,6 +1464,7 @@
   </script>
 </body>
 </html>
+
 
 
 
