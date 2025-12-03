@@ -291,8 +291,27 @@
 
             <div id="section-4" class="form-section card card-body mb-3"><h4 class="mb-3 border-bottom pb-2">ส่วนที่ 4: สถาบัน</h4><div id="q4-content" class="conditional-subsection"><p class="text-danger p-3">เฉพาะนักเรียนที่อยู่กับสถาบัน</p><div class="p-3"><div class="mb-3"><label>ประเภท</label><input type="text" id="Q4_Inst_Type" name="Q4_Inst_Type" class="form-control"></div><div class="mb-3"><label>ชื่อสถาบัน</label><input type="text" id="Q4_Inst_Name" name="Q4_Inst_Name" class="form-control"></div></div></div></div>
 
-            <div id="section-5" class="form-section card card-body mb-3"><h4 class="mb-3 border-bottom pb-2">ส่วนที่ 5: การเดินทาง</h4><div class="row"><div class="col-md-6 mb-3"><label>วิธีเดินทาง</label><select id="Q5_TravelMethod" name="Q5_TravelMethod" class="form-select"><option value="">-- เลือก --</option><option>เดิน</option><option>จักรยาน</option><option>รถจักรยานยนต์</option><option>รถยนต์</option><option>รถโรงเรียน</option><option>รถโดยสาร</option></select></div><div class="col-md-6 mb-3"><label>ระยะทาง (กม.)</label><input type="number" id="Q5_Distance_km" name="Q5_Distance_km" class="form-control"></div><div class="col-md-6 mb-3"><label>ค่าใช้จ่าย (บาท/เดือน)</label><input type="number" id="Q5_Cost_per_month" name="Q5_Cost_per_month" class="form-control"></div><div class="col-md-6 mb-3"><label>เงินมาโรงเรียน (บาท/วัน)</label><input type="number" id="Q5_Allowance_per_day" name="Q5_Allowance_per_day" class="form-control"></div></div></div>
-
+            <div id="section-5" class="form-section card card-body mb-3">
+              <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 5: การเดินทาง</h4>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label>วิธีเดินทาง</label>
+                  <select id="Q5_TravelMethod" name="Q5_TravelMethod" class="form-select">
+                    <option value="">-- เลือก --</option>
+                    <option>เดิน</option>
+                    <option>จักรยาน</option>
+                    <option>รถจักรยานยนต์</option>
+                    <option>รถยนต์</option>
+                    <option>รถโรงเรียน</option>
+                    <option>รถโดยสาร</option>
+                    <option>ผู้ปกครองมาส่ง</option> </select>
+                </div>
+                <div class="col-md-6 mb-3"><label>ระยะทาง (กม.)</label><input type="number" id="Q5_Distance_km" name="Q5_Distance_km" class="form-control"></div>
+                <div class="col-md-6 mb-3"><label>ค่าใช้จ่าย (บาท/เดือน)</label><input type="number" id="Q5_Cost_per_month" name="Q5_Cost_per_month" class="form-control"></div>
+                <div class="col-md-6 mb-3"><label>เงินมาโรงเรียน (บาท/วัน)</label><input type="number" id="Q5_Allowance_per_day" name="Q5_Allowance_per_day" class="form-control"></div>
+              </div>
+            </div>
+            
             <div id="section-6" class="form-section card card-body mb-3">
               <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 6: ที่พักอาศัย</h4>
               <div class="row"><div class="col-md-3 mb-3"><label>บ้านเลขที่</label><input type="text" id="Q6_Addr_Number" name="Q6_Addr_Number" class="form-control"></div><div class="col-md-3 mb-3"><label>หมู่ที่</label><input type="text" id="Q6_Addr_Moo" name="Q6_Addr_Moo" class="form-control"></div><div class="col-md-6 mb-3"><label>หมู่บ้าน</label><select id="Q6_Addr_Village" name="Q6_Addr_Village" class="form-select"><option value="">-- เลือก --</option><option value="บ้านทุ่งยาว">บ้านทุ่งยาว</option><option value="บ้านวังขวัญ">บ้านวังขวัญ</option><option value="บ้านหนองดู่">บ้านหนองดู่</option><option value="บ้านวังโพรง">บ้านวังโพรง</option><option value="บ้านเขาเขียว">บ้านเขาเขียว</option><option value="บ้านใหม่คลองตาลัด">บ้านใหม่คลองตาลัด</option><option value="บ้านวังโพรงเก่า">บ้านวังโพรงเก่า</option><option value="บ้านวังกะทะ">บ้านวังกะทะ</option><option value="บ้านหนองมะดูก">บ้านหนองมะดูก</option><option value="บ้านคลองตะเคียน">บ้านคลองตะเคียน</option><option value="บ้านไทรดงยั้ง">บ้านไทรดงยั้ง</option><option value="บ้านวังดินเหนียว">บ้านวังดินเหนียว</option><option value="บ้านหนองชาละวัน">บ้านหนองชาละวัน</option><option value="บ้านทุ่งนาดี">บ้านทุ่งนาดี</option><option value="บ้านวังยาง">บ้านวังยาง</option><option value="บ้านวังยางใต้">บ้านวังยางใต้</option><option value="บ้านวังหิน">บ้านวังหิน</option><option value="บ้านวังสมบัติ">บ้านวังสมบัติ</option><option value="บ้านน้ำอ้อม">บ้านน้ำอ้อม</option><option value="บ้านวังใหญ่">บ้านวังใหญ่</option><option value="บ้านวังพลับ">บ้านวังพลับ</option><option value="บ้านวังหินเหนือ">บ้านวังหินเหนือ</option><option value="บ้านวังหินซองใต้">บ้านวังหินซองใต้</option><option value="บ้านวังสะพุง">บ้านวังสะพุง</option><option value="บ้านดงเจริญ">บ้านดงเจริญ</option><option value="บ้านใหม่วังตะเคียน">บ้านใหม่วังตะเคียน</option><option value="บ้านวังหินซองเหนือ">บ้านวังหินซองเหนือ</option><option value="บ้านเนินสวรรค์">บ้านเนินสวรรค์</option><option value="บ้านวังไทรงาม">บ้านวังไทรงาม</option><option value="บ้านเนินศิลาเพชร">บ้านเนินศิลาเพชร</option><option value="บ้านวังน้ำอ้อมใต้">บ้านวังน้ำอ้อมใต้</option><option value="บ้านวังสะพุงใต้">บ้านวังสะพุงใต้</option><option value="บ้านวังหินทอง">บ้านวังหินทอง</option></select></div></div>
@@ -1435,5 +1454,6 @@
   </script>
 </body>
 </html>
+
 
 
