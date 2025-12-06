@@ -529,7 +529,7 @@
     const CLOUDINARY_UPLOAD_PRESET = "ml_default"; 
     const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
     
-    // 🔴🔴 สำคัญ! แก้ URL ให้เป็นของคุณ 🔴🔴
+    // 🔴🔴 สำคัญ! ตรวจสอบ URL ของคุณอีกครั้ง 🔴🔴
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyZBFYUglarDmKqt_uvubHyjbd7cByHviNcfwOhMWCVT7eDwQyfEwEoMR2ISoMGgE-h/exec"; 
 
     const gState = { currentUser: null, selectedStudentId: null, selectedStudentName: null, currentRecordId: null, originalData: {}, changesToPush: {}, householdMembers: [], isLoading: false };
@@ -552,6 +552,7 @@
       } catch (err) { alert("Init Error: " + err.message); if(SCREENS.loading) SCREENS.loading.style.display = 'none'; }
     });
 
+    // --- Authentication ---
     async function handleManualLogin(e) { e.preventDefault(); setLoading(true); if(el.loginBtn) el.loginBtn.disabled=true; if(el.loginErrorMessage) el.loginErrorMessage.style.display='none'; 
       try { 
          const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'checkLogin', email: el.loginEmailInput.value, password: el.loginPasswordInput.value }) });
@@ -570,10 +571,12 @@
     function handleLoginFailure(e) { setLoading(false); gState.currentUser=null; showScreen('login'); if(el.loginBtn) el.loginBtn.disabled=false; if(el.loginErrorMessage){ el.loginErrorMessage.textContent=e; el.loginErrorMessage.style.display='block'; } else alert(e); }
     function handleLogout() { Swal.fire({title:'Logout?', showCancelButton:true}).then(r=>{ if(r.isConfirmed){ localStorage.removeItem(`visit_${gState.currentRecordId}`); window.location.reload(); }}); }
 
+    // --- Screen Navigation ---
     function showScreen(id) { if(!SCREENS.loading)return; if(el.mainNavbar) el.mainNavbar.style.display=(id==='login'||id==='loading')?'none':'block'; Object.values(SCREENS).forEach(s=>s.style.display='none'); if(SCREENS[id]) SCREENS[id].style.display='block'; if(el.navHomeLink){ el.navHomeLink.classList.toggle('active',id==='selection'||id==='form'); el.navDashboardLink.classList.toggle('active',id==='dashboard'); el.navPrintLink.classList.toggle('active',id==='print'); } }
     function setLoading(l,m='Loading...') { gState.isLoading=l; if(SCREENS.loading){ SCREENS.loading.querySelector('p').textContent=m; SCREENS.loading.style.display=l?'flex':'none'; } }
     function handleError(e) { setLoading(false); Swal.fire('Error',e.message||e,'error'); if(el.loginBtn)el.loginBtn.disabled=false; if(el.saveBtn){el.saveBtn.disabled=false; el.saveBtn.innerHTML=`บันทึก (${Object.keys(gState.changesToPush).length})`;} }
 
+    // --- Selection & Form Loading ---
     function populateClassDropdown(c) { el.classSelect.innerHTML='<option value="">-- เลือก --</option>'; c.forEach(x=>el.classSelect.add(new Option(x,x))); }
     async function handleClassChange() { const c=el.classSelect.value; if(!c){el.studentSelect.disabled=true;return;} el.studentSelect.disabled=true; setLoading(true); 
        try{ 
@@ -648,6 +651,12 @@
                    const el = document.getElementsByName(k)[0] || document.getElementById(k);
                    if(el) el.dispatchEvent(new Event('change'));
                 }
+                
+                // Trigger logic for Q11
+                if(['Q11_IsAtRisk','Q11_Risk_Behavior'].includes(k)) {
+                   const el = document.getElementById(k);
+                   if(el) el.dispatchEvent(new Event('change'));
+                }
              }
           }
        }
@@ -664,6 +673,7 @@
        el.householdTbody.innerHTML=''; el.studentSelect.value='';
        if(el.q4Content) el.q4Content.style.display='none';
        if(el.q3_1_SubOptions) el.q3_1_SubOptions.style.display='none';
+       document.getElementById('risk-details').style.display='none'; // Reset Q11
        el.saveBtn.disabled=true; el.saveBtn.innerHTML='บันทึก (0)'; updateProgressBar(0);
     }
 
@@ -680,39 +690,15 @@
     }
     function updateProgressBar(p) { if(el.progressBar){el.progressBar.style.width=`${p}%`; el.progressBar.innerText=`${p}%`;} if(el.progressText)el.progressText.innerText=`${p}%`; }
 
+    // --- Events ---
     function bindEventListeners() {
-      // ปุ่ม Navbar
-      if (el.navHomeLink) el.navHomeLink.onclick = (e) => {
-        e.preventDefault();
-        if (SCREENS.form.style.display === 'block') handleBackToSelection();
-        else showScreen('selection');
-      };
-
-      if (el.navDashboardLink) el.navDashboardLink.onclick = (e) => {
-        e.preventDefault();
-        if (SCREENS.form.style.display === 'block') {
-          handleBackToSelection(() => showScreen('dashboard'));
-        } else {
-          showScreen('dashboard');
-        }
-      };
-
-      if (el.navPrintLink) el.navPrintLink.onclick = (e) => {
-        e.preventDefault();
-        if (SCREENS.form.style.display === 'block') {
-          handleBackToSelection(() => showScreen('print'));
-        } else {
-          showScreen('print');
-        }
-        if (el.classSelect.value) {
-          el.printClassSelect.innerHTML = el.classSelect.innerHTML;
-          el.printClassSelect.value = el.classSelect.value;
-        }
-      };
-
+      // Navbar
+      if (el.navHomeLink) el.navHomeLink.onclick = (e) => { e.preventDefault(); if (SCREENS.form.style.display === 'block') handleBackToSelection(); else showScreen('selection'); };
+      if (el.navDashboardLink) el.navDashboardLink.onclick = (e) => { e.preventDefault(); if (SCREENS.form.style.display === 'block') handleBackToSelection(() => showScreen('dashboard')); else showScreen('dashboard'); };
+      if (el.navPrintLink) el.navPrintLink.onclick = (e) => { e.preventDefault(); if (SCREENS.form.style.display === 'block') handleBackToSelection(() => showScreen('print')); else showScreen('print'); if (el.classSelect.value) { el.printClassSelect.innerHTML = el.classSelect.innerHTML; el.printClassSelect.value = el.classSelect.value; } };
       if (el.navLogoutBtn) el.navLogoutBtn.onclick = handleLogout;
 
-      // ปุ่มฟอร์มหลัก
+      // Form
       if (el.loginForm) el.loginForm.onsubmit = handleManualLogin;
       if (el.classSelect) el.classSelect.onchange = handleClassChange;
       if (el.studentSelect) el.studentSelect.onchange = validateStartButton;
@@ -722,21 +708,16 @@
       if (el.gpsBtn) el.gpsBtn.onclick = handleGPSButton;
       if (el.addMemberBtn) el.addMemberBtn.onclick = () => editHouseholdMember(-1);
 
-      // ปุ่มหน้า Print
+      // Print
       if (el.loadPrintListBtn) el.loadPrintListBtn.onclick = handleLoadPrintList;
       if (el.printAllBtn) el.printAllBtn.onclick = handleBatchPrint;
       if (el.printTableBody) el.printTableBody.onclick = handlePrintTableClick;
       if (el.backFromPrintBtn) el.backFromPrintBtn.onclick = () => showScreen('selection');
 
-      // Sidebar Link Navigation
-      el.sidebarLinks.forEach(link => {
-        link.onclick = (e) => {
-          e.preventDefault();
-          showSection(link.getAttribute('data-section'));
-        };
-      });
+      // Sidebar
+      el.sidebarLinks.forEach(link => { link.onclick = (e) => { e.preventDefault(); showSection(link.getAttribute('data-section')); }; });
 
-      // Event Listeners อื่นๆ
+      // Conditional Logic
       if (el.livesWithSelect) el.livesWithSelect.onchange = (e) => el.q4Content.style.display = (e.target.value === 'ครัวเรือนสถาบัน') ? 'block' : 'none';
       el.q3_1_Status.forEach(r => r.onchange = (e) => el.q3_1_SubOptions.style.display = (e.target.value === 'มี') ? 'block' : 'none');
       el.q3_4_Status.forEach(r => r.onchange = (e) => el.q3_4_SubOptions.style.display = (e.target.value === 'ทำ') ? 'block' : 'none');
@@ -744,138 +725,69 @@
       const incChk = document.getElementById('Q3_StudentIncome_Has');
       if (incChk) incChk.onchange = (e) => {
         const inps = [document.getElementsByName('Q3_StudentIncome_Detail')[0], document.getElementsByName('Q3_StudentIncome_Amount')[0]];
-        inps.forEach(i => {
-          if (i) {
-            i.disabled = !e.target.checked;
-            if (!e.target.checked) i.value = '';
-          }
-        });
+        inps.forEach(i => { if (i) { i.disabled = !e.target.checked; if (!e.target.checked) i.value = ''; } });
         trackChange('Q3_StudentIncome_Has', e.target.checked ? "TRUE" : "FALSE");
       };
       document.querySelectorAll('.file-upload-input').forEach(i => i.onchange = handleFileUpload);
 
-      // --- ส่วนจัดการเปลี่ยนรหัสผ่าน (แก้ไขใหม่) ---
+      // Change Password
       const cpBtn = document.getElementById('open-change-pwd-btn');
-      if (cpBtn) cpBtn.onclick = (e) => {
-        e.preventDefault();
-        new bootstrap.Modal(document.getElementById('changePasswordModal')).show();
-      };
-
+      if (cpBtn) cpBtn.onclick = (e) => { e.preventDefault(); new bootstrap.Modal(document.getElementById('changePasswordModal')).show(); };
       const savePassBtn = document.getElementById('save-new-pass-btn');
       if(savePassBtn) savePassBtn.onclick = async () => {
-        const email = document.getElementById('cp-email').value;
-        const oldPass = document.getElementById('cp-old-pass').value;
-        const newPass = document.getElementById('cp-new-pass').value;
-
-        if (!email || !oldPass || !newPass) {
-          return Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
-        }
-
-        try {
-          setLoading(true, 'กำลังเปลี่ยนรหัสผ่าน...');
-          const res = await fetch(GAS_API_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'changePassword', email: email, oldPass: oldPass, newPass: newPass })
-          });
-          const json = await res.json();
-          if (json.success) {
-            Swal.fire('สำเร็จ', 'เปลี่ยนรหัสผ่านเรียบร้อยแล้ว', 'success');
-            const modalEl = document.getElementById('changePasswordModal');
-            const modalInstance = bootstrap.Modal.getInstance(modalEl);
-            if (modalInstance) modalInstance.hide();
-            document.getElementById('cp-old-pass').value = '';
-            document.getElementById('cp-new-pass').value = '';
-          } else {
-            throw new Error(json.error || 'เปลี่ยนรหัสผ่านไม่สำเร็จ');
-          }
-        } catch (err) {
-          Swal.fire('เกิดข้อผิดพลาด', err.message, 'error');
-        } finally {
-          setLoading(false);
-        }
+        const [em,o,n] = [document.getElementById('cp-email').value, document.getElementById('cp-old-pass').value, document.getElementById('cp-new-pass').value];
+        if (!em || !o || !n) return Swal.fire('เตือน', 'กรอกให้ครบ', 'warning');
+        try { setLoading(true, 'เปลี่ยนรหัส...'); const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'changePassword', email: em, oldPass: o, newPass: n }) });
+          const json = await res.json(); if (json.success) { Swal.fire('สำเร็จ', 'เรียบร้อย', 'success'); bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide(); } else throw new Error(json.error);
+        } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { setLoading(false); }
       };
-    }
-      // --- Logic ส่วนที่ 11 (กลุ่มเสี่ยง) ---
+
+      // Q11 Risk Logic
       const riskToggle = document.getElementById('Q11_IsAtRisk');
       const riskDetails = document.getElementById('risk-details');
-      
-      // เมื่อติ๊ก "นักเรียนกลุ่มเสี่ยง" ให้แสดงรายละเอียด
       if (riskToggle) {
           riskToggle.addEventListener('change', (e) => {
               riskDetails.style.display = e.target.checked ? 'block' : 'none';
-              // ถ้าปิด ให้เคลียร์ค่า หรือซ่อนส่วนย่อย (Optional)
-              if(!e.target.checked) {
-                 // อาจจะเลือกไม่ทำอะไร เพื่อเก็บค่าที่เคยติ๊กไว้
-              }
               trackChange('Q11_IsAtRisk', e.target.checked ? "TRUE" : "FALSE");
           });
       }
-
-      // เมื่อติ๊ก "ด้านพฤติกรรม" ให้แสดง Checkbox ย่อย
       const behToggle = document.getElementById('Q11_Risk_Behavior');
       const behOptions = document.getElementById('risk-behavior-options');
       if (behToggle) {
-          behToggle.addEventListener('change', (e) => {
-              behOptions.style.display = e.target.checked ? 'block' : 'none';
-          });
+          behToggle.addEventListener('change', (e) => { behOptions.style.display = e.target.checked ? 'block' : 'none'; });
       }
-
-      // เมื่อติ๊ก "อื่นๆ" ให้แสดงช่องพิมพ์
       const othRiskCheck = document.getElementById('Q11_B_Other_Check');
       const othRiskText = document.getElementById('Q11_B_Other_Text');
       if (othRiskCheck) {
-          othRiskCheck.addEventListener('change', (e) => {
-              othRiskText.style.display = e.target.checked ? 'block' : 'none';
-              if (!e.target.checked) othRiskText.value = '';
-          });
+          othRiskCheck.addEventListener('change', (e) => { othRiskText.style.display = e.target.checked ? 'block' : 'none'; if (!e.target.checked) othRiskText.value = ''; });
       }
-      
     }
 
-    // --- Print Logic ---
+    // --- Print ---
     async function handleLoadPrintList() {
-         const cls = el.printClassSelect.value; if(!cls) return Swal.fire('เตือน','เลือกชั้น','warning');
-         setLoading(true); el.printListContainer.style.display='none'; el.printTableBody.innerHTML='';
-         try {
-            const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentsByClass', className: cls }) });
-            const d = await res.json(); 
-            if(d && Array.isArray(d)) {
-                d.forEach(s=>{
-                    const rid = `${s.id}_${el.printSemester.value}_${el.printYear.value}`;
-                    el.printTableBody.innerHTML += `<tr><td class="text-center">${s.studentNumber}</td><td>${s.name}</td><td class="text-center"><button class="btn btn-sm btn-danger print-single-btn" data-rid="${rid}" data-name="${s.name}">PDF</button></td></tr>`;
-                });
-                el.printListContainer.style.display='block';
-            }
-         } catch(e){handleError(e);} finally{setLoading(false);}
+       const cls = el.printClassSelect.value; if(!cls) return Swal.fire('เตือน','เลือกชั้น','warning');
+       setLoading(true); el.printListContainer.style.display='none'; el.printTableBody.innerHTML='';
+       try { const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentsByClass', className: cls }) });
+         const d = await res.json(); 
+         if(d && Array.isArray(d)) { d.forEach(s=>{ const rid = `${s.id}_${el.printSemester.value}_${el.printYear.value}`; el.printTableBody.innerHTML += `<tr><td class="text-center">${s.studentNumber}</td><td>${s.name}</td><td class="text-center"><button class="btn btn-sm btn-danger print-single-btn" data-rid="${rid}" data-name="${s.name}">PDF</button></td></tr>`; }); el.printListContainer.style.display='block'; }
+       } catch(e){handleError(e);} finally{setLoading(false);}
     }
     function handlePrintTableClick(e) { const btn=e.target.closest('.print-single-btn'); if(btn) generateSinglePDF(btn.dataset.rid, btn.dataset.name); }
     async function handleBatchPrint() {
-         const btns = document.querySelectorAll('.print-single-btn'); if(btns.length==0)return;
-         if((await Swal.fire({title:`พิมพ์ ${btns.length} คน?`, showCancelButton:true})).isConfirmed) {
-             for(const btn of btns) {
-                 btn.scrollIntoView({behavior:'smooth',block:'center'}); btn.disabled=true; btn.innerHTML='...';
-                 try { await generateSinglePDF(btn.dataset.rid, btn.dataset.name, true); btn.className='btn btn-sm btn-success'; btn.innerHTML='OK'; }
-                 catch { btn.className='btn btn-sm btn-secondary'; btn.innerHTML='X'; }
-                 await new Promise(r=>setTimeout(r,1000));
-             }
-             Swal.fire('เสร็จสิ้น','','success');
-         }
+       const btns = document.querySelectorAll('.print-single-btn'); if(btns.length==0)return;
+       if((await Swal.fire({title:`พิมพ์ ${btns.length} คน?`, showCancelButton:true})).isConfirmed) {
+           for(const btn of btns) { btn.scrollIntoView({behavior:'smooth',block:'center'}); btn.disabled=true; btn.innerHTML='...'; try { await generateSinglePDF(btn.dataset.rid, btn.dataset.name, true); btn.className='btn btn-sm btn-success'; btn.innerHTML='OK'; } catch { btn.className='btn btn-sm btn-secondary'; btn.innerHTML='X'; } await new Promise(r=>setTimeout(r,1000)); } Swal.fire('เสร็จสิ้น','','success');
+       }
     }
     async function generateSinglePDF(rid, name, batch=false) {
-        if(!GAS_API_URL) return Swal.fire('Error','No API','error');
-        if(!batch) setLoading(true, `PDF ${name}...`);
-        try {
-            const res = await fetch(GAS_API_URL, {method:'POST', body:JSON.stringify({action:'generatePDF', recordId:rid})});
-            const d = await res.json();
-            if(d.success) { window.open(d.url,'_blank'); if(!batch){setLoading(false);Swal.fire('สำเร็จ','','success');} return true; }
-            else throw new Error(d.error);
-        } catch(e) { if(!batch) handleError(e); throw e; }
+       if(!GAS_API_URL) return Swal.fire('Error','No API','error'); if(!batch) setLoading(true, `PDF ${name}...`);
+       try { const res = await fetch(GAS_API_URL, {method:'POST', body:JSON.stringify({action:'generatePDF', recordId:rid})}); const d = await res.json(); if(d.success) { window.open(d.url,'_blank'); if(!batch){setLoading(false);Swal.fire('สำเร็จ','','success');} return true; } else throw new Error(d.error); } catch(e) { if(!batch) handleError(e); throw e; }
     }
 
+    // --- Helpers ---
     function showSection(id) { el.formSections.forEach(s=>s.classList.toggle('active',s.id===id)); el.sidebarLinks.forEach(l=>l.classList.toggle('active',l.getAttribute('data-section')===id)); window.scrollTo(0,0); }
     function handleGPSButton() { navigator.geolocation.getCurrentPosition(p=>{ const [lat,lon]=[p.coords.latitude.toFixed(6),p.coords.longitude.toFixed(6)]; document.getElementById('Q6_Addr_Latitude').value=lat; document.getElementById('Q6_Addr_Longitude').value=lon; trackChange('Q6_Addr_Latitude',lat); trackChange('Q6_Addr_Longitude',lon); saveToLocalStorage(); }, e=>Swal.fire('Error',e.message,'error')); }
     function deleteImage(n) { document.getElementById(n).value=""; document.getElementById(`wrapper_${n}`).style.display='none'; trackChange(n,""); saveToLocalStorage(); }
-    
     async function handleFileUpload(e) {
       const f=e.target.files[0]; if(!f)return; const id=e.target.dataset.targetHidden;
       const prev=document.getElementById(`preview_${id}`), wrap=document.getElementById(`wrapper_${id}`), del=wrap.querySelector('.btn-delete-img');
@@ -885,329 +797,103 @@
       prev.src=d.secure_url; del.style.display='block'; document.getElementById(id).value=d.secure_url; trackChange(id,d.secure_url); saveToLocalStorage(); } catch(e){ handleError(e); }
     }
 
-  // --- Household Logic (แก้ไขให้ปุ่มใช้งานได้) ---
+    // --- Household (Fixed) ---
     function renderHouseholdTable(m) {
-      // ป้องกันกรณีส่งมาเป็น null
-      gState.householdMembers = Array.isArray(m) ? m : []; 
-      el.householdTbody.innerHTML = '';
-      
-      // Auto Add Default Members (ถ้ายังไม่มีข้อมูล)
+      gState.householdMembers = Array.isArray(m) ? m : []; el.householdTbody.innerHTML = '';
       if (gState.householdMembers.length === 0 && gState.originalData.studentMaster) {
          const sm = gState.originalData.studentMaster;
          gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName} ${sm.LastName}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 });
-         
-         // เพิ่มแถวว่างสำหรับ พ่อ/แม่ รอไว้เลย
          gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 2, MemberName: sm.FatherName || '', Relation: 'บิดา', Phone: sm.FatherPhone || '', Education: sm.FatherJob || '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
          gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: sm.MotherName || '', Relation: 'มารดา', Phone: sm.MotherPhone || '', Education: sm.MotherJob || '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
       }
-      
-      // วนลูปสร้างแถวตาราง
       gState.householdMembers.forEach((x, i) => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${i + 1}</td>
-          <td class="text-start">${x.MemberName || ''}</td>
-          <td>${x.Relation || ''}</td>
-          <td>${x.Phone || '-'}</td>
-          <td>${x.MemberEducation || x.Education || '-'}</td>
-          <td>${x.CitizenID || '-'}</td>
-          <td>${x.Age || '-'}</td>
-          <td>${x.IsDisabledOrChronic == 'TRUE' ? '/' : ''}</td>
-          <td>${x.Got10kDigitalWallet == 'TRUE' ? '/' : ''}</td>
-          <td class="text-end">${(x.Income_Total || 0).toLocaleString()}</td>
-          <td><button type="button" class="btn btn-sm btn-primary edit-btn">แก้</button></td>
-          <td>${x.Relation != 'นักเรียน' ? `<button type="button" class="btn btn-sm btn-danger del-btn">ลบ</button>` : ''}</td>
-        `;
-        
-        // *สำคัญ* ผูก Event Listener โดยตรงที่ปุ่ม (แก้ปัญหาปุ่มกดไม่ได้)
+        tr.innerHTML = `<td>${i + 1}</td><td class="text-start">${x.MemberName || ''}</td><td>${x.Relation || ''}</td><td>${x.Phone || '-'}</td><td>${x.MemberEducation || x.Education || '-'}</td><td>${x.CitizenID || '-'}</td><td>${x.Age || '-'}</td><td>${x.IsDisabledOrChronic == 'TRUE' ? '/' : ''}</td><td>${x.Got10kDigitalWallet == 'TRUE' ? '/' : ''}</td><td class="text-end">${(x.Income_Total || 0).toLocaleString()}</td><td><button type="button" class="btn btn-sm btn-primary edit-btn">แก้</button></td><td>${x.Relation != 'นักเรียน' ? `<button type="button" class="btn btn-sm btn-danger del-btn">ลบ</button>` : ''}</td>`;
         tr.querySelector('.edit-btn').onclick = () => editHouseholdMember(i);
-        if (tr.querySelector('.del-btn')) {
-            tr.querySelector('.del-btn').onclick = () => removeHouseholdMember(i);
-        }
-        
+        if (tr.querySelector('.del-btn')) tr.querySelector('.del-btn').onclick = () => removeHouseholdMember(i);
         el.householdTbody.appendChild(tr);
       });
-      
       calculateHouseholdIncome();
     }
-    
-    // ฟังก์ชันแก้ไขสมาชิก (ฉบับแก้ไขบัคบันทึกข้อมูล + รองรับ Checkbox)
+
     window.editHouseholdMember = (index) => {
         const isNew = index === -1;
-        // ดึงข้อมูลเดิม (ถ้ามี) หรือสร้างใหม่
         const member = isNew ? { RecordID: gState.currentRecordId, IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE" } : { ...gState.householdMembers[index] };
-        
         const jobOpts = ["ไม่ได้ทำงาน", "ข้าราชการ/รัฐวิสาหกิจ", "พนักงานบริษัท", "รับจ้างทั่วไป", "เกษตรกร", "ค้าขาย", "ธุรกิจส่วนตัว", "อื่นๆ"];
         const eduOpts = ["ไม่ได้เรียน", "ประถมศึกษา", "มัธยมศึกษา", "ปวช./ปวส.", "ปริญญาตรี", "ปริญญาโท/เอก", "อื่นๆ"];
-
-        // ฟังก์ชันเช็คว่าค่าปัจจุบันมีในตัวเลือกไหม (ถ้าไม่มี ให้ปัดเป็น "อื่นๆ")
         const checkOpt = (opts, val) => opts.includes(val) ? val : (val && val.trim() !== "" ? 'อื่นๆ' : '');
-        
-        // เตรียมค่าเริ่มต้นสำหรับ Dropdown
         const currentJobSelect = checkOpt(jobOpts, member.MemberOccupation);
         const currentJobOther = currentJobSelect === 'อื่นๆ' || !jobOpts.includes(member.MemberOccupation) ? (member.MemberOccupation || '') : '';
-        
         const currentEduSelect = checkOpt(eduOpts, member.MemberEducation);
         const currentEduOther = currentEduSelect === 'อื่นๆ' || !eduOpts.includes(member.MemberEducation) ? (member.MemberEducation || '') : '';
 
-        Swal.fire({
-            title: isNew ? 'เพิ่มสมาชิก' : 'แก้ไขข้อมูล',
-            width: '700px',
-            html: `
-              <div class="row g-2 text-start">
-                 <div class="col-6"><label>ชื่อ-สกุล</label><input id="sw-Name" class="form-control" value="${member.MemberName || ''}"></div>
-                 <div class="col-6"><label>ความสัมพันธ์</label><input id="sw-Rel" class="form-control" value="${member.Relation || ''}"></div>
-                 
-                 <div class="col-6">
-                    <label>อาชีพ</label>
-                    <select id="sw-Job" class="form-select mb-2" onchange="document.getElementById('sw-Job-Other').style.display=this.value=='อื่นๆ'?'block':'none'">
-                        <option value="">-- เลือก --</option>
-                        ${jobOpts.map(o => `<option value="${o}" ${currentJobSelect === o ? 'selected' : ''}>${o}</option>`).join('')}
-                    </select>
-                    <input id="sw-Job-Other" class="form-control" placeholder="ระบุอาชีพ..." style="display:${currentJobSelect === 'อื่นๆ' ? 'block' : 'none'}" value="${currentJobOther}">
-                 </div>
-
-                 <div class="col-6">
-                    <label>การศึกษา</label>
-                     <select id="sw-Edu" class="form-select mb-2" onchange="document.getElementById('sw-Edu-Other').style.display=this.value=='อื่นๆ'?'block':'none'">
-                        <option value="">-- เลือก --</option>
-                        ${eduOpts.map(o => `<option value="${o}" ${currentEduSelect === o ? 'selected' : ''}>${o}</option>`).join('')}
-                    </select>
-                    <input id="sw-Edu-Other" class="form-control" placeholder="ระบุ..." style="display:${currentEduSelect === 'อื่นๆ' ? 'block' : 'none'}" value="${currentEduOther}">
-                 </div>
-
-                 <div class="col-6"><label>เบอร์โทร</label><input id="sw-Phone" class="form-control" value="${member.Phone || ''}"></div>
-                 <div class="col-6"><label>เลข ปชช.</label><input id="sw-Cit" class="form-control" value="${member.CitizenID || ''}"></div>
-                 <div class="col-4"><label>อายุ</label><input id="sw-Age" class="form-control" value="${member.Age || ''}"></div>
-                 <div class="col-8"><label>รายได้รวม</label><input id="sw-Inc" type="number" class="form-control" value="${member.Income_Total || 0}"></div>
-                 
-                 <div class="col-12 mt-2">
-                    <input type="checkbox" id="sw-Dis" ${String(member.IsDisabledOrChronic) === 'TRUE' ? 'checked' : ''}> พิการ/ป่วย &nbsp;&nbsp;
-                    <input type="checkbox" id="sw-10k" ${String(member.Got10kDigitalWallet) === 'TRUE' ? 'checked' : ''}> ได้เงิน 10k
-                 </div>
-              </div>
-            `,
-            focusConfirm: false,
-            preConfirm: () => {
-                let job = document.getElementById('sw-Job').value;
-                if (job === 'อื่นๆ') job = document.getElementById('sw-Job-Other').value;
-                
-                let edu = document.getElementById('sw-Edu').value;
-                if (edu === 'อื่นๆ') edu = document.getElementById('sw-Edu-Other').value;
-
-                return {
-                    MemberName: document.getElementById('sw-Name').value,
-                    Relation: document.getElementById('sw-Rel').value,
-                    MemberOccupation: job,
-                    MemberEducation: edu,
-                    Phone: document.getElementById('sw-Phone').value,
-                    CitizenID: document.getElementById('sw-Cit').value,
-                    Age: document.getElementById('sw-Age').value,
-                    Income_Total: document.getElementById('sw-Inc').value,
-                    IsDisabledOrChronic: document.getElementById('sw-Dis').checked ? "TRUE" : "FALSE",
-                    Got10kDigitalWallet: document.getElementById('sw-10k').checked ? "TRUE" : "FALSE"
-                };
+        Swal.fire({ title: isNew ? 'เพิ่มสมาชิก' : 'แก้ไขข้อมูล', width: '700px', html: `<div class="row g-2 text-start"><div class="col-6"><label>ชื่อ-สกุล</label><input id="sw-Name" class="form-control" value="${member.MemberName || ''}"></div><div class="col-6"><label>ความสัมพันธ์</label><input id="sw-Rel" class="form-control" value="${member.Relation || ''}"></div><div class="col-6"><label>อาชีพ</label><select id="sw-Job" class="form-select mb-2" onchange="document.getElementById('sw-Job-Other').style.display=this.value=='อื่นๆ'?'block':'none'"><option value="">-- เลือก --</option>${jobOpts.map(o => `<option value="${o}" ${currentJobSelect === o ? 'selected' : ''}>${o}</option>`).join('')}</select><input id="sw-Job-Other" class="form-control" placeholder="ระบุอาชีพ..." style="display:${currentJobSelect === 'อื่นๆ' ? 'block' : 'none'}" value="${currentJobOther}"></div><div class="col-6"><label>การศึกษา</label><select id="sw-Edu" class="form-select mb-2" onchange="document.getElementById('sw-Edu-Other').style.display=this.value=='อื่นๆ'?'block':'none'"><option value="">-- เลือก --</option>${eduOpts.map(o => `<option value="${o}" ${currentEduSelect === o ? 'selected' : ''}>${o}</option>`).join('')}</select><input id="sw-Edu-Other" class="form-control" placeholder="ระบุ..." style="display:${currentEduSelect === 'อื่นๆ' ? 'block' : 'none'}" value="${currentEduOther}"></div><div class="col-6"><label>เบอร์โทร</label><input id="sw-Phone" class="form-control" value="${member.Phone || ''}"></div><div class="col-6"><label>เลข ปชช.</label><input id="sw-Cit" class="form-control" value="${member.CitizenID || ''}"></div><div class="col-4"><label>อายุ</label><input id="sw-Age" class="form-control" value="${member.Age || ''}"></div><div class="col-8"><label>รายได้รวม</label><input id="sw-Inc" type="number" class="form-control" value="${member.Income_Total || 0}"></div><div class="col-12 mt-2"><input type="checkbox" id="sw-Dis" ${String(member.IsDisabledOrChronic) === 'TRUE' ? 'checked' : ''}> พิการ/ป่วย &nbsp;&nbsp; <input type="checkbox" id="sw-10k" ${String(member.Got10kDigitalWallet) === 'TRUE' ? 'checked' : ''}> ได้เงิน 10k</div></div>`, focusConfirm: false, preConfirm: () => {
+                let job = document.getElementById('sw-Job').value; if (job === 'อื่นๆ') job = document.getElementById('sw-Job-Other').value;
+                let edu = document.getElementById('sw-Edu').value; if (edu === 'อื่นๆ') edu = document.getElementById('sw-Edu-Other').value;
+                return { MemberName: document.getElementById('sw-Name').value, Relation: document.getElementById('sw-Rel').value, MemberOccupation: job, MemberEducation: edu, Phone: document.getElementById('sw-Phone').value, CitizenID: document.getElementById('sw-Cit').value, Age: document.getElementById('sw-Age').value, Income_Total: document.getElementById('sw-Inc').value, IsDisabledOrChronic: document.getElementById('sw-Dis').checked ? "TRUE" : "FALSE", Got10kDigitalWallet: document.getElementById('sw-10k').checked ? "TRUE" : "FALSE" };
             }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const updatedMember = { ...member, ...result.value };
-                
-                if (isNew) {
-                    gState.householdMembers.push(updatedMember);
-                } else {
-                    gState.householdMembers[index] = updatedMember;
-                }
-                
-                trackChange('household_changed', true);
-                renderHouseholdTable(gState.householdMembers);
-                saveToLocalStorage();
-            }
-        });
+        }).then((result) => { if (result.isConfirmed) { const updatedMember = { ...member, ...result.value }; if (isNew) gState.householdMembers.push(updatedMember); else gState.householdMembers[index] = updatedMember; trackChange('household_changed', true); renderHouseholdTable(gState.householdMembers); saveToLocalStorage(); } });
     };
 
-    // ฟังก์ชันลบสมาชิก (ต้องมีไว้ด้วย)
     window.removeHouseholdMember = (index) => {
-       Swal.fire({
-           title: 'ลบรายการนี้?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', confirmButtonColor: '#d33'
-       }).then((r) => {
-           if (r.isConfirmed) {
-               gState.householdMembers.splice(index, 1);
-               trackChange('household_changed', true);
-               renderHouseholdTable(gState.householdMembers);
-               saveToLocalStorage();
-           }
-       });
+       Swal.fire({ title: 'ลบรายการนี้?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', confirmButtonColor: '#d33' }).then((r) => { if (r.isConfirmed) { gState.householdMembers.splice(index, 1); trackChange('household_changed', true); renderHouseholdTable(gState.householdMembers); saveToLocalStorage(); } });
     };
-    window.removeHouseholdMember = (i) => { gState.householdMembers.splice(i,1); trackChange('household_changed',true); renderHouseholdTable(gState.householdMembers); saveToLocalStorage(); };
+
     function calculateHouseholdIncome() { const t=gState.householdMembers.length; const s=gState.householdMembers.reduce((a,b)=>a+(parseFloat(b.Income_Total)||0),0); el.totalMembersInput.value=t; el.totalIncomeInput.value=s; el.perCapitaIncomeInput.value=t>0?(s/t).toFixed(2):0; }
     
     function attachFormListeners() { document.querySelectorAll('#visit-form input, select, textarea').forEach(e=>{ if(e.type!='file') e.addEventListener('change', (ev)=>{ trackChange(ev.target.name, ev.target.type=='checkbox'?(ev.target.checked?"TRUE":"FALSE"):ev.target.value); saveToLocalStorage(); calculateProgress(); }); }); }
     function trackChange(n,v) { if(!n)return; if(n=='household_changed')gState.changesToPush['householdData']=true; else gState.changesToPush[n]=v; el.saveBtn.disabled=false; el.saveBtn.innerHTML=`บันทึก (${Object.keys(gState.changesToPush).length})`; }
     function saveToLocalStorage() { const d={studentMaster:gState.originalData.studentMaster, visitData:{}, householdData:gState.householdMembers}; const fd=new FormData(document.getElementById('visit-form')); fd.forEach((v,k)=>d.visitData[k]=v); document.querySelectorAll('input[type=checkbox]').forEach(c=>d.visitData[c.name]=c.checked?"TRUE":"FALSE"); localStorage.setItem(`visit_${gState.currentRecordId}`, JSON.stringify(d)); }
     function loadFromLocalStorage() { const d=localStorage.getItem(`visit_${gState.currentRecordId}`); return d?JSON.parse(d):null; }
-    
-    async function handleSaveToSheets() {
-        el.saveBtn.disabled = true;
-        el.saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
 
+    // --- Save & Sync Logic ---
+    async function handleSaveToSheets() {
+        el.saveBtn.disabled = true; el.saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
         try {
-            // ---------------------------------------------------------
-            // 1. ส่วนซิงค์ข้อมูล (Code ที่คุณครูถามหา)
-            // ---------------------------------------------------------
+            // 1. Sync
             const syncParent = (relation, prefixId) => {
                 const idx = gState.householdMembers.findIndex(m => m.Relation === relation);
                 const nameInput = document.getElementById(`${prefixId}Name`);
-                
-                // ถ้ามีสมาชิกคนนี้ในตาราง และในช่องกรอกมีข้อมูล ให้เอาข้อมูลจากช่องกรอกไปอัปเดตในตาราง
                 if (idx !== -1 && nameInput && nameInput.value.trim() !== "") {
-                    gState.householdMembers[idx].MemberName = document.getElementById(`${prefixId}Name`).value;
-                    gState.householdMembers[idx].Age = document.getElementById(`${prefixId}Age`).value;
-                    gState.householdMembers[idx].Phone = document.getElementById(`${prefixId}Phone`).value;
-                    gState.householdMembers[idx].CitizenID = document.getElementById(`${prefixId}CitizenID`).value;
-                    gState.householdMembers[idx].MemberOccupation = document.getElementById(`${prefixId}Job`).value;
-                    
-                    // บันทึกว่ามีการเปลี่ยนแปลง Household เพื่อให้ระบบส่งข้อมูลส่วนนี้ไปด้วย
+                    const m = gState.householdMembers[idx];
+                    m.MemberName = document.getElementById(`${prefixId}Name`).value;
+                    m.Age = document.getElementById(`${prefixId}Age`).value;
+                    m.Phone = document.getElementById(`${prefixId}Phone`).value;
+                    m.CitizenID = document.getElementById(`${prefixId}CitizenID`).value;
+                    m.MemberOccupation = document.getElementById(`${prefixId}Job`).value;
                     gState.changesToPush['householdData'] = true; 
                 }
             };
-            
-            // ** สำคัญ: ต้องเรียกใช้ฟังก์ชันด้วยครับ **
-            syncParent('บิดา', 'Q1_Father');
-            syncParent('มารดา', 'Q1_Mother');
-            // ---------------------------------------------------------
-
-
-            // 2. เตรียมข้อมูลบันทึกแบบฟอร์มหลัก (Visit Data)
-            const d = {};
-            const fd = new FormData(document.getElementById('visit-form'));
-            fd.forEach((v, k) => d[k] = v);
-            document.querySelectorAll('input[type=checkbox]').forEach(c => d[c.name] = c.checked ? "TRUE" : "FALSE");
-
-            // อัปเดตข้อมูลพ่อแม่ใน d อีกครั้งเพื่อให้แน่ใจว่าตรงกับตารางล่าสุด
-            const mems = gState.householdMembers || [];
-            const dad = mems.find(m => m.Relation === 'บิดา');
-            if (dad) {
-                d['Q1_FatherName'] = dad.MemberName || "";
-                d['Q1_FatherAge'] = dad.Age || "";
-                d['Q1_FatherPhone'] = dad.Phone || "";
-                d['Q1_FatherCitizenID'] = dad.CitizenID || "";
-                d['Q1_FatherJob'] = dad.MemberOccupation || dad.Education || "";
-            }
-            const mom = mems.find(m => m.Relation === 'มารดา');
-            if (mom) {
-                d['Q1_MotherName'] = mom.MemberName || "";
-                d['Q1_MotherAge'] = mom.Age || "";
-                d['Q1_MotherPhone'] = mom.Phone || "";
-                d['Q1_MotherCitizenID'] = mom.CitizenID || "";
-                d['Q1_MotherJob'] = mom.MemberOccupation || mom.Education || "";
-            }
-
-            // 3. ส่งข้อมูล VisitData ไปบันทึก
-            await fetch(GAS_API_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'saveDeltaChanges',
-                    recordId: gState.currentRecordId,
-                    userEmail: gState.currentUser.email,
-                    changes: d
-                })
-            });
-
-            // 4. ส่งข้อมูล Household ไปบันทึก (ถ้ามีการเปลี่ยนแปลง)
-            if (gState.changesToPush.householdData) {
-                // เติม RecordID ให้ครบทุกแถวก่อนส่ง (แก้บัคบันทึกไม่เข้า)
-                const membersToSend = gState.householdMembers.map(x => ({ 
-                    ...x, 
-                    RecordID: gState.currentRecordId 
-                }));
-                
-                await fetch(GAS_API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'overwriteHouseholdData',
-                        recordId: gState.currentRecordId,
-                        members: membersToSend
-                    })
-                });
-            }
-            
-            onSaveSuccess();
-
-        } catch (e) {
-            handleError(e);
-        } finally {
-            if (el.saveBtn) {
-                el.saveBtn.disabled = false;
-                el.saveBtn.innerHTML = 'บันทึก (0)';
-            }
-        }
-    }
-            
             syncParent('บิดา', 'Q1_Father');
             syncParent('มารดา', 'Q1_Mother');
 
-            // 2. เตรียมข้อมูลบันทึก
-            const d = {};
-            const fd = new FormData(document.getElementById('visit-form'));
+            // 2. Prepare Data
+            const d = {}; const fd = new FormData(document.getElementById('visit-form'));
             fd.forEach((v, k) => d[k] = v);
             document.querySelectorAll('input[type=checkbox]').forEach(c => d[c.name] = c.checked ? "TRUE" : "FALSE");
 
-            // 3. (ยังคงไว้) เอาข้อมูลจาก Household มาใส่ใน d อีกรอบเพื่อความชัวร์ (ตอนนี้ข้อมูลจะตรงกันแล้วเพราะซิงค์เมื่อกี้)
             const mems = gState.householdMembers || [];
             const dad = mems.find(m => m.Relation === 'บิดา');
-            if (dad) {
-                d['Q1_FatherName'] = dad.MemberName || "";
-                d['Q1_FatherAge'] = dad.Age || "";
-                d['Q1_FatherPhone'] = dad.Phone || "";
-                d['Q1_FatherCitizenID'] = dad.CitizenID || "";
-                d['Q1_FatherJob'] = dad.MemberOccupation || dad.Education || "";
-            }
+            if (dad) { d['Q1_FatherName'] = dad.MemberName; d['Q1_FatherAge'] = dad.Age; d['Q1_FatherPhone'] = dad.Phone; d['Q1_FatherCitizenID'] = dad.CitizenID; d['Q1_FatherJob'] = dad.MemberOccupation; }
             const mom = mems.find(m => m.Relation === 'มารดา');
-            if (mom) {
-                d['Q1_MotherName'] = mom.MemberName || "";
-                d['Q1_MotherAge'] = mom.Age || "";
-                d['Q1_MotherPhone'] = mom.Phone || "";
-                d['Q1_MotherCitizenID'] = mom.CitizenID || "";
-                d['Q1_MotherJob'] = mom.MemberOccupation || mom.Education || "";
-            }
+            if (mom) { d['Q1_MotherName'] = mom.MemberName; d['Q1_MotherAge'] = mom.Age; d['Q1_MotherPhone'] = mom.Phone; d['Q1_MotherCitizenID'] = mom.CitizenID; d['Q1_MotherJob'] = mom.MemberOccupation; }
 
-            // 4. ส่งข้อมูล VisitData ไปบันทึก
-            await fetch(GAS_API_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'saveDeltaChanges',
-                    recordId: gState.currentRecordId,
-                    userEmail: gState.currentUser.email,
-                    changes: d
-                })
-            });
+            // 3. Send
+            await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveDeltaChanges', recordId: gState.currentRecordId, userEmail: gState.currentUser.email, changes: d }) });
 
-            // 5. ส่งข้อมูล Household ไปบันทึก (ถ้ามีการเปลี่ยนแปลง)
+            // 4. Send Household
             if (gState.changesToPush.householdData) {
-                const h = mems.map(x => ({ ...x, RecordID: gState.currentRecordId }));
-                await fetch(GAS_API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'overwriteHouseholdData',
-                        recordId: gState.currentRecordId,
-                        members: h
-                    })
-                });
+                const membersToSend = gState.householdMembers.map(x => ({ ...x, RecordID: gState.currentRecordId }));
+                await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'overwriteHouseholdData', recordId: gState.currentRecordId, members: membersToSend }) });
             }
             onSaveSuccess();
-        } catch (e) {
-            handleError(e);
-        } finally {
-            if (el.saveBtn) {
-                el.saveBtn.disabled = false;
-                el.saveBtn.innerHTML = 'บันทึก (0)';
-            }
-        }
+        } catch (e) { handleError(e); } finally { if (el.saveBtn) { el.saveBtn.disabled = false; el.saveBtn.innerHTML = 'บันทึก (0)'; } }
     }
     function onSaveSuccess() { setLoading(false); Swal.fire('สำเร็จ','','success'); gState.changesToPush={}; gState.originalData=JSON.parse(JSON.stringify(loadFromLocalStorage())); }
   </script>
 </body>
 </html>
+
 
 
 
