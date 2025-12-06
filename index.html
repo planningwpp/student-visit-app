@@ -931,19 +931,19 @@
       calculateHouseholdIncome();
     }
     
-    // ฟังก์ชันแก้ไขสมาชิก (Updated)
-    function editHouseholdMember(index) {
-        const isNew = index == -1;
-        // ดึงข้อมูลเดิมมาแสดง
-        const member = isNew ? { RecordID: gState.currentRecordId } : { ...gState.householdMembers[index] };
+    // ฟังก์ชันแก้ไขสมาชิก (ฉบับแก้ไขบัคบันทึกข้อมูล + รองรับ Checkbox)
+    window.editHouseholdMember = (index) => {
+        const isNew = index === -1;
+        // ดึงข้อมูลเดิม (ถ้ามี) หรือสร้างใหม่
+        const member = isNew ? { RecordID: gState.currentRecordId, IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE" } : { ...gState.householdMembers[index] };
         
         const jobOpts = ["ไม่ได้ทำงาน", "ข้าราชการ/รัฐวิสาหกิจ", "พนักงานบริษัท", "รับจ้างทั่วไป", "เกษตรกร", "ค้าขาย", "ธุรกิจส่วนตัว", "อื่นๆ"];
         const eduOpts = ["ไม่ได้เรียน", "ประถมศึกษา", "มัธยมศึกษา", "ปวช./ปวส.", "ปริญญาตรี", "ปริญญาโท/เอก", "อื่นๆ"];
 
-        // ฟังก์ชันช่วยตรวจสอบว่าค่าปัจจุบันอยู่ในตัวเลือกหรือไม่ ถ้าไม่ ให้ปัดเป็น "อื่นๆ"
-        const checkOpt = (opts, val) => opts.includes(val) ? val : (val ? 'อื่นๆ' : '');
+        // ฟังก์ชันเช็คว่าค่าปัจจุบันมีในตัวเลือกไหม (ถ้าไม่มี ให้ปัดเป็น "อื่นๆ")
+        const checkOpt = (opts, val) => opts.includes(val) ? val : (val && val.trim() !== "" ? 'อื่นๆ' : '');
         
-        // กำหนดค่าเริ่มต้นให้กับ Dropdown และช่องกรอกเอง
+        // เตรียมค่าเริ่มต้นสำหรับ Dropdown
         const currentJobSelect = checkOpt(jobOpts, member.MemberOccupation);
         const currentJobOther = currentJobSelect === 'อื่นๆ' || !jobOpts.includes(member.MemberOccupation) ? (member.MemberOccupation || '') : '';
         
@@ -982,18 +982,16 @@
                  <div class="col-8"><label>รายได้รวม</label><input id="sw-Inc" type="number" class="form-control" value="${member.Income_Total || 0}"></div>
                  
                  <div class="col-12 mt-2">
-                    <input type="checkbox" id="sw-Dis" ${member.IsDisabledOrChronic == 'TRUE' ? 'checked' : ''}> พิการ/ป่วย &nbsp;&nbsp;
-                    <input type="checkbox" id="sw-10k" ${member.Got10kDigitalWallet == 'TRUE' ? 'checked' : ''}> ได้เงิน 10k
+                    <input type="checkbox" id="sw-Dis" ${String(member.IsDisabledOrChronic) === 'TRUE' ? 'checked' : ''}> พิการ/ป่วย &nbsp;&nbsp;
+                    <input type="checkbox" id="sw-10k" ${String(member.Got10kDigitalWallet) === 'TRUE' ? 'checked' : ''}> ได้เงิน 10k
                  </div>
               </div>
             `,
             focusConfirm: false,
             preConfirm: () => {
-                // จัดการค่าอาชีพ (ถ้าเลือกอื่นๆ ให้เอาค่าจากช่องพิมพ์)
                 let job = document.getElementById('sw-Job').value;
                 if (job === 'อื่นๆ') job = document.getElementById('sw-Job-Other').value;
                 
-                // จัดการค่าการศึกษา
                 let edu = document.getElementById('sw-Edu').value;
                 if (edu === 'อื่นๆ') edu = document.getElementById('sw-Edu-Other').value;
 
@@ -1013,18 +1011,22 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 const updatedMember = { ...member, ...result.value };
+                
                 if (isNew) {
                     gState.householdMembers.push(updatedMember);
                 } else {
                     gState.householdMembers[index] = updatedMember;
                 }
+                
                 trackChange('household_changed', true);
                 renderHouseholdTable(gState.householdMembers);
                 saveToLocalStorage();
             }
         });
-    }
-    function removeHouseholdMember(index) {
+    };
+
+    // ฟังก์ชันลบสมาชิก (ต้องมีไว้ด้วย)
+    window.removeHouseholdMember = (index) => {
        Swal.fire({
            title: 'ลบรายการนี้?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', confirmButtonColor: '#d33'
        }).then((r) => {
@@ -1035,7 +1037,7 @@
                saveToLocalStorage();
            }
        });
-    }
+    };
     window.removeHouseholdMember = (i) => { gState.householdMembers.splice(i,1); trackChange('household_changed',true); renderHouseholdTable(gState.householdMembers); saveToLocalStorage(); };
     function calculateHouseholdIncome() { const t=gState.householdMembers.length; const s=gState.householdMembers.reduce((a,b)=>a+(parseFloat(b.Income_Total)||0),0); el.totalMembersInput.value=t; el.totalIncomeInput.value=s; el.perCapitaIncomeInput.value=t>0?(s/t).toFixed(2):0; }
     
@@ -1049,7 +1051,9 @@
         el.saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
 
         try {
-            // 1. ซิงค์ข้อมูลจาก Input ส่วนที่ 1 กลับเข้า Array สมาชิกครัวเรือน (เพื่อให้ข้อมูลตรงกัน)
+            // ---------------------------------------------------------
+            // 1. ส่วนซิงค์ข้อมูล (Code ที่คุณครูถามหา)
+            // ---------------------------------------------------------
             const syncParent = (relation, prefixId) => {
                 const idx = gState.householdMembers.findIndex(m => m.Relation === relation);
                 const nameInput = document.getElementById(`${prefixId}Name`);
@@ -1061,10 +1065,83 @@
                     gState.householdMembers[idx].Phone = document.getElementById(`${prefixId}Phone`).value;
                     gState.householdMembers[idx].CitizenID = document.getElementById(`${prefixId}CitizenID`).value;
                     gState.householdMembers[idx].MemberOccupation = document.getElementById(`${prefixId}Job`).value;
+                    
                     // บันทึกว่ามีการเปลี่ยนแปลง Household เพื่อให้ระบบส่งข้อมูลส่วนนี้ไปด้วย
                     gState.changesToPush['householdData'] = true; 
                 }
             };
+            
+            // ** สำคัญ: ต้องเรียกใช้ฟังก์ชันด้วยครับ **
+            syncParent('บิดา', 'Q1_Father');
+            syncParent('มารดา', 'Q1_Mother');
+            // ---------------------------------------------------------
+
+
+            // 2. เตรียมข้อมูลบันทึกแบบฟอร์มหลัก (Visit Data)
+            const d = {};
+            const fd = new FormData(document.getElementById('visit-form'));
+            fd.forEach((v, k) => d[k] = v);
+            document.querySelectorAll('input[type=checkbox]').forEach(c => d[c.name] = c.checked ? "TRUE" : "FALSE");
+
+            // อัปเดตข้อมูลพ่อแม่ใน d อีกครั้งเพื่อให้แน่ใจว่าตรงกับตารางล่าสุด
+            const mems = gState.householdMembers || [];
+            const dad = mems.find(m => m.Relation === 'บิดา');
+            if (dad) {
+                d['Q1_FatherName'] = dad.MemberName || "";
+                d['Q1_FatherAge'] = dad.Age || "";
+                d['Q1_FatherPhone'] = dad.Phone || "";
+                d['Q1_FatherCitizenID'] = dad.CitizenID || "";
+                d['Q1_FatherJob'] = dad.MemberOccupation || dad.Education || "";
+            }
+            const mom = mems.find(m => m.Relation === 'มารดา');
+            if (mom) {
+                d['Q1_MotherName'] = mom.MemberName || "";
+                d['Q1_MotherAge'] = mom.Age || "";
+                d['Q1_MotherPhone'] = mom.Phone || "";
+                d['Q1_MotherCitizenID'] = mom.CitizenID || "";
+                d['Q1_MotherJob'] = mom.MemberOccupation || mom.Education || "";
+            }
+
+            // 3. ส่งข้อมูล VisitData ไปบันทึก
+            await fetch(GAS_API_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'saveDeltaChanges',
+                    recordId: gState.currentRecordId,
+                    userEmail: gState.currentUser.email,
+                    changes: d
+                })
+            });
+
+            // 4. ส่งข้อมูล Household ไปบันทึก (ถ้ามีการเปลี่ยนแปลง)
+            if (gState.changesToPush.householdData) {
+                // เติม RecordID ให้ครบทุกแถวก่อนส่ง (แก้บัคบันทึกไม่เข้า)
+                const membersToSend = gState.householdMembers.map(x => ({ 
+                    ...x, 
+                    RecordID: gState.currentRecordId 
+                }));
+                
+                await fetch(GAS_API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'overwriteHouseholdData',
+                        recordId: gState.currentRecordId,
+                        members: membersToSend
+                    })
+                });
+            }
+            
+            onSaveSuccess();
+
+        } catch (e) {
+            handleError(e);
+        } finally {
+            if (el.saveBtn) {
+                el.saveBtn.disabled = false;
+                el.saveBtn.innerHTML = 'บันทึก (0)';
+            }
+        }
+    }
             
             syncParent('บิดา', 'Q1_Father');
             syncParent('มารดา', 'Q1_Mother');
@@ -1131,6 +1208,7 @@
   </script>
 </body>
 </html>
+
 
 
 
