@@ -180,6 +180,7 @@
               <li class="nav-item"><a class="nav-link" data-section="section-8">8. พฤติกรรม</a></li>
               <li class="nav-item"><a class="nav-link" data-section="section-9">9. ข้อเสนอแนะ</a></li>
               <li class="nav-item"><a class="nav-link" data-section="section-10">10. รับรองข้อมูล</a></li>
+              <li class="nav-item"><a class="nav-link" data-section="section-11">11. กลุ่มเสี่ยง</a></li>
             </ul>
           </div>
         </nav>
@@ -439,7 +440,62 @@
               <h5>ส่วนของเจ้าหน้าที่ (ครูผู้เยี่ยมบ้าน)</h5>
               <div class="form-check form-switch mb-3 fs-5"><input class="form-check-input" type="checkbox" id="Q10_Teacher_Confirm" name="Q10_Teacher_Confirm"><label class="form-check-label">ข้าพเจ้า (ครูผู้เยี่ยม) ขอรับรองว่าข้อมูลถูกต้อง</label></div>
             </div>
+            
+            <div id="section-11" class="form-section card card-body mb-3">
+              <h4 class="mb-3 border-bottom pb-2">ส่วนที่ 11: นักเรียนกลุ่มเป้าหมาย (ข้อ 24)</h4>
+              
+              <div class="form-check form-switch mb-3 p-3 bg-light rounded border border-danger">
+                <input class="form-check-input fs-4" type="checkbox" id="Q11_IsAtRisk" name="Q11_IsAtRisk">
+                <label class="form-check-label fs-5 ms-2 pt-1 fw-bold text-danger" for="Q11_IsAtRisk">
+                  นักเรียนกลุ่มเสี่ยง (ถ้าเสี่ยงให้ติ๊กเปิด)
+                </label>
+              </div>
 
+              <div id="risk-details" style="display: none;">
+                
+                <div class="mb-3 border p-3 rounded">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="Q11_Risk_Learning" name="Q11_Risk_Learning" value="TRUE">
+                    <label class="form-check-label fw-bold">1. ด้านการเรียน</label>
+                  </div>
+                </div>
+
+                <div class="mb-3 border p-3 rounded">
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="Q11_Risk_Behavior" name="Q11_Risk_Behavior" value="TRUE">
+                    <label class="form-check-label fw-bold">2. ด้านพฤติกรรม</label>
+                  </div>
+
+                  <div id="risk-behavior-options" class="ms-4 mt-2 ps-3 border-start" style="display: none;">
+                    <div class="row g-2">
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q11_B_Aggressive"><label>ก้าวร้าว</label></div></div>
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q11_B_ADHD"><label>สมาธิสั้น</label></div></div>
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q11_B_Smoking"><label>บุหรี่/บุหรี่ไฟฟ้า</label></div></div>
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q11_B_Drugs"><label>สารเสพติด</label></div></div>
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q11_B_Depression"><label>ภาวะซึมเศร้า</label></div></div>
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q11_B_WrongDress"><label>แต่งกายผิดระเบียบ</label></div></div>
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q11_B_Late"><label>มาสายเป็นประจำ</label></div></div>
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q11_B_Alcohol"><label>แอลกอฮอล์</label></div></div>
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q11_B_Stealing"><label>ลักขโมย</label></div></div>
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q11_B_NoSocial"><label>ขาดทักษะสังคม</label></div></div>
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q11_B_Absent"><label>ขาดเรียนเป็นประจำ</label></div></div>
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q11_B_Sexual"><label>เพศสัมพันธ์</label></div></div>
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q11_B_Fighting"><label>ทะเลาะวิวาท</label></div></div>
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q11_B_GameAddict"><label>ติดเกม/ติดเพื่อน</label></div></div>
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="Q11_B_FamilyProb"><label>ปัญหาครอบครัว</label></div></div>
+                      <div class="col-md-6">
+                        <div class="form-check d-flex align-items-center">
+                          <input class="form-check-input me-2" type="checkbox" id="Q11_B_Other_Check" name="Q11_B_Other_Check">
+                          <label class="me-2">อื่นๆ</label>
+                          <input type="text" id="Q11_B_Other_Text" name="Q11_B_Other_Text" class="form-control form-control-sm" style="display:none;" placeholder="ระบุ...">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
           </form>
         </main>
       </div>
@@ -624,12 +680,13 @@
     }
     function updateProgressBar(p) { if(el.progressBar){el.progressBar.style.width=`${p}%`; el.progressBar.innerText=`${p}%`;} if(el.progressText)el.progressText.innerText=`${p}%`; }
 
-function bindEventListeners() {
+    function bindEventListeners() {
       // ปุ่ม Navbar
       if (el.navHomeLink) el.navHomeLink.onclick = (e) => {
         e.preventDefault();
         if (SCREENS.form.style.display === 'block') handleBackToSelection();
         else showScreen('selection');
+        
       };
 
       if (el.navDashboardLink) el.navDashboardLink.onclick = (e) => {
@@ -738,6 +795,41 @@ function bindEventListeners() {
           setLoading(false);
         }
       };
+      // --- Logic ส่วนที่ 11 (กลุ่มเสี่ยง) ---
+      const riskToggle = document.getElementById('Q11_IsAtRisk');
+      const riskDetails = document.getElementById('risk-details');
+      
+      // เมื่อติ๊ก "นักเรียนกลุ่มเสี่ยง" ให้แสดงรายละเอียด
+      if (riskToggle) {
+          riskToggle.addEventListener('change', (e) => {
+              riskDetails.style.display = e.target.checked ? 'block' : 'none';
+              // ถ้าปิด ให้เคลียร์ค่า หรือซ่อนส่วนย่อย (Optional)
+              if(!e.target.checked) {
+                 // อาจจะเลือกไม่ทำอะไร เพื่อเก็บค่าที่เคยติ๊กไว้
+              }
+              trackChange('Q11_IsAtRisk', e.target.checked ? "TRUE" : "FALSE");
+          });
+      }
+
+      // เมื่อติ๊ก "ด้านพฤติกรรม" ให้แสดง Checkbox ย่อย
+      const behToggle = document.getElementById('Q11_Risk_Behavior');
+      const behOptions = document.getElementById('risk-behavior-options');
+      if (behToggle) {
+          behToggle.addEventListener('change', (e) => {
+              behOptions.style.display = e.target.checked ? 'block' : 'none';
+          });
+      }
+
+      // เมื่อติ๊ก "อื่นๆ" ให้แสดงช่องพิมพ์
+      const othRiskCheck = document.getElementById('Q11_B_Other_Check');
+      const othRiskText = document.getElementById('Q11_B_Other_Text');
+      if (othRiskCheck) {
+          othRiskCheck.addEventListener('change', (e) => {
+              othRiskText.style.display = e.target.checked ? 'block' : 'none';
+              if (!e.target.checked) othRiskText.value = '';
+          });
+      }
+      
     }
 
     // --- Print Logic ---
@@ -1039,6 +1131,7 @@ function bindEventListeners() {
   </script>
 </body>
 </html>
+
 
 
 
