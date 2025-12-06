@@ -686,7 +686,6 @@
         e.preventDefault();
         if (SCREENS.form.style.display === 'block') handleBackToSelection();
         else showScreen('selection');
-        
       };
 
       if (el.navDashboardLink) el.navDashboardLink.onclick = (e) => {
@@ -795,6 +794,7 @@
           setLoading(false);
         }
       };
+    }
       // --- Logic ส่วนที่ 11 (กลุ่มเสี่ยง) ---
       const riskToggle = document.getElementById('Q11_IsAtRisk');
       const riskDetails = document.getElementById('risk-details');
@@ -1208,6 +1208,7 @@
   </script>
 </body>
 </html>
+
 
 
 
