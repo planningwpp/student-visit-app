@@ -816,23 +816,110 @@
       calculateHouseholdIncome();
     }
 
+// ฟังก์ชันแก้ไขสมาชิก (ฉบับสมบูรณ์: แก้ในตารางแล้วไปอัปเดตส่วนที่ 1 ด้วย)
     window.editHouseholdMember = (index) => {
         const isNew = index === -1;
         const member = isNew ? { RecordID: gState.currentRecordId, IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE" } : { ...gState.householdMembers[index] };
+        
         const jobOpts = ["ไม่ได้ทำงาน", "ข้าราชการ/รัฐวิสาหกิจ", "พนักงานบริษัท", "รับจ้างทั่วไป", "เกษตรกร", "ค้าขาย", "ธุรกิจส่วนตัว", "อื่นๆ"];
         const eduOpts = ["ไม่ได้เรียน", "ประถมศึกษา", "มัธยมศึกษา", "ปวช./ปวส.", "ปริญญาตรี", "ปริญญาโท/เอก", "อื่นๆ"];
+
+        // เช็คค่าเพื่อเลือกใน Dropdown
         const checkOpt = (opts, val) => opts.includes(val) ? val : (val && val.trim() !== "" ? 'อื่นๆ' : '');
+        
         const currentJobSelect = checkOpt(jobOpts, member.MemberOccupation);
         const currentJobOther = currentJobSelect === 'อื่นๆ' || !jobOpts.includes(member.MemberOccupation) ? (member.MemberOccupation || '') : '';
         const currentEduSelect = checkOpt(eduOpts, member.MemberEducation);
         const currentEduOther = currentEduSelect === 'อื่นๆ' || !eduOpts.includes(member.MemberEducation) ? (member.MemberEducation || '') : '';
 
-        Swal.fire({ title: isNew ? 'เพิ่มสมาชิก' : 'แก้ไขข้อมูล', width: '700px', html: `<div class="row g-2 text-start"><div class="col-6"><label>ชื่อ-สกุล</label><input id="sw-Name" class="form-control" value="${member.MemberName || ''}"></div><div class="col-6"><label>ความสัมพันธ์</label><input id="sw-Rel" class="form-control" value="${member.Relation || ''}"></div><div class="col-6"><label>อาชีพ</label><select id="sw-Job" class="form-select mb-2" onchange="document.getElementById('sw-Job-Other').style.display=this.value=='อื่นๆ'?'block':'none'"><option value="">-- เลือก --</option>${jobOpts.map(o => `<option value="${o}" ${currentJobSelect === o ? 'selected' : ''}>${o}</option>`).join('')}</select><input id="sw-Job-Other" class="form-control" placeholder="ระบุอาชีพ..." style="display:${currentJobSelect === 'อื่นๆ' ? 'block' : 'none'}" value="${currentJobOther}"></div><div class="col-6"><label>การศึกษา</label><select id="sw-Edu" class="form-select mb-2" onchange="document.getElementById('sw-Edu-Other').style.display=this.value=='อื่นๆ'?'block':'none'"><option value="">-- เลือก --</option>${eduOpts.map(o => `<option value="${o}" ${currentEduSelect === o ? 'selected' : ''}>${o}</option>`).join('')}</select><input id="sw-Edu-Other" class="form-control" placeholder="ระบุ..." style="display:${currentEduSelect === 'อื่นๆ' ? 'block' : 'none'}" value="${currentEduOther}"></div><div class="col-6"><label>เบอร์โทร</label><input id="sw-Phone" class="form-control" value="${member.Phone || ''}"></div><div class="col-6"><label>เลข ปชช.</label><input id="sw-Cit" class="form-control" value="${member.CitizenID || ''}"></div><div class="col-4"><label>อายุ</label><input id="sw-Age" class="form-control" value="${member.Age || ''}"></div><div class="col-8"><label>รายได้รวม (บาท/เดือน)</label><input id="sw-Inc" type="number" class="form-control" value="${member.Income_Total || 0}"></div><div class="col-12 mt-2"><input type="checkbox" id="sw-Dis" ${String(member.IsDisabledOrChronic) === 'TRUE' ? 'checked' : ''}> พิการ/ป่วย &nbsp;&nbsp; <input type="checkbox" id="sw-10k" ${String(member.Got10kDigitalWallet) === 'TRUE' ? 'checked' : ''}> ได้เงิน 10k</div></div>`, focusConfirm: false, preConfirm: () => {
-                let job = document.getElementById('sw-Job').value; if (job === 'อื่นๆ') job = document.getElementById('sw-Job-Other').value;
-                let edu = document.getElementById('sw-Edu').value; if (edu === 'อื่นๆ') edu = document.getElementById('sw-Edu-Other').value;
-                return { MemberName: document.getElementById('sw-Name').value, Relation: document.getElementById('sw-Rel').value, MemberOccupation: job, MemberEducation: edu, Phone: document.getElementById('sw-Phone').value, CitizenID: document.getElementById('sw-Cit').value, Age: document.getElementById('sw-Age').value, Income_Total: document.getElementById('sw-Inc').value, IsDisabledOrChronic: document.getElementById('sw-Dis').checked ? "TRUE" : "FALSE", Got10kDigitalWallet: document.getElementById('sw-10k').checked ? "TRUE" : "FALSE" };
+        Swal.fire({
+            title: isNew ? 'เพิ่มสมาชิก' : 'แก้ไขข้อมูล',
+            width: '700px',
+            html: `
+              <div class="row g-2 text-start">
+                 <div class="col-6"><label>ชื่อ-สกุล</label><input id="sw-Name" class="form-control" value="${member.MemberName || ''}"></div>
+                 <div class="col-6"><label>ความสัมพันธ์</label><input id="sw-Rel" class="form-control" value="${member.Relation || ''}"></div>
+                 <div class="col-6">
+                    <label>อาชีพ</label>
+                    <select id="sw-Job" class="form-select mb-2" onchange="document.getElementById('sw-Job-Other').style.display=this.value=='อื่นๆ'?'block':'none'">
+                        <option value="">-- เลือก --</option>
+                        ${jobOpts.map(o => `<option value="${o}" ${currentJobSelect === o ? 'selected' : ''}>${o}</option>`).join('')}
+                    </select>
+                    <input id="sw-Job-Other" class="form-control" placeholder="ระบุอาชีพ..." style="display:${currentJobSelect === 'อื่นๆ' ? 'block' : 'none'}" value="${currentJobOther}">
+                 </div>
+                 <div class="col-6">
+                    <label>การศึกษา</label>
+                     <select id="sw-Edu" class="form-select mb-2" onchange="document.getElementById('sw-Edu-Other').style.display=this.value=='อื่นๆ'?'block':'none'">
+                        <option value="">-- เลือก --</option>
+                        ${eduOpts.map(o => `<option value="${o}" ${currentEduSelect === o ? 'selected' : ''}>${o}</option>`).join('')}
+                    </select>
+                    <input id="sw-Edu-Other" class="form-control" placeholder="ระบุ..." style="display:${currentEduSelect === 'อื่นๆ' ? 'block' : 'none'}" value="${currentEduOther}">
+                 </div>
+                 <div class="col-6"><label>เบอร์โทร</label><input id="sw-Phone" class="form-control" value="${member.Phone || ''}"></div>
+                 <div class="col-6"><label>เลข ปชช.</label><input id="sw-Cit" class="form-control" value="${member.CitizenID || ''}"></div>
+                 <div class="col-4"><label>อายุ</label><input id="sw-Age" class="form-control" value="${member.Age || ''}"></div>
+                 <div class="col-8"><label>รายได้รวม</label><input id="sw-Inc" type="number" class="form-control" value="${member.Income_Total || 0}"></div>
+                 <div class="col-12 mt-2">
+                    <input type="checkbox" id="sw-Dis" ${String(member.IsDisabledOrChronic) === 'TRUE' ? 'checked' : ''}> พิการ/ป่วย &nbsp;&nbsp;
+                    <input type="checkbox" id="sw-10k" ${String(member.Got10kDigitalWallet) === 'TRUE' ? 'checked' : ''}> ได้เงิน 10k
+                 </div>
+              </div>
+            `,
+            focusConfirm: false,
+            preConfirm: () => {
+                let job = document.getElementById('sw-Job').value;
+                if (job === 'อื่นๆ') job = document.getElementById('sw-Job-Other').value;
+                
+                let edu = document.getElementById('sw-Edu').value;
+                if (edu === 'อื่นๆ') edu = document.getElementById('sw-Edu-Other').value;
+
+                return {
+                    MemberName: document.getElementById('sw-Name').value,
+                    Relation: document.getElementById('sw-Rel').value,
+                    MemberOccupation: job,
+                    MemberEducation: edu,
+                    Phone: document.getElementById('sw-Phone').value,
+                    CitizenID: document.getElementById('sw-Cit').value,
+                    Age: document.getElementById('sw-Age').value,
+                    Income_Total: document.getElementById('sw-Inc').value,
+                    IsDisabledOrChronic: document.getElementById('sw-Dis').checked ? "TRUE" : "FALSE",
+                    Got10kDigitalWallet: document.getElementById('sw-10k').checked ? "TRUE" : "FALSE"
+                };
             }
-        }).then((result) => { if (result.isConfirmed) { const updatedMember = { ...member, ...result.value }; if (isNew) gState.householdMembers.push(updatedMember); else gState.householdMembers[index] = updatedMember; trackChange('household_changed', true); renderHouseholdTable(gState.householdMembers); saveToLocalStorage(); } });
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const updatedMember = { ...member, ...result.value };
+                
+                // อัปเดตข้อมูลในตาราง
+                if (isNew) {
+                    gState.householdMembers.push(updatedMember);
+                } else {
+                    gState.householdMembers[index] = updatedMember;
+                }
+
+                // --- เพิ่มส่วนนี้: ส่งค่ากลับไปอัปเดตช่องกรอกในส่วนที่ 1 ทันที ---
+                const setVal = (id, v) => { const el = document.getElementById(id); if(el) el.value = v || ''; };
+                
+                if (updatedMember.Relation === 'บิดา') {
+                    setVal('Q1_FatherName', updatedMember.MemberName);
+                    setVal('Q1_FatherPhone', updatedMember.Phone);
+                    setVal('Q1_FatherJob', updatedMember.MemberOccupation); // ส่งอาชีพกลับไป
+                    setVal('Q1_FatherCitizenID', updatedMember.CitizenID);
+                    setVal('Q1_FatherAge', updatedMember.Age);
+                } else if (updatedMember.Relation === 'มารดา') {
+                    setVal('Q1_MotherName', updatedMember.MemberName);
+                    setVal('Q1_MotherPhone', updatedMember.Phone);
+                    setVal('Q1_MotherJob', updatedMember.MemberOccupation); // ส่งอาชีพกลับไป
+                    setVal('Q1_MotherCitizenID', updatedMember.CitizenID);
+                    setVal('Q1_MotherAge', updatedMember.Age);
+                }
+                // -------------------------------------------------------------
+                
+                trackChange('household_changed', true);
+                renderHouseholdTable(gState.householdMembers);
+                saveToLocalStorage();
+            }
+        });
     };
 
     window.removeHouseholdMember = (index) => {
@@ -893,6 +980,7 @@
   </script>
 </body>
 </html>
+
 
 
 
