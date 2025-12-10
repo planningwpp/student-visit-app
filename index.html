@@ -816,15 +816,15 @@
       calculateHouseholdIncome();
     }
 
-// ฟังก์ชันแก้ไขสมาชิก (ฉบับสมบูรณ์: แก้ในตารางแล้วไปอัปเดตส่วนที่ 1 ด้วย)
+/    // ฟังก์ชันแก้ไขสมาชิก (ฉบับสมบูรณ์: เพิ่มอาชีพ 'รับจ้าง' และซิงค์ข้อมูลทันที)
     window.editHouseholdMember = (index) => {
         const isNew = index === -1;
         const member = isNew ? { RecordID: gState.currentRecordId, IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE" } : { ...gState.householdMembers[index] };
         
-        const jobOpts = ["ไม่ได้ทำงาน", "ข้าราชการ/รัฐวิสาหกิจ", "พนักงานบริษัท", "รับจ้างทั่วไป", "เกษตรกร", "ค้าขาย", "ธุรกิจส่วนตัว", "อื่นๆ"];
+        // เพิ่ม "รับจ้าง" เข้าไปในตัวเลือก เพื่อให้ตรงกับข้อมูลเดิม
+        const jobOpts = ["ไม่ได้ทำงาน", "ข้าราชการ/รัฐวิสาหกิจ", "พนักงานบริษัท", "รับจ้าง", "รับจ้างทั่วไป", "เกษตรกร", "ค้าขาย", "ธุรกิจส่วนตัว", "อื่นๆ"];
         const eduOpts = ["ไม่ได้เรียน", "ประถมศึกษา", "มัธยมศึกษา", "ปวช./ปวส.", "ปริญญาตรี", "ปริญญาโท/เอก", "อื่นๆ"];
 
-        // เช็คค่าเพื่อเลือกใน Dropdown
         const checkOpt = (opts, val) => opts.includes(val) ? val : (val && val.trim() !== "" ? 'อื่นๆ' : '');
         
         const currentJobSelect = checkOpt(jobOpts, member.MemberOccupation);
@@ -869,7 +869,6 @@
             preConfirm: () => {
                 let job = document.getElementById('sw-Job').value;
                 if (job === 'อื่นๆ') job = document.getElementById('sw-Job-Other').value;
-                
                 let edu = document.getElementById('sw-Edu').value;
                 if (edu === 'อื่นๆ') edu = document.getElementById('sw-Edu-Other').value;
 
@@ -897,30 +896,135 @@
                     gState.householdMembers[index] = updatedMember;
                 }
 
-                // --- เพิ่มส่วนนี้: ส่งค่ากลับไปอัปเดตช่องกรอกในส่วนที่ 1 ทันที ---
+                // --- ซิงค์ข้อมูลกลับไปที่ส่วนที่ 1 ทันที ---
                 const setVal = (id, v) => { const el = document.getElementById(id); if(el) el.value = v || ''; };
                 
                 if (updatedMember.Relation === 'บิดา') {
                     setVal('Q1_FatherName', updatedMember.MemberName);
                     setVal('Q1_FatherPhone', updatedMember.Phone);
-                    setVal('Q1_FatherJob', updatedMember.MemberOccupation); // ส่งอาชีพกลับไป
+                    setVal('Q1_FatherJob', updatedMember.MemberOccupation);
                     setVal('Q1_FatherCitizenID', updatedMember.CitizenID);
                     setVal('Q1_FatherAge', updatedMember.Age);
                 } else if (updatedMember.Relation === 'มารดา') {
                     setVal('Q1_MotherName', updatedMember.MemberName);
                     setVal('Q1_MotherPhone', updatedMember.Phone);
-                    setVal('Q1_MotherJob', updatedMember.MemberOccupation); // ส่งอาชีพกลับไป
+                    setVal('Q1_MotherJob', updatedMember.MemberOccupation);
                     setVal('Q1_MotherCitizenID', updatedMember.CitizenID);
                     setVal('Q1_MotherAge', updatedMember.Age);
                 }
-                // -------------------------------------------------------------
                 
+                // แจ้งระบบว่ามีการเปลี่ยนแปลง
                 trackChange('household_changed', true);
                 renderHouseholdTable(gState.householdMembers);
                 saveToLocalStorage();
             }
         });
     };
+    // ฟังก์ชันแก้ไขสมาชิก (ฉบับสมบูรณ์: เพิ่มอาชีพ 'รับจ้าง' และซิงค์ข้อมูลทันที)
+    window.editHouseholdMember = (index) => {
+        const isNew = index === -1;
+        const member = isNew ? { RecordID: gState.currentRecordId, IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE" } : { ...gState.householdMembers[index] };
+        
+        // เพิ่ม "รับจ้าง" เข้าไปในตัวเลือก เพื่อให้ตรงกับข้อมูลเดิม
+        const jobOpts = ["ไม่ได้ทำงาน", "ข้าราชการ/รัฐวิสาหกิจ", "พนักงานบริษัท", "รับจ้าง", "รับจ้างทั่วไป", "เกษตรกร", "ค้าขาย", "ธุรกิจส่วนตัว", "อื่นๆ"];
+        const eduOpts = ["ไม่ได้เรียน", "ประถมศึกษา", "มัธยมศึกษา", "ปวช./ปวส.", "ปริญญาตรี", "ปริญญาโท/เอก", "อื่นๆ"];
+
+        const checkOpt = (opts, val) => opts.includes(val) ? val : (val && val.trim() !== "" ? 'อื่นๆ' : '');
+        
+        const currentJobSelect = checkOpt(jobOpts, member.MemberOccupation);
+        const currentJobOther = currentJobSelect === 'อื่นๆ' || !jobOpts.includes(member.MemberOccupation) ? (member.MemberOccupation || '') : '';
+        const currentEduSelect = checkOpt(eduOpts, member.MemberEducation);
+        const currentEduOther = currentEduSelect === 'อื่นๆ' || !eduOpts.includes(member.MemberEducation) ? (member.MemberEducation || '') : '';
+
+        Swal.fire({
+            title: isNew ? 'เพิ่มสมาชิก' : 'แก้ไขข้อมูล',
+            width: '700px',
+            html: `
+              <div class="row g-2 text-start">
+                 <div class="col-6"><label>ชื่อ-สกุล</label><input id="sw-Name" class="form-control" value="${member.MemberName || ''}"></div>
+                 <div class="col-6"><label>ความสัมพันธ์</label><input id="sw-Rel" class="form-control" value="${member.Relation || ''}"></div>
+                 <div class="col-6">
+                    <label>อาชีพ</label>
+                    <select id="sw-Job" class="form-select mb-2" onchange="document.getElementById('sw-Job-Other').style.display=this.value=='อื่นๆ'?'block':'none'">
+                        <option value="">-- เลือก --</option>
+                        ${jobOpts.map(o => `<option value="${o}" ${currentJobSelect === o ? 'selected' : ''}>${o}</option>`).join('')}
+                    </select>
+                    <input id="sw-Job-Other" class="form-control" placeholder="ระบุอาชีพ..." style="display:${currentJobSelect === 'อื่นๆ' ? 'block' : 'none'}" value="${currentJobOther}">
+                 </div>
+                 <div class="col-6">
+                    <label>การศึกษา</label>
+                     <select id="sw-Edu" class="form-select mb-2" onchange="document.getElementById('sw-Edu-Other').style.display=this.value=='อื่นๆ'?'block':'none'">
+                        <option value="">-- เลือก --</option>
+                        ${eduOpts.map(o => `<option value="${o}" ${currentEduSelect === o ? 'selected' : ''}>${o}</option>`).join('')}
+                    </select>
+                    <input id="sw-Edu-Other" class="form-control" placeholder="ระบุ..." style="display:${currentEduSelect === 'อื่นๆ' ? 'block' : 'none'}" value="${currentEduOther}">
+                 </div>
+                 <div class="col-6"><label>เบอร์โทร</label><input id="sw-Phone" class="form-control" value="${member.Phone || ''}"></div>
+                 <div class="col-6"><label>เลข ปชช.</label><input id="sw-Cit" class="form-control" value="${member.CitizenID || ''}"></div>
+                 <div class="col-4"><label>อายุ</label><input id="sw-Age" class="form-control" value="${member.Age || ''}"></div>
+                 <div class="col-8"><label>รายได้รวม</label><input id="sw-Inc" type="number" class="form-control" value="${member.Income_Total || 0}"></div>
+                 <div class="col-12 mt-2">
+                    <input type="checkbox" id="sw-Dis" ${String(member.IsDisabledOrChronic) === 'TRUE' ? 'checked' : ''}> พิการ/ป่วย &nbsp;&nbsp;
+                    <input type="checkbox" id="sw-10k" ${String(member.Got10kDigitalWallet) === 'TRUE' ? 'checked' : ''}> ได้เงิน 10k
+                 </div>
+              </div>
+            `,
+            focusConfirm: false,
+            preConfirm: () => {
+                let job = document.getElementById('sw-Job').value;
+                if (job === 'อื่นๆ') job = document.getElementById('sw-Job-Other').value;
+                let edu = document.getElementById('sw-Edu').value;
+                if (edu === 'อื่นๆ') edu = document.getElementById('sw-Edu-Other').value;
+
+                return {
+                    MemberName: document.getElementById('sw-Name').value,
+                    Relation: document.getElementById('sw-Rel').value,
+                    MemberOccupation: job,
+                    MemberEducation: edu,
+                    Phone: document.getElementById('sw-Phone').value,
+                    CitizenID: document.getElementById('sw-Cit').value,
+                    Age: document.getElementById('sw-Age').value,
+                    Income_Total: document.getElementById('sw-Inc').value,
+                    IsDisabledOrChronic: document.getElementById('sw-Dis').checked ? "TRUE" : "FALSE",
+                    Got10kDigitalWallet: document.getElementById('sw-10k').checked ? "TRUE" : "FALSE"
+                };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const updatedMember = { ...member, ...result.value };
+                
+                // อัปเดตข้อมูลในตาราง
+                if (isNew) {
+                    gState.householdMembers.push(updatedMember);
+                } else {
+                    gState.householdMembers[index] = updatedMember;
+                }
+
+                // --- ซิงค์ข้อมูลกลับไปที่ส่วนที่ 1 ทันที ---
+                const setVal = (id, v) => { const el = document.getElementById(id); if(el) el.value = v || ''; };
+                
+                if (updatedMember.Relation === 'บิดา') {
+                    setVal('Q1_FatherName', updatedMember.MemberName);
+                    setVal('Q1_FatherPhone', updatedMember.Phone);
+                    setVal('Q1_FatherJob', updatedMember.MemberOccupation);
+                    setVal('Q1_FatherCitizenID', updatedMember.CitizenID);
+                    setVal('Q1_FatherAge', updatedMember.Age);
+                } else if (updatedMember.Relation === 'มารดา') {
+                    setVal('Q1_MotherName', updatedMember.MemberName);
+                    setVal('Q1_MotherPhone', updatedMember.Phone);
+                    setVal('Q1_MotherJob', updatedMember.MemberOccupation);
+                    setVal('Q1_MotherCitizenID', updatedMember.CitizenID);
+                    setVal('Q1_MotherAge', updatedMember.Age);
+                }
+                
+                // แจ้งระบบว่ามีการเปลี่ยนแปลง
+                trackChange('household_changed', true);
+                renderHouseholdTable(gState.householdMembers);
+                saveToLocalStorage();
+            }
+        });
+    };
+
 
     window.removeHouseholdMember = (index) => {
        Swal.fire({ title: 'ลบรายการนี้?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', confirmButtonColor: '#d33' }).then((r) => { if (r.isConfirmed) { gState.householdMembers.splice(index, 1); trackChange('household_changed', true); renderHouseholdTable(gState.householdMembers); saveToLocalStorage(); } });
@@ -933,53 +1037,150 @@
     function saveToLocalStorage() { const d={studentMaster:gState.originalData.studentMaster, visitData:{}, householdData:gState.householdMembers}; const fd=new FormData(document.getElementById('visit-form')); fd.forEach((v,k)=>d.visitData[k]=v); document.querySelectorAll('input[type=checkbox]').forEach(c=>d.visitData[c.name]=c.checked?"TRUE":"FALSE"); localStorage.setItem(`visit_${gState.currentRecordId}`, JSON.stringify(d)); }
     function loadFromLocalStorage() { const d=localStorage.getItem(`visit_${gState.currentRecordId}`); return d?JSON.parse(d):null; }
 
-    // --- Save & Sync Logic ---
     async function handleSaveToSheets() {
-        el.saveBtn.disabled = true; el.saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
-        try {
-            // 1. Sync
-            const syncParent = (relation, prefixId) => {
-                const idx = gState.householdMembers.findIndex(m => m.Relation === relation);
-                const nameInput = document.getElementById(`${prefixId}Name`);
-                if (idx !== -1 && nameInput && nameInput.value.trim() !== "") {
-                    const m = gState.householdMembers[idx];
-                    m.MemberName = document.getElementById(`${prefixId}Name`).value;
-                    m.Age = document.getElementById(`${prefixId}Age`).value;
-                    m.Phone = document.getElementById(`${prefixId}Phone`).value;
-                    m.CitizenID = document.getElementById(`${prefixId}CitizenID`).value;
-                    m.MemberOccupation = document.getElementById(`${prefixId}Job`).value;
-                    gState.changesToPush['householdData'] = true; 
-                }
-            };
-            syncParent('บิดา', 'Q1_Father');
-            syncParent('มารดา', 'Q1_Mother');
+        el.saveBtn.disabled = true;
+        el.saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
 
-            // 2. Prepare Data
-            const d = {}; const fd = new FormData(document.getElementById('visit-form'));
+        try {
+            // 1. เตรียมข้อมูลบันทึกแบบฟอร์มหลัก (Visit Data)
+            const d = {};
+            const fd = new FormData(document.getElementById('visit-form'));
             fd.forEach((v, k) => d[k] = v);
             document.querySelectorAll('input[type=checkbox]').forEach(c => d[c.name] = c.checked ? "TRUE" : "FALSE");
 
+            // อัปเดตข้อมูลพ่อแม่ใน d ให้ตรงกับตารางล่าสุด (เอาจากตารางเป็นหลัก)
             const mems = gState.householdMembers || [];
             const dad = mems.find(m => m.Relation === 'บิดา');
-            if (dad) { d['Q1_FatherName'] = dad.MemberName; d['Q1_FatherAge'] = dad.Age; d['Q1_FatherPhone'] = dad.Phone; d['Q1_FatherCitizenID'] = dad.CitizenID; d['Q1_FatherJob'] = dad.MemberOccupation; }
-            const mom = mems.find(m => m.Relation === 'มารดา');
-            if (mom) { d['Q1_MotherName'] = mom.MemberName; d['Q1_MotherAge'] = mom.Age; d['Q1_MotherPhone'] = mom.Phone; d['Q1_MotherCitizenID'] = mom.CitizenID; d['Q1_MotherJob'] = mom.MemberOccupation; }
-
-            // 3. Send
-            await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveDeltaChanges', recordId: gState.currentRecordId, userEmail: gState.currentUser.email, changes: d }) });
-
-            // 4. Send Household
-            if (gState.changesToPush.householdData) {
-                const membersToSend = gState.householdMembers.map(x => ({ ...x, RecordID: gState.currentRecordId }));
-                await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'overwriteHouseholdData', recordId: gState.currentRecordId, members: membersToSend }) });
+            if (dad) {
+                d['Q1_FatherName'] = dad.MemberName || "";
+                d['Q1_FatherAge'] = dad.Age || "";
+                d['Q1_FatherPhone'] = dad.Phone || "";
+                d['Q1_FatherCitizenID'] = dad.CitizenID || "";
+                d['Q1_FatherJob'] = dad.MemberOccupation || dad.Education || "";
             }
+            const mom = mems.find(m => m.Relation === 'มารดา');
+            if (mom) {
+                d['Q1_MotherName'] = mom.MemberName || "";
+                d['Q1_MotherAge'] = mom.Age || "";
+                d['Q1_MotherPhone'] = mom.Phone || "";
+                d['Q1_MotherCitizenID'] = mom.CitizenID || "";
+                d['Q1_MotherJob'] = mom.MemberOccupation || mom.Education || "";
+            }
+
+            // 2. ส่งข้อมูล VisitData ไปบันทึก
+            await fetch(GAS_API_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'saveDeltaChanges',
+                    recordId: gState.currentRecordId,
+                    userEmail: gState.currentUser.email,
+                    changes: d
+                })
+            });
+
+            // 3. ส่งข้อมูล Household ไปบันทึก (ถ้ามีการเปลี่ยนแปลง)
+            if (gState.changesToPush.householdData) {
+                const membersToSend = gState.householdMembers.map(x => ({ 
+                    ...x, 
+                    RecordID: gState.currentRecordId 
+                }));
+                
+                await fetch(GAS_API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'overwriteHouseholdData',
+                        recordId: gState.currentRecordId,
+                        members: membersToSend
+                    })
+                });
+            }
+            
             onSaveSuccess();
-        } catch (e) { handleError(e); } finally { if (el.saveBtn) { el.saveBtn.disabled = false; el.saveBtn.innerHTML = 'บันทึก (0)'; } }
+
+        } catch (e) {
+            handleError(e);
+        } finally {
+            if (el.saveBtn) {
+                el.saveBtn.disabled = false;
+                el.saveBtn.innerHTML = 'บันทึก (0)';
+            }
+        }
     }
+    async function handleSaveToSheets() {
+        el.saveBtn.disabled = true;
+        el.saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
+
+        try {
+            // 1. เตรียมข้อมูลบันทึกแบบฟอร์มหลัก (Visit Data)
+            const d = {};
+            const fd = new FormData(document.getElementById('visit-form'));
+            fd.forEach((v, k) => d[k] = v);
+            document.querySelectorAll('input[type=checkbox]').forEach(c => d[c.name] = c.checked ? "TRUE" : "FALSE");
+
+            // อัปเดตข้อมูลพ่อแม่ใน d ให้ตรงกับตารางล่าสุด (เอาจากตารางเป็นหลัก)
+            const mems = gState.householdMembers || [];
+            const dad = mems.find(m => m.Relation === 'บิดา');
+            if (dad) {
+                d['Q1_FatherName'] = dad.MemberName || "";
+                d['Q1_FatherAge'] = dad.Age || "";
+                d['Q1_FatherPhone'] = dad.Phone || "";
+                d['Q1_FatherCitizenID'] = dad.CitizenID || "";
+                d['Q1_FatherJob'] = dad.MemberOccupation || dad.Education || "";
+            }
+            const mom = mems.find(m => m.Relation === 'มารดา');
+            if (mom) {
+                d['Q1_MotherName'] = mom.MemberName || "";
+                d['Q1_MotherAge'] = mom.Age || "";
+                d['Q1_MotherPhone'] = mom.Phone || "";
+                d['Q1_MotherCitizenID'] = mom.CitizenID || "";
+                d['Q1_MotherJob'] = mom.MemberOccupation || mom.Education || "";
+            }
+
+            // 2. ส่งข้อมูล VisitData ไปบันทึก
+            await fetch(GAS_API_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'saveDeltaChanges',
+                    recordId: gState.currentRecordId,
+                    userEmail: gState.currentUser.email,
+                    changes: d
+                })
+            });
+
+            // 3. ส่งข้อมูล Household ไปบันทึก (ถ้ามีการเปลี่ยนแปลง)
+            if (gState.changesToPush.householdData) {
+                const membersToSend = gState.householdMembers.map(x => ({ 
+                    ...x, 
+                    RecordID: gState.currentRecordId 
+                }));
+                
+                await fetch(GAS_API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'overwriteHouseholdData',
+                        recordId: gState.currentRecordId,
+                        members: membersToSend
+                    })
+                });
+            }
+            
+            onSaveSuccess();
+
+        } catch (e) {
+            handleError(e);
+        } finally {
+            if (el.saveBtn) {
+                el.saveBtn.disabled = false;
+                el.saveBtn.innerHTML = 'บันทึก (0)';
+            }
+        }
+    }
+
     function onSaveSuccess() { setLoading(false); Swal.fire('สำเร็จ','','success'); gState.changesToPush={}; gState.originalData=JSON.parse(JSON.stringify(loadFromLocalStorage())); }
   </script>
 </body>
 </html>
+
 
 
 
