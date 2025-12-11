@@ -933,53 +933,93 @@
     function saveToLocalStorage() { const d={studentMaster:gState.originalData.studentMaster, visitData:{}, householdData:gState.householdMembers}; const fd=new FormData(document.getElementById('visit-form')); fd.forEach((v,k)=>d.visitData[k]=v); document.querySelectorAll('input[type=checkbox]').forEach(c=>d.visitData[c.name]=c.checked?"TRUE":"FALSE"); localStorage.setItem(`visit_${gState.currentRecordId}`, JSON.stringify(d)); }
     function loadFromLocalStorage() { const d=localStorage.getItem(`visit_${gState.currentRecordId}`); return d?JSON.parse(d):null; }
 
-    // --- Save & Sync Logic ---
+   // ฟังก์ชันบันทึกข้อมูล (ฉบับเสถียร: ยึดตารางเป็นหลัก ไม่ดึงข้อมูลเก่ามาทับ)
     async function handleSaveToSheets() {
-        el.saveBtn.disabled = true; el.saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
-        try {
-            // 1. Sync
-            const syncParent = (relation, prefixId) => {
-                const idx = gState.householdMembers.findIndex(m => m.Relation === relation);
-                const nameInput = document.getElementById(`${prefixId}Name`);
-                if (idx !== -1 && nameInput && nameInput.value.trim() !== "") {
-                    const m = gState.householdMembers[idx];
-                    m.MemberName = document.getElementById(`${prefixId}Name`).value;
-                    m.Age = document.getElementById(`${prefixId}Age`).value;
-                    m.Phone = document.getElementById(`${prefixId}Phone`).value;
-                    m.CitizenID = document.getElementById(`${prefixId}CitizenID`).value;
-                    m.MemberOccupation = document.getElementById(`${prefixId}Job`).value;
-                    gState.changesToPush['householdData'] = true; 
-                }
-            };
-            syncParent('บิดา', 'Q1_Father');
-            syncParent('มารดา', 'Q1_Mother');
+        // 1. ล็อกปุ่มกันกดซ้ำ
+        el.saveBtn.disabled = true; 
+        el.saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
 
-            // 2. Prepare Data
-            const d = {}; const fd = new FormData(document.getElementById('visit-form'));
+        try {
+            // 2. เตรียมข้อมูลจากแบบฟอร์ม (Section 1, 3-11)
+            const d = {}; 
+            const fd = new FormData(document.getElementById('visit-form'));
             fd.forEach((v, k) => d[k] = v);
             document.querySelectorAll('input[type=checkbox]').forEach(c => d[c.name] = c.checked ? "TRUE" : "FALSE");
 
+            // -----------------------------------------------------------------------
+            // จุดสำคัญ: เอาข้อมูลจาก "ตารางสมาชิก (Section 2)" ยัดกลับเข้าไปใน d (Section 1)
+            // เพื่อให้ข้อมูลตรงกันเสมอ โดยยึดตารางเป็น "ข้อมูลที่ถูกต้องที่สุด"
+            // -----------------------------------------------------------------------
             const mems = gState.householdMembers || [];
+            
+            // หาพ่อในตาราง
             const dad = mems.find(m => m.Relation === 'บิดา');
-            if (dad) { d['Q1_FatherName'] = dad.MemberName; d['Q1_FatherAge'] = dad.Age; d['Q1_FatherPhone'] = dad.Phone; d['Q1_FatherCitizenID'] = dad.CitizenID; d['Q1_FatherJob'] = dad.MemberOccupation; }
-            const mom = mems.find(m => m.Relation === 'มารดา');
-            if (mom) { d['Q1_MotherName'] = mom.MemberName; d['Q1_MotherAge'] = mom.Age; d['Q1_MotherPhone'] = mom.Phone; d['Q1_MotherCitizenID'] = mom.CitizenID; d['Q1_MotherJob'] = mom.MemberOccupation; }
-
-            // 3. Send
-            await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveDeltaChanges', recordId: gState.currentRecordId, userEmail: gState.currentUser.email, changes: d }) });
-
-            // 4. Send Household
-            if (gState.changesToPush.householdData) {
-                const membersToSend = gState.householdMembers.map(x => ({ ...x, RecordID: gState.currentRecordId }));
-                await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'overwriteHouseholdData', recordId: gState.currentRecordId, members: membersToSend }) });
+            if (dad) { 
+                d['Q1_FatherName'] = dad.MemberName; 
+                d['Q1_FatherAge'] = dad.Age; 
+                d['Q1_FatherPhone'] = dad.Phone; 
+                d['Q1_FatherCitizenID'] = dad.CitizenID; 
+                d['Q1_FatherJob'] = dad.MemberOccupation; 
             }
+
+            // หามารดาในตาราง
+            const mom = mems.find(m => m.Relation === 'มารดา');
+            if (mom) { 
+                d['Q1_MotherName'] = mom.MemberName; 
+                d['Q1_MotherAge'] = mom.Age; 
+                d['Q1_MotherPhone'] = mom.Phone; 
+                d['Q1_MotherCitizenID'] = mom.CitizenID; 
+                d['Q1_MotherJob'] = mom.MemberOccupation; 
+            }
+            // -----------------------------------------------------------------------
+
+            // 3. ส่งข้อมูลหลัก (Visit Data) ไปบันทึก
+            await fetch(GAS_API_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({ 
+                    action: 'saveDeltaChanges', 
+                    recordId: gState.currentRecordId, 
+                    userEmail: gState.currentUser.email, 
+                    changes: d 
+                }) 
+            });
+
+            // 4. ส่งข้อมูลตาราง (Household Data) ไปบันทึก (ถ้ามีการแก้ไข)
+            if (gState.changesToPush.householdData) {
+                // เติม RecordID ให้ครบทุกแถวก่อนส่ง เพื่อกันเหนียว
+                const membersToSend = gState.householdMembers.map(x => ({ 
+                    ...x, 
+                    RecordID: gState.currentRecordId 
+                }));
+                
+                await fetch(GAS_API_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ 
+                        action: 'overwriteHouseholdData', 
+                        recordId: gState.currentRecordId, 
+                        members: membersToSend 
+                    }) 
+                });
+            }
+            
+            // 5. แจ้งเตือนความสำเร็จ
             onSaveSuccess();
-        } catch (e) { handleError(e); } finally { if (el.saveBtn) { el.saveBtn.disabled = false; el.saveBtn.innerHTML = 'บันทึก (0)'; } }
+
+        } catch (e) { 
+            handleError(e); 
+        } finally { 
+            // คืนค่าปุ่มบันทึก
+            if (el.saveBtn) { 
+                el.saveBtn.disabled = false; 
+                el.saveBtn.innerHTML = 'บันทึก (0)'; 
+            } 
+        }
     }
     function onSaveSuccess() { setLoading(false); Swal.fire('สำเร็จ','','success'); gState.changesToPush={}; gState.originalData=JSON.parse(JSON.stringify(loadFromLocalStorage())); }
   </script>
 </body>
 </html>
+
 
 
 
