@@ -797,22 +797,84 @@
       prev.src=d.secure_url; del.style.display='block'; document.getElementById(id).value=d.secure_url; trackChange(id,d.secure_url); saveToLocalStorage(); } catch(e){ handleError(e); }
     }
 
-    // --- Household (Fixed) ---
+// ฟังก์ชันแสดงตาราง (ฉบับ Clean Slate: ไม่ดึงข้อมูลเก่าพ่อแม่ ให้กรอกใหม่เพื่อความชัวร์)
     function renderHouseholdTable(m) {
-      gState.householdMembers = Array.isArray(m) ? m : []; el.householdTbody.innerHTML = '';
+      gState.householdMembers = Array.isArray(m) ? m : []; 
+      el.householdTbody.innerHTML = '';
+      
+      // กรณีเพิ่งเริ่ม (ยังไม่มีข้อมูลในแบบฟอร์มนี้)
       if (gState.householdMembers.length === 0 && gState.originalData.studentMaster) {
          const sm = gState.originalData.studentMaster;
-         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName} ${sm.LastName}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 });
-         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 2, MemberName: sm.FatherName || '', Relation: 'บิดา', Phone: sm.FatherPhone || '', Education: sm.FatherJob || '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
-         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: sm.MotherName || '', Relation: 'มารดา', Phone: sm.MotherPhone || '', Education: sm.MotherJob || '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
+         
+         // 1. ดึงเฉพาะ "นักเรียน" (เพราะข้อมูลนี้ชัวร์อยู่แล้ว)
+         gState.householdMembers.push({ 
+             RecordID: gState.currentRecordId, 
+             MemberNo: 1, 
+             MemberName: `${sm.Prefix || ''} ${sm.FirstName} ${sm.LastName}`, 
+             Relation: 'นักเรียน', 
+             Phone: sm.Phone || '', 
+             Education: 'กำลังศึกษา', 
+             CitizenID: sm.CitizenID, 
+             Age: sm.Age || '', 
+             IsDisabledOrChronic: "FALSE", 
+             Got10kDigitalWallet: "FALSE", 
+             Income_Total: 0 
+         });
+         
+         // 2. สร้างแถว "บิดา" รอไว้ (แต่ไม่ดึงชื่อเก่ามาใส่ ให้กรอกใหม่)
+         gState.householdMembers.push({ 
+             RecordID: gState.currentRecordId, 
+             MemberNo: 2, 
+             MemberName: '',  // <--- ปล่อยว่าง
+             Relation: 'บิดา', 
+             Phone: '',       // <--- ปล่อยว่าง
+             Education: '',   // <--- ปล่อยว่าง
+             CitizenID: '',
+             Age: '',
+             IsDisabledOrChronic: "FALSE", 
+             Income_Total: 0 
+         });
+         
+         // 3. สร้างแถว "มารดา" รอไว้ (ให้กรอกใหม่)
+         gState.householdMembers.push({ 
+             RecordID: gState.currentRecordId, 
+             MemberNo: 3, 
+             MemberName: '',  // <--- ปล่อยว่าง
+             Relation: 'มารดา', 
+             Phone: '',       // <--- ปล่อยว่าง
+             Education: '',   // <--- ปล่อยว่าง
+             CitizenID: '',
+             Age: '',
+             IsDisabledOrChronic: "FALSE", 
+             Income_Total: 0 
+         });
       }
+
+      // วาดตารางตามปกติ
       gState.householdMembers.forEach((x, i) => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${i + 1}</td><td class="text-start">${x.MemberName || ''}</td><td>${x.Relation || ''}</td><td>${x.Phone || '-'}</td><td>${x.MemberEducation || x.Education || '-'}</td><td>${x.CitizenID || '-'}</td><td>${x.Age || '-'}</td><td>${x.IsDisabledOrChronic == 'TRUE' ? '/' : ''}</td><td>${x.Got10kDigitalWallet == 'TRUE' ? '/' : ''}</td><td class="text-end">${(x.Income_Total || 0).toLocaleString()}</td><td><button type="button" class="btn btn-sm btn-primary edit-btn">แก้</button></td><td>${x.Relation != 'นักเรียน' ? `<button type="button" class="btn btn-sm btn-danger del-btn">ลบ</button>` : ''}</td>`;
+        tr.innerHTML = `
+            <td>${i + 1}</td>
+            <td class="text-start">${x.MemberName || ''}</td>
+            <td>${x.Relation || ''}</td>
+            <td>${x.Phone || '-'}</td>
+            <td>${x.MemberEducation || x.Education || '-'}</td>
+            <td>${x.CitizenID || '-'}</td>
+            <td>${x.Age || '-'}</td>
+            <td>${x.IsDisabledOrChronic == 'TRUE' ? '/' : ''}</td>
+            <td>${x.Got10kDigitalWallet == 'TRUE' ? '/' : ''}</td>
+            <td class="text-end">${(x.Income_Total || 0).toLocaleString()}</td>
+            <td><button type="button" class="btn btn-sm btn-primary edit-btn">แก้</button></td>
+            <td>${x.Relation != 'นักเรียน' ? `<button type="button" class="btn btn-sm btn-danger del-btn">ลบ</button>` : ''}</td>
+        `;
+        
         tr.querySelector('.edit-btn').onclick = () => editHouseholdMember(i);
-        if (tr.querySelector('.del-btn')) tr.querySelector('.del-btn').onclick = () => removeHouseholdMember(i);
+        if (tr.querySelector('.del-btn')) {
+            tr.querySelector('.del-btn').onclick = () => removeHouseholdMember(i);
+        }
         el.householdTbody.appendChild(tr);
       });
+      
       calculateHouseholdIncome();
     }
 
@@ -1019,6 +1081,7 @@
   </script>
 </body>
 </html>
+
 
 
 
