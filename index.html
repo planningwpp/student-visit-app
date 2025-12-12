@@ -243,7 +243,21 @@
               <hr>
               <div class="row">
                 <div class="col-md-6 mb-3"><label class="form-label">สถานภาพครอบครัว</label><select id="Q1_FamilyStatus" name="Q1_FamilyStatus" class="form-select"><option value="">-- เลือก --</option><option>พ่อแม่อยู่ด้วยกัน</option><option>พ่อแม่แยกกันอยู่</option><option>พ่อแม่หย่าร้าง</option><option>พ่อเสียชีวิต/สาบสูญ</option><option>แม่เสียชีวิต/สาบสูญ</option><option>เสียชีวิตทั้งคู่/สาบสูญ</option><option>พ่อ/แม่ทอดทิ้ง</option></select></div>
-                <div class="col-md-6 mb-3"><label class="form-label">อาศัยอยู่กับ</label><select id="Q1_LivesWith" name="Q1_LivesWith" class="form-select"><option value="">-- เลือก --</option><option>พ่อ/แม่</option><option>ญาติ</option><option>อยู่ลำพัง</option><option>ผู้อุปการะ/นายจ้าง</option><option>ครัวเรือนสถาบัน</option></select></div>
+                <div class="col-md-6 mb-3">
+    <label class="form-label">อาศัยอยู่กับ</label>
+    <select id="Q1_LivesWith" name="Q1_LivesWith" class="form-select">
+        <option value="">-- เลือก --</option>
+        <option value="พ่อ/แม่">พ่อ/แม่</option>
+        
+        <option value="ปู่ย่า">ปู่ย่า</option>
+        <option value="ตายาย">ตายาย</option>
+        
+        <option value="ญาติ">ญาติ</option>
+        <option value="อยู่ลำพัง">อยู่ลำพัง</option>
+        <option value="ผู้อุปการะ/นายจ้าง">ผู้อุปการะ/นายจ้าง</option>
+        <option value="ครัวเรือนสถาบัน">ครัวเรือนสถาบัน</option>
+    </select>
+</div>
               </div>
               <div class="row">
                 <div class="col-md-6 mb-3"><label class="form-label fw-bold">สถานะบิดา</label><div class="btn-group w-100" role="group"><input type="radio" class="btn-check" name="Q1_FatherStatus" id="fs1" value="มีชีวิต" checked><label class="btn btn-outline-success" for="fs1">มีชีวิต</label><input type="radio" class="btn-check" name="Q1_FatherStatus" id="fs2" value="ถึงแก่กรรม"><label class="btn btn-outline-secondary" for="fs2">ถึงแก่กรรม</label><input type="radio" class="btn-check" name="Q1_FatherStatus" id="fs3" value="ขาดการติดต่อ"><label class="btn btn-outline-warning" for="fs3">ติดต่อไม่ได้</label></div></div>
@@ -892,6 +906,7 @@ function renderHouseholdTable(m) {
 </html>
 </body>
 </html>
+
 
 
 
