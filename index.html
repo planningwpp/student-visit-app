@@ -69,6 +69,7 @@
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item"><a id="nav-home-link" class="nav-link active" href="#"><i class="bi bi-person-check-fill me-1"></i> เลือกนักเรียน</a></li>
           <li class="nav-item"><a id="nav-dashboard-link" class="nav-link" href="#"><i class="bi bi-bar-chart-line-fill me-1"></i> Dashboard</a></li>
+          <li class="nav-item"><a id="nav-status-link" class="nav-link" href="#"><i class="bi bi-list-check me-1"></i> สถานะรายห้อง</a></li>
           <li class="nav-item"><a id="nav-print-link" class="nav-link" href="#"><i class="bi bi-printer-fill me-1"></i> พิมพ์รายงาน</a></li>
         </ul>
         <span class="navbar-text me-3 text-white-50" id="nav-user-email"></span>
@@ -164,6 +165,58 @@
                 </table>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+<div id="status-screen" class="container">
+      <div class="row justify-content-center">
+        <div class="col-md-12 col-lg-10">
+          <div class="card shadow border-0 p-4">
+            <h4 class="mb-4 text-primary"><i class="bi bi-list-task"></i> ติดตามสถานะการเยี่ยมบ้าน</h4>
+            
+            <div class="row g-2 mb-3 bg-light p-3 rounded align-items-end">
+               <div class="col-md-4">
+                  <label class="fw-bold small">ระดับชั้น</label>
+                  <select id="status-class-select" class="form-select form-select-sm"></select>
+               </div>
+               <div class="col-md-3">
+                  <label class="fw-bold small">ภาคเรียน/ปี</label>
+                  <div class="input-group input-group-sm">
+                    <select id="status-sem" class="form-select" style="max-width: 80px;"><option value="1">1</option><option value="2" selected>2</option></select>
+                    <input type="number" id="status-year" class="form-control" value="2568">
+                  </div>
+               </div>
+               <div class="col-md-3">
+                  <button id="btn-load-status" class="btn btn-primary btn-sm w-100"><i class="bi bi-search"></i> ค้นหา</button>
+               </div>
+            </div>
+
+            <div id="status-summary-panel" style="display:none;">
+                <div class="d-flex gap-2 mb-3 overflow-auto pb-2">
+                    <button class="btn btn-outline-secondary btn-sm active" onclick="filterStatusTable('all')">ทั้งหมด (<span id="cnt-all">0</span>)</button>
+                    <button class="btn btn-outline-success btn-sm" onclick="filterStatusTable('visited')"><i class="bi bi-check-circle"></i> เยี่ยมแล้ว (<span id="cnt-done">0</span>)</button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="filterStatusTable('pending')"><i class="bi bi-hourglass"></i> ยังไม่เยี่ยม (<span id="cnt-pending">0</span>)</button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="filterStatusTable('risk')"><i class="bi bi-exclamation-triangle"></i> กลุ่มเสี่ยง (<span id="cnt-risk">0</span>)</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle" id="status-table">
+                        <thead class="table-light text-center">
+                            <tr>
+                                <th width="50">เลขที่</th>
+                                <th>ชื่อ-สกุล</th>
+                                <th width="100">สถานะ</th>
+                                <th width="120">กลุ่มเสี่ยง</th>
+                                <th width="100">วันที่</th>
+                                <th width="80">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="status-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -577,7 +630,7 @@
     // --- 2. เริ่มต้นทำงาน (Init) ---
     document.addEventListener("DOMContentLoaded", () => {
       try {
-          SCREENS = { loading: document.getElementById('loading-screen'), login: document.getElementById('login-screen'), selection: document.getElementById('student-selection-screen'), dashboard: document.getElementById('dashboard-screen'), print: document.getElementById('print-screen'), form: document.getElementById('main-form-screen') };
+          SCREENS = { loading: document.getElementById('loading-screen'), login: document.getElementById('login-screen'), selection: document.getElementById('student-selection-screen'), dashboard: document.getElementById('dashboard-screen'), print: document.getElementById('print-screen'), form: document.getElementById('main-form-screen') , status: document.getElementById('status-screen') };
           el = {
             mainNavbar: document.getElementById('main-navbar'), navHomeLink: document.getElementById('nav-home-link'), navDashboardLink: document.getElementById('nav-dashboard-link'), navPrintLink: document.getElementById('nav-print-link'), navLogoutBtn: document.getElementById('nav-logout-btn'), navUserEmail: document.getElementById('nav-user-email'),
             printClassSelect: document.getElementById('print-class-select'), printSemester: document.getElementById('print-semester'), printYear: document.getElementById('print-year'), loadPrintListBtn: document.getElementById('load-print-list-btn'), printListContainer: document.getElementById('print-list-container'), printTableBody: document.getElementById('print-table-body'), printAllBtn: document.getElementById('print-all-btn'), backFromPrintBtn: document.getElementById('back-from-print-btn'),
@@ -610,6 +663,7 @@
             el.navHomeLink.classList.toggle('active',id==='selection'||id==='form'); 
             el.navDashboardLink.classList.toggle('active',id==='dashboard'); 
             el.navPrintLink.classList.toggle('active',id==='print'); 
+        if(el.navStatusLink) el.navStatusLink.classList.toggle('active', id==='status');
         } 
     }
 
@@ -762,21 +816,182 @@
     function onSaveSuccess() { Swal.fire('สำเร็จ','บันทึกข้อมูลเรียบร้อยแล้ว','success'); gState.changesToPush={}; }
     function setLoading(l,m='Loading...') { gState.isLoading=l; if(SCREENS.loading){ SCREENS.loading.querySelector('p').textContent=m; SCREENS.loading.style.display=l?'flex':'none'; } }
     function handleError(e) { setLoading(false); Swal.fire('Error',e.message||e,'error'); if(el.loginBtn)el.loginBtn.disabled=false; if(el.saveBtn){el.saveBtn.disabled=false; el.saveBtn.innerHTML=`บันทึก (${Object.keys(gState.changesToPush).length})`;} }
-    
-    function bindEventListeners() { if (el.navHomeLink) el.navHomeLink.onclick = (e) => { e.preventDefault(); if (SCREENS.form.style.display === 'block') handleBackToSelection(); else showScreen('selection'); }; if (el.navDashboardLink) el.navDashboardLink.onclick = (e) => {
-    e.preventDefault();
-    if (SCREENS.form.style.display === 'block') {
-        // กรณีเปิดฟอร์มค้างอยู่ ให้เคลียร์ก่อน แล้วค่อยไป Dashboard + โหลดข้อมูล
-        handleBackToSelection(() => {
-            showScreen('dashboard');
-            loadDashboardData(); // <--- เพิ่มบรรทัดนี้
+
+    // =============================================================
+    // 🔴 ฟังก์ชันผูกปุ่มเมนูต่างๆ (bindEventListeners) - ฉบับแก้ไข
+    // =============================================================
+    function bindEventListeners() {
+        
+        // 1. เมนู "เลือกนักเรียน" (Home)
+        if (el.navHomeLink) el.navHomeLink.onclick = (e) => {
+            e.preventDefault();
+            // ถ้าอยู่ในหน้าฟอร์ม ให้เคลียร์ก่อนกลับ
+            if (SCREENS.form.style.display === 'block') handleBackToSelection();
+            else showScreen('selection');
+        };
+
+        // 2. เมนู "Dashboard" (จุดที่แก้ไข)
+        if (el.navDashboardLink) el.navDashboardLink.onclick = (e) => {
+            e.preventDefault();
+            
+            // สร้างคำสั่งเตรียมไว้: ไปหน้า Dashboard และโหลดข้อมูล
+            const goToDashboard = () => {
+                showScreen('dashboard');
+                // เรียกฟังก์ชันโหลดข้อมูล (ถ้ามี)
+                if (typeof loadDashboardData === 'function') {
+                    loadDashboardData(); 
+                }
+            };
+
+            // เช็คว่าค้างหน้าฟอร์มอยู่ไหม
+            if (SCREENS.form.style.display === 'block') {
+                handleBackToSelection(goToDashboard); // เคลียร์ฟอร์ม -> แล้วไป Dashboard
+            } else {
+                goToDashboard(); // ไป Dashboard เลย
+            }
+        };
+
+        // 3. เมนู "พิมพ์รายงาน" (Print)
+        if (el.navPrintLink) el.navPrintLink.onclick = (e) => {
+            e.preventDefault();
+            
+            const goToPrint = () => {
+                showScreen('print');
+                // ก๊อปปี้ตัวเลือกห้องมาใส่หน้าพิมพ์
+                if (el.classSelect.value) {
+                    el.printClassSelect.innerHTML = el.classSelect.innerHTML;
+                    el.printClassSelect.value = el.classSelect.value;
+                }
+            };
+
+            if (SCREENS.form.style.display === 'block') {
+                handleBackToSelection(goToPrint);
+            } else {
+                goToPrint();
+            }
+        };
+
+        // 4. ปุ่ม Logout
+        if (el.navLogoutBtn) el.navLogoutBtn.onclick = handleLogout;
+
+        // 5. ปุ่ม Login
+        if (el.loginForm) el.loginForm.onsubmit = handleManualLogin;
+
+        // 6. Dropdown เลือกห้อง/นักเรียน
+        if (el.classSelect) el.classSelect.onchange = handleClassChange;
+        if (el.studentSelect) el.studentSelect.onchange = validateStartButton;
+
+        // 7. ปุ่มเริ่มกรอกข้อมูล / กลับ / บันทึก
+        if (el.startFormBtn) el.startFormBtn.onclick = handleStartForm;
+        if (el.backBtn) el.backBtn.onclick = (e) => {
+            e.preventDefault();
+            handleBackToSelection();
+        };
+        if (el.saveBtn) el.saveBtn.onclick = handleSaveToSheets;
+
+        // 8. ปุ่มอื่นๆ (GPS, เพิ่มสมาชิก, ฯลฯ)
+        if (el.gpsBtn) el.gpsBtn.onclick = handleGPSButton;
+        
+        // ปุ่มเพิ่มสมาชิก (ผูกกับฟังก์ชัน Global)
+        if (el.addMemberBtn) {
+            el.addMemberBtn.onclick = () => window.editHouseholdMember(-1);
+        }
+
+        // 9. ปุ่มหน้าพิมพ์รายงาน
+        if (el.loadPrintListBtn) el.loadPrintListBtn.onclick = handleLoadPrintList;
+        if (el.printAllBtn) el.printAllBtn.onclick = handleBatchPrint;
+        if (el.printTableBody) el.printTableBody.onclick = handlePrintTableClick;
+        if (el.backFromPrintBtn) el.backFromPrintBtn.onclick = () => showScreen('selection');
+
+        // 10. เมนู Sidebar ด้านซ้าย
+        el.sidebarLinks.forEach(link => {
+            link.onclick = (e) => {
+                e.preventDefault();
+                showSection(link.getAttribute('data-section'));
+            };
         });
-    } else {
-        // กรณีปกติ ไป Dashboard เลย + โหลดข้อมูล
-        showScreen('dashboard');
-        loadDashboardData(); // <--- เพิ่มบรรทัดนี้
+
+        // 11. Event Change สำหรับ Input ต่างๆ (Logic ซ่อน/แสดง)
+        if (el.livesWithSelect) el.livesWithSelect.onchange = (e) => el.q4Content.style.display = (e.target.value === 'ครัวเรือนสถาบัน') ? 'block' : 'none';
+        
+        el.q3_1_Status.forEach(r => r.onchange = (e) => el.q3_1_SubOptions.style.display = (e.target.value === 'มี') ? 'block' : 'none');
+        
+        el.q3_4_Status.forEach(r => r.onchange = (e) => el.q3_4_SubOptions.style.display = (e.target.value === 'ทำ') ? 'block' : 'none');
+
+        const incChk = document.getElementById('Q3_StudentIncome_Has');
+        if (incChk) incChk.onchange = (e) => {
+            const inps = [document.getElementsByName('Q3_StudentIncome_Detail')[0], document.getElementsByName('Q3_StudentIncome_Amount')[0]];
+            inps.forEach(i => {
+                if (i) {
+                    i.disabled = !e.target.checked;
+                    if (!e.target.checked) i.value = '';
+                }
+            });
+            trackChange('Q3_StudentIncome_Has', e.target.checked ? "TRUE" : "FALSE");
+        };
+
+        // 12. อัปโหลดรูปภาพ
+        document.querySelectorAll('.file-upload-input').forEach(i => i.onchange = handleFileUpload);
+
+        // 13. เปลี่ยนรหัสผ่าน
+        const cpBtn = document.getElementById('open-change-pwd-btn');
+        if (cpBtn) cpBtn.onclick = (e) => {
+            e.preventDefault();
+            new bootstrap.Modal(document.getElementById('changePasswordModal')).show();
+        };
+        
+        const savePassBtn = document.getElementById('save-new-pass-btn');
+        if (savePassBtn) savePassBtn.onclick = async () => {
+            const [em, o, n] = [document.getElementById('cp-email').value, document.getElementById('cp-old-pass').value, document.getElementById('cp-new-pass').value];
+            if (!em || !o || !n) return Swal.fire('เตือน', 'กรอกให้ครบ', 'warning');
+            try {
+                setLoading(true, 'เปลี่ยนรหัส...');
+                const res = await fetch(GAS_API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'changePassword', email: em, oldPass: o, newPass: n })
+                });
+                const json = await res.json();
+                if (json.success) {
+                    Swal.fire('สำเร็จ', 'เรียบร้อย', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
+                } else throw new Error(json.error);
+            } catch (err) {
+                Swal.fire('Error', err.message, 'error');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        // 14. ความเสี่ยง (Risk Toggles)
+        const riskToggle = document.getElementById('Q11_IsAtRisk');
+        const riskDetails = document.getElementById('risk-details');
+        if (riskToggle) {
+            riskToggle.addEventListener('change', (e) => {
+                riskDetails.style.display = e.target.checked ? 'block' : 'none';
+                trackChange('Q11_IsAtRisk', e.target.checked ? "TRUE" : "FALSE");
+            });
+        }
+        
+        const behToggle = document.getElementById('Q11_Risk_Behavior');
+        const behOptions = document.getElementById('risk-behavior-options');
+        if (behToggle) {
+            behToggle.addEventListener('change', (e) => {
+                behOptions.style.display = e.target.checked ? 'block' : 'none';
+            });
+        }
+        
+        const othRiskCheck = document.getElementById('Q11_B_Other_Check');
+        const othRiskText = document.getElementById('Q11_B_Other_Text');
+        if (othRiskCheck) {
+            othRiskCheck.addEventListener('change', (e) => {
+                othRiskText.style.display = e.target.checked ? 'block' : 'none';
+                if (!e.target.checked) othRiskText.value = '';
+            });
+        }
     }
-}; if (el.navPrintLink) el.navPrintLink.onclick = (e) => { e.preventDefault(); if (SCREENS.form.style.display === 'block') handleBackToSelection(() => showScreen('print')); else showScreen('print'); if (el.classSelect.value) { el.printClassSelect.innerHTML = el.classSelect.innerHTML; el.printClassSelect.value = el.classSelect.value; } }; if (el.navLogoutBtn) el.navLogoutBtn.onclick = handleLogout; if (el.loginForm) el.loginForm.onsubmit = handleManualLogin; if (el.classSelect) el.classSelect.onchange = handleClassChange; if (el.studentSelect) el.studentSelect.onchange = validateStartButton; if (el.startFormBtn) el.startFormBtn.onclick = handleStartForm; if (el.backBtn) el.backBtn.onclick = (e) => { e.preventDefault(); handleBackToSelection(); }; if (el.saveBtn) el.saveBtn.onclick = handleSaveToSheets; if (el.gpsBtn) el.gpsBtn.onclick = handleGPSButton; if (el.addMemberBtn) el.addMemberBtn.onclick = () => editHouseholdMember(-1); if (el.loadPrintListBtn) el.loadPrintListBtn.onclick = handleLoadPrintList; if (el.printAllBtn) el.printAllBtn.onclick = handleBatchPrint; if (el.printTableBody) el.printTableBody.onclick = handlePrintTableClick; if (el.backFromPrintBtn) el.backFromPrintBtn.onclick = () => showScreen('selection'); el.sidebarLinks.forEach(link => { link.onclick = (e) => { e.preventDefault(); showSection(link.getAttribute('data-section')); }; }); if (el.livesWithSelect) el.livesWithSelect.onchange = (e) => el.q4Content.style.display = (e.target.value === 'ครัวเรือนสถาบัน') ? 'block' : 'none'; el.q3_1_Status.forEach(r => r.onchange = (e) => el.q3_1_SubOptions.style.display = (e.target.value === 'มี') ? 'block' : 'none'); el.q3_4_Status.forEach(r => r.onchange = (e) => el.q3_4_SubOptions.style.display = (e.target.value === 'ทำ') ? 'block' : 'none'); const incChk = document.getElementById('Q3_StudentIncome_Has'); if (incChk) incChk.onchange = (e) => { const inps = [document.getElementsByName('Q3_StudentIncome_Detail')[0], document.getElementsByName('Q3_StudentIncome_Amount')[0]]; inps.forEach(i => { if (i) { i.disabled = !e.target.checked; if (!e.target.checked) i.value = ''; } }); trackChange('Q3_StudentIncome_Has', e.target.checked ? "TRUE" : "FALSE"); }; document.querySelectorAll('.file-upload-input').forEach(i => i.onchange = handleFileUpload); const cpBtn = document.getElementById('open-change-pwd-btn'); if (cpBtn) cpBtn.onclick = (e) => { e.preventDefault(); new bootstrap.Modal(document.getElementById('changePasswordModal')).show(); }; const savePassBtn = document.getElementById('save-new-pass-btn'); if(savePassBtn) savePassBtn.onclick = async () => { const [em,o,n] = [document.getElementById('cp-email').value, document.getElementById('cp-old-pass').value, document.getElementById('cp-new-pass').value]; if (!em || !o || !n) return Swal.fire('เตือน', 'กรอกให้ครบ', 'warning'); try { setLoading(true, 'เปลี่ยนรหัส...'); const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'changePassword', email: em, oldPass: o, newPass: n }) }); const json = await res.json(); if (json.success) { Swal.fire('สำเร็จ', 'เรียบร้อย', 'success'); bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide(); } else throw new Error(json.error); } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { setLoading(false); } }; const riskToggle = document.getElementById('Q11_IsAtRisk'); const riskDetails = document.getElementById('risk-details'); if (riskToggle) { riskToggle.addEventListener('change', (e) => { riskDetails.style.display = e.target.checked ? 'block' : 'none'; trackChange('Q11_IsAtRisk', e.target.checked ? "TRUE" : "FALSE"); }); } const behToggle = document.getElementById('Q11_Risk_Behavior'); const behOptions = document.getElementById('risk-behavior-options'); if (behToggle) { behToggle.addEventListener('change', (e) => { behOptions.style.display = e.target.checked ? 'block' : 'none'; }); } const othRiskCheck = document.getElementById('Q11_B_Other_Check'); const othRiskText = document.getElementById('Q11_B_Other_Text'); if (othRiskCheck) { othRiskCheck.addEventListener('change', (e) => { othRiskText.style.display = e.target.checked ? 'block' : 'none'; if (!e.target.checked) othRiskText.value = ''; }); } }
+    
+   
+    
     async function handleLoadPrintList() { const cls = el.printClassSelect.value; if(!cls) return Swal.fire('เตือน','เลือกชั้น','warning'); setLoading(true); el.printListContainer.style.display='none'; el.printTableBody.innerHTML=''; try { const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentsByClass', className: cls }) }); const d = await res.json(); if(d && Array.isArray(d)) { d.forEach(s=>{ const rid = `${s.id}_${el.printSemester.value}_${el.printYear.value}`; el.printTableBody.innerHTML += `<tr><td class="text-center">${s.studentNumber}</td><td>${s.name}</td><td class="text-center"><button class="btn btn-sm btn-danger print-single-btn" data-rid="${rid}" data-name="${s.name}">PDF</button></td></tr>`; }); el.printListContainer.style.display='block'; } } catch(e){handleError(e);} finally{setLoading(false);} }
     function handlePrintTableClick(e) { const btn=e.target.closest('.print-single-btn'); if(btn) generateSinglePDF(btn.dataset.rid, btn.dataset.name); }
     async function handleBatchPrint() { const btns = document.querySelectorAll('.print-single-btn'); if(btns.length==0)return; if((await Swal.fire({title:`พิมพ์ ${btns.length} คน?`, showCancelButton:true})).isConfirmed) { for(const btn of btns) { btn.scrollIntoView({behavior:'smooth',block:'center'}); btn.disabled=true; btn.innerHTML='...'; try { await generateSinglePDF(btn.dataset.rid, btn.dataset.name, true); btn.className='btn btn-sm btn-success'; btn.innerHTML='OK'; } catch { btn.className='btn btn-sm btn-secondary'; btn.innerHTML='X'; } await new Promise(r=>setTimeout(r,1000)); } Swal.fire('เสร็จสิ้น','','success'); } }
@@ -1314,11 +1529,128 @@ window.exportTableToExcel = function() {
     // 4. สั่งดาวน์โหลด
     XLSX.writeFile(wb, fileName);
 };    
+// --- ส่วนจัดการหน้าสถานะรายห้อง ---
+
+    // 1. โหลดข้อมูล
+    async function loadClassStatus() {
+        const cls = document.getElementById('status-class-select').value;
+        const sem = document.getElementById('status-sem').value;
+        const yr = document.getElementById('status-year').value;
+
+        if(!cls) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกระดับชั้น', 'warning');
+
+        setLoading(true, 'กำลังดึงข้อมูล...');
+        document.getElementById('status-summary-panel').style.display = 'none';
+
+        try {
+            const res = await fetch(GAS_API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'getClassStatusSummary', className: cls, semester: sem, year: yr })
+            });
+            const data = await res.json();
+            
+            if(data.error) throw new Error(data.error);
+            
+            renderStatusTable(data);
+            setLoading(false);
+            document.getElementById('status-summary-panel').style.display = 'block';
+
+        } catch(e) {
+            handleError(e);
+        }
+    }
+
+    // 2. แสดงตาราง
+    let currentStatusData = []; // เก็บข้อมูลไว้กรอง
+    function renderStatusTable(data) {
+        currentStatusData = data;
+        const tbody = document.getElementById('status-tbody');
+        tbody.innerHTML = '';
+
+        let cAll=0, cDone=0, cPending=0, cRisk=0;
+
+        data.forEach(s => {
+            cAll++;
+            if(s.status === 'visited') cDone++; else cPending++;
+            if(s.isRisk) cRisk++;
+
+            const tr = document.createElement('tr');
+            tr.dataset.status = s.status; // ไว้กรอง
+            tr.dataset.risk = s.isRisk ? 'true' : 'false';
+
+            const statusBadge = s.status === 'visited' 
+                ? `<span class="badge bg-success"><i class="bi bi-check-lg"></i> เรียบร้อย</span>` 
+                : `<span class="badge bg-secondary">รอเยี่ยม</span>`;
+            
+            const riskBadge = s.isRisk 
+                ? `<span class="badge bg-danger text-wrap">${s.riskText || 'เสี่ยง'}</span>` 
+                : (s.status === 'visited' ? `<span class="text-muted small">-</span>` : ``);
+
+            // ปุ่มจัดการ: ถ้าเยี่ยมแล้วให้กดดู/แก้ ถ้ายังให้กดเยี่ยม
+            const btnAction = s.status === 'visited'
+                ? `<button class="btn btn-sm btn-outline-primary" onclick="openStudentForm('${s.id}', '${s.name}')"><i class="bi bi-pencil-square"></i> แก้ไข</button>`
+                : `<button class="btn btn-sm btn-primary" onclick="openStudentForm('${s.id}', '${s.name}')"><i class="bi bi-house-door"></i> เยี่ยม</button>`;
+
+            tr.innerHTML = `
+                <td class="text-center">${s.number}</td>
+                <td>${s.name}</td>
+                <td class="text-center">${statusBadge}</td>
+                <td class="text-center">${riskBadge}</td>
+                <td class="text-center small">${s.lastUpdated}</td>
+                <td class="text-center">${btnAction}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // อัปเดตตัวเลขสรุป
+        document.getElementById('cnt-all').innerText = cAll;
+        document.getElementById('cnt-done').innerText = cDone;
+        document.getElementById('cnt-pending').innerText = cPending;
+        document.getElementById('cnt-risk').innerText = cRisk;
+    }
+
+    // 3. ฟังก์ชันกรอง (Filter)
+    window.filterStatusTable = (type) => {
+        const rows = document.querySelectorAll('#status-tbody tr');
+        rows.forEach(r => {
+            let show = false;
+            if(type === 'all') show = true;
+            else if(type === 'visited' && r.dataset.status === 'visited') show = true;
+            else if(type === 'pending' && r.dataset.status === 'pending') show = true;
+            else if(type === 'risk' && r.dataset.risk === 'true') show = true;
+            
+            r.style.display = show ? '' : 'none';
+        });
+        
+        // จัดการ class active ที่ปุ่ม
+        document.querySelectorAll('#status-summary-panel button').forEach(b => b.classList.remove('active', 'btn-primary', 'btn-success', 'btn-danger'));
+        // (ส่วนตกแต่งปุ่มให้สวยงามตามสถานะที่เลือก อาจจะละไว้ก่อนได้)
+    };
+
+    // 4. ฟังก์ชันเปิดฟอร์มจากหน้านี้
+    window.openStudentForm = (sid, sname) => {
+        // ตั้งค่าตัวแปรระบบให้เหมือนเลือกจากหน้าแรก
+        el.classSelect.value = document.getElementById('status-class-select').value;
+        
+        // ต้องรอโหลดรายชื่อนักเรียนเข้า Dropdown หลักก่อน (ถ้ายังไม่มี) 
+        // แต่วิธีลัดคือ ยัดค่าลงไปเลยถ้าเรารู้ ID
+        
+        // อัปเดต State
+        gState.selectedStudentId = sid;
+        gState.selectedStudentName = sname;
+        el.semesterSelect.value = document.getElementById('status-sem').value;
+        el.yearSelect.value = document.getElementById('status-year').value;
+        
+        // เรียกฟังก์ชันเริ่มทำแบบฟอร์ม
+        handleStartForm();
+    };
+    
   </script>
 </body>
 </html>
 </body>
 </html>
+
 
 
 
