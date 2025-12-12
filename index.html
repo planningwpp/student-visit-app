@@ -941,19 +941,28 @@ function renderHouseholdTable(m) {
     }
 }
 
+/* แก้ไขใน index.html */
+
 function renderDashboard(data) {
     const container = document.getElementById('dashboard-screen');
-    // ค่าปัจจุบันที่ใช้อยู่ (เพื่อแสดงใน Dropdown)
     const currentSem = document.getElementById('semester-select')?.value || "2";
     const currentYear = document.getElementById('year-select')?.value || "2568";
     
-    const total = data.total || 1; 
+    // 🟢 เก็บค่าห้องที่เลือกไว้ปัจจุบัน (ถ้ามี)
+    const currentClass = window.dashboardCurrentClass || ""; 
 
     let html = `
       <div class="card shadow-sm mb-4 bg-white border-primary">
         <div class="card-body py-3">
           <div class="row align-items-center g-2">
             <div class="col-auto"><span class="fw-bold text-primary"><i class="bi bi-funnel-fill"></i> ตัวเลือกข้อมูล:</span></div>
+            
+            <div class="col-auto">
+                <select id="dash-class" class="form-select form-select-sm">
+                    <option value="">-- ทุกระดับชั้น --</option>
+                    </select>
+            </div>
+
             <div class="col-auto">
                 <select id="dash-sem" class="form-select form-select-sm">
                     <option value="1" ${currentSem=="1"?"selected":""}>เทอม 1</option>
@@ -967,24 +976,24 @@ function renderDashboard(data) {
                 <button onclick="refreshDashboard()" class="btn btn-sm btn-primary"><i class="bi bi-arrow-clockwise"></i> อัปเดต</button>
             </div>
             <div class="col text-end text-muted small">
-                ข้อมูล ณ วันที่ ${new Date().toLocaleDateString('th-TH')}
+                 ${data.total} คน
             </div>
           </div>
         </div>
       </div>
-
+      
       <div class="row g-3 mb-4">
         <div class="col-md-3"><div class="card bg-primary text-white p-3 h-100 text-center"><h3>${data.total}</h3><p class="mb-0">เยี่ยมบ้านแล้ว (คน)</p></div></div>
         <div class="col-md-3"><div class="card bg-danger text-white p-3 h-100 text-center"><h3>${data.risks.total_risk || 0}</h3><p class="mb-0">กลุ่มเสี่ยง (คน)</p></div></div>
         <div class="col-md-3"><div class="card bg-warning text-dark p-3 h-100 text-center"><h3>${data.risks.learning || 0}</h3><p class="mb-0">เสี่ยงด้านการเรียน</p></div></div>
         <div class="col-md-3"><div class="card bg-info text-white p-3 h-100 text-center"><h3>${data.risks.behavior || 0}</h3><p class="mb-0">เสี่ยงด้านพฤติกรรม</p></div></div>
       </div>
-
+      
       <div class="row">
          <div class="col-md-6 mb-4"><div class="card shadow h-100"><div class="card-header fw-bold">รายได้ครอบครัว</div><div class="card-body"><canvas id="chartIncome"></canvas></div></div></div>
          <div class="col-md-6 mb-4"><div class="card shadow h-100"><div class="card-header fw-bold">สถานภาพครอบครัว</div><div class="card-body"><canvas id="chartFamily"></canvas></div></div></div>
       </div>
-
+      
       <div class="card shadow mb-4">
          <div class="card-header fw-bold bg-light">รายละเอียดตามหัวข้อรายงาน</div>
          <div class="card-body">
@@ -1014,9 +1023,25 @@ function renderDashboard(data) {
          </div>
       </div>
     `;
+    
     container.innerHTML = html;
 
-    // Render Charts (ต้องทำหลังจาก innerHTML)
+    // 🟢 เติมตัวเลือกห้องเรียน (ดึงจากหน้า Login)
+    const dashClassSelect = document.getElementById('dash-class');
+    const mainClassSelect = document.getElementById('class-select');
+    if (mainClassSelect && dashClassSelect) {
+        // ก๊อปปี้ตัวเลือกทั้งหมดมา
+        dashClassSelect.innerHTML = mainClassSelect.innerHTML;
+        // เพิ่มตัวเลือก "ทั้งหมด" ไว้บนสุด
+        const allOpt = new Option("-- ทุกระดับชั้น --", "");
+        dashClassSelect.insertBefore(allOpt, dashClassSelect.firstChild);
+        dashClassSelect.selectedIndex = 0; // default เลือกทั้งหมด
+        
+        // คืนค่าที่เลือกไว้ล่าสุด
+        if(currentClass) dashClassSelect.value = currentClass;
+    }
+
+    // Render Charts
     if(data.q14_income_range) {
        new Chart(document.getElementById('chartIncome'), {
           type: 'bar',
@@ -1040,18 +1065,19 @@ function renderDashboard(data) {
     }
 }
 
-// 🟢 ฟังก์ชันสำหรับปุ่มอัปเดตใน Dashboard
+// 🟢 อัปเดตฟังก์ชัน refreshDashboard ให้ส่งห้องไปด้วย
 window.refreshDashboard = function() {
     const s = document.getElementById('dash-sem').value;
     const y = document.getElementById('dash-year').value;
-    // อัปเดตค่า Global ไว้ด้วย เผื่อกดกลับไปหน้าอื่น
-    if(document.getElementById('semester-select')) document.getElementById('semester-select').value = s;
-    if(document.getElementById('year-select')) document.getElementById('year-select').value = y;
+    const c = document.getElementById('dash-class').value; // เอาค่าห้อง
     
+    // จำค่าห้องไว้ (Global)
+    window.dashboardCurrentClass = c;
+
     setLoading(true, "กำลังโหลดข้อมูลใหม่...");
     fetch(GAS_API_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: 'getDashboardStats', semester: s, year: y })
+        body: JSON.stringify({ action: 'getDashboardStats', semester: s, year: y, className: c }) // ส่ง c ไปด้วย
     })
     .then(r => r.json())
     .then(d => {
@@ -1098,6 +1124,7 @@ function createTableRows(title, obj, total) {
 </html>
 </body>
 </html>
+
 
 
 
