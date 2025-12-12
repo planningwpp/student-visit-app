@@ -562,40 +562,48 @@
     });
 
     // --- 1. แสดงตาราง (ฉบับแก้บัคการดึงข้อมูล) ---
-    function renderHouseholdTable(m) { 
-      // รับข้อมูลมา (ถ้าไม่มีให้เป็นว่าง)
-      gState.householdMembers = (Array.isArray(m) && m.length > 0) ? m : []; 
-      el.householdTbody.innerHTML = ''; 
+function renderHouseholdTable(m) {
+      // รับข้อมูลดิบมา
+      let rawData = Array.isArray(m) ? m : [];
       
-      // ถ้าไม่มีข้อมูลจริงๆ (เพิ่งเริ่มทำ) -> สร้างแถวรอ
-      if (gState.householdMembers.length === 0) {
-         // แจ้งเตือนเล็กน้อยมุมขวา (Toast) ว่าไม่พบข้อมูลเก่า
-         const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
-         Toast.fire({ icon: 'info', title: 'ไม่พบข้อมูลเก่า (สร้างแบบฟอร์มใหม่)' });
+      // -----------------------------------------------------------
+      // 🌟 จุดแก้บัคสำคัญ: กรองเอาเฉพาะข้อมูลล่าสุด (Last Write Wins)
+      // -----------------------------------------------------------
+      // หลักการ: วนลูปดูข้อมูล ถ้าเจอเลขลำดับ (MemberNo) ซ้ำกัน ให้เอาอันใหม่ทับอันเก่า
+      // ทำให้เราได้ข้อมูลชุดล่างสุดใน Excel เสมอ
+      
+      const uniqueMap = new Map();
+      rawData.forEach(item => {
+          // ใช้ MemberNo เป็นเกณฑ์ (ถ้าไม่มี MemberNo ให้ใช้ Relation)
+          const key = item.MemberNo || item.Relation || item.MemberName; 
+          if(key) uniqueMap.set(String(key), item);
+      });
+      
+      // แปลงกลับเป็น Array เพื่อเอาไปใช้งาน
+      gState.householdMembers = Array.from(uniqueMap.values());
+      // -----------------------------------------------------------
 
-         if (gState.originalData.studentMaster) {
-             const sm = gState.originalData.studentMaster; 
-             // 1. นักเรียน
-             gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName} ${sm.LastName}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 }); 
-             // 2. บิดา (ว่าง)
-             gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 2, MemberName: '', Relation: 'บิดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 }); 
-             // 3. มารดา (ว่าง)
-             gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: '', Relation: 'มารดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 }); 
-         }
-      } else {
-         // ถ้ามีข้อมูล -> แจ้งเตือนว่าโหลดสำเร็จ
-         const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true });
-         Toast.fire({ icon: 'success', title: `โหลดข้อมูลสำเร็จ ${gState.householdMembers.length} รายการ` });
+      el.householdTbody.innerHTML = '';
+      
+      // ถ้าข้อมูลว่างเปล่า (เพิ่งเริ่ม)
+      if (gState.householdMembers.length === 0 && gState.originalData.studentMaster) {
+         const sm = gState.originalData.studentMaster;
+         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName} ${sm.LastName}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 }); 
+         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 2, MemberName: '', Relation: 'บิดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 }); 
+         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: '', Relation: 'มารดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 }); 
       }
       
+      // เรียงลำดับตาม MemberNo (กันสลับที่)
+      gState.householdMembers.sort((a, b) => (parseInt(a.MemberNo)||99) - (parseInt(b.MemberNo)||99));
+
       // วาดตาราง
-      gState.householdMembers.forEach((x, i) => { 
-        // Map ตัวแปรให้ครอบคลุม (กันพลาดจาก CSV)
+      gState.householdMembers.forEach((x, i) => {
+        // Map ชื่อตัวแปร (กันพลาดจาก CSV)
         const job = x.MemberOccupation || x.Occupation || x.Job || '-';
         const edu = x.MemberEducation || x.Education || '-';
         const income = x.Income_Total || x.Income || 0;
 
-        const tr = document.createElement('tr'); 
+        const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${i + 1}</td>
             <td class="text-start">${x.MemberName || ''}</td>
@@ -611,15 +619,16 @@
             <td>${x.Relation != 'นักเรียน' ? `<button type="button" class="btn btn-sm btn-danger del-btn">ลบ</button>` : ''}</td>
         `;
         
-        tr.querySelector('.edit-btn').onclick = () => editHouseholdMember(i); 
-        if (tr.querySelector('.del-btn')) tr.querySelector('.del-btn').onclick = () => removeHouseholdMember(i); 
-        
-        el.householdTbody.appendChild(tr); 
-      }); 
+        tr.querySelector('.edit-btn').onclick = () => editHouseholdMember(i);
+        if (tr.querySelector('.del-btn')) {
+            tr.querySelector('.del-btn').onclick = () => removeHouseholdMember(i);
+        }
+        el.householdTbody.appendChild(tr);
+      });
       
-      calculateHouseholdIncome(); 
+      calculateHouseholdIncome();
     }
-
+    
     // --- 2. แก้ไขสมาชิก (บันทึกลงตารางทันที) ---
     window.editHouseholdMember = (index) => {
         const isNew = index === -1;
@@ -672,24 +681,22 @@
     };
 
     // --- 3. บันทึกข้อมูล (แยกอิสระ) ---
-    async function handleSaveToSheets() {
+async function handleSaveToSheets() {
         el.saveBtn.disabled = true; el.saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
         try {
-            // เตรียมข้อมูลจากฟอร์ม
             const d = {}; const fd = new FormData(document.getElementById('visit-form'));
             fd.forEach((v, k) => d[k] = v);
             document.querySelectorAll('input[type=checkbox]').forEach(c => d[c.name] = c.checked ? "TRUE" : "FALSE");
 
-            // ส่งข้อมูลหลัก (VisitData)
+            // 1. ส่งข้อมูลหลัก
             await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveDeltaChanges', recordId: gState.currentRecordId, userEmail: gState.currentUser.email, changes: d }) });
 
-            // ส่งข้อมูลตาราง (HouseholdData)
+            // 2. ส่งข้อมูลตาราง
             if (gState.changesToPush.householdData) {
                 const membersToSend = gState.householdMembers.map((x, i) => ({ 
                     ...x, 
                     RecordID: gState.currentRecordId,
-                    MemberNo: i + 1,
-                    // ส่งเผื่อไปทั้ง 2 ชื่อ (ไทย/อังกฤษ) เพื่อให้ Google Sheets รับค่าได้ชัวร์
+                    MemberNo: i + 1, // 👈 สำคัญมาก: ระบุลำดับที่ให้ชัดเจน เพื่อใช้กรอง
                     Occupation: x.MemberOccupation, 
                     Education: x.MemberEducation,
                     Income: x.Income_Total
@@ -787,6 +794,7 @@
 </html>
 </body>
 </html>
+
 
 
 
