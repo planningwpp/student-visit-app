@@ -110,7 +110,7 @@
             </div>
             <div class="row g-3 mt-3">
               <div class="col-md-6"><label class="form-label fw-bold">3. ภาคเรียน</label><input type="number" id="semester-select" class="form-control form-control-lg" value="1"></div>
-              <div class="col-md-6"><label class="form-label fw-bold">4. ปีการศึกษา</label><input type="number" id="year-select" class="form-control form-control-lg" value="2568"></div>
+              <div class="col-md-6"><label class="form-label fw-bold">3. ภาคเรียน</label><input type="number" id="semester-select" class="form-control form-control-lg" value="2"></div>
             </div>
             <button id="start-form-btn" class="btn btn-success btn-lg w-100 mt-4" disabled><i class="bi bi-pencil-square me-2"></i> เริ่มกรอกข้อมูล</button>
           </div>
@@ -522,7 +522,7 @@
     </div>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
     // --- ตั้งค่าระบบ ---
@@ -553,15 +553,15 @@
           showScreen('login'); 
           bindEventListeners(); 
           
-          // ตั้งค่าเริ่มต้น ภาคเรียนที่ 2 ปี 2568
-          if(el.semesterSelect) el.semesterSelect.value = "2";
+          // บังคับตั้งค่าเริ่มต้นเป็น 2/2568 อีกครั้งทาง JS
+          if(el.semesterSelect) el.semesterSelect.value = "2"; 
           if(el.yearSelect) el.yearSelect.value = "2568";
           
           try { attachFormListeners(); } catch(e) { console.warn("Attach warning", e); }
       } catch (err) { alert("Init Error: " + err.message); if(SCREENS.loading) SCREENS.loading.style.display = 'none'; }
     });
 
-    // --- 1. โหลดข้อมูล (บังคับโหลดใหม่จาก Server เสมอ) ---
+    // --- 1. โหลดข้อมูล (บังคับดึงใหม่ + แจ้งเตือนถ้าไม่เจอ) ---
     async function handleStartForm() { 
        try { 
           gState.selectedStudentId = el.studentSelect.value; 
@@ -573,7 +573,6 @@
           
           if(el.studentNameHeader) el.studentNameHeader.textContent = `${gState.selectedStudentName} (${sem}/${yr})`; 
           
-          // [แก้บัค] ไม่ใช้ LocalStorage แล้ว เพื่อให้ได้ข้อมูลล่าสุดจาก Sheets เสมอ
           setLoading(true, 'กำลังดึงข้อมูลล่าสุด...'); 
           
           const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentVisitData', recordId: gState.currentRecordId }) }); 
@@ -582,20 +581,14 @@
           if(data.studentMaster) { 
              loadStudentDataSuccess(data); 
           } else { 
-             // ถ้าไม่เจอ ให้ลองดึงแค่ข้อมูลตั้งต้นนักเรียนมาสร้างฟอร์มเปล่า
+             // แจ้งเตือนชัดๆ ว่าไม่เจอข้อมูล
              Swal.fire({
-                 icon: 'info', title: 'เริ่มบันทึกใหม่', 
-                 text: 'ไม่พบข้อมูลเดิมในเทอมนี้ ระบบจะสร้างแบบฟอร์มใหม่ให้ครับ',
-                 timer: 2000, showConfirmButton: false
+                 icon: 'info', title: 'ไม่พบข้อมูลเก่า', 
+                 text: `ไม่พบข้อมูลของเทอม ${sem}/${yr} ระบบจะสร้างแบบฟอร์มเปล่าให้ครับ`,
+                 timer: 3000
              });
-             // สร้างโครงข้อมูลเปล่าๆ แต่มีข้อมูลนักเรียน
-             const emptyData = { 
-                 studentMaster: data.studentMaster || {}, // กรณี GAS ส่ง master มาแต่ไม่มี visit
-                 visitData: {}, 
-                 householdData: [] 
-             };
-             // ถ้า GAS ไม่ส่งอะไรมาเลยจริงๆ ให้ดึงจาก cache master เก่า (ถ้ามี) หรือ error
-             loadStudentDataSuccess(data.studentMaster ? data : emptyData); 
+             // สร้างข้อมูลเปล่า
+             loadStudentDataSuccess({ studentMaster: data.studentMaster || {}, visitData: {}, householdData: [] }); 
           } 
        } catch(e) { 
           console.error(e); 
@@ -608,7 +601,6 @@
       gState.originalData = JSON.parse(JSON.stringify(d)); 
       prefillForm(d.studentMaster, d.visitData); 
       
-      // แปลงข้อมูล Household
       let hData = d.householdData;
       if (typeof hData === 'string') { try { hData = JSON.parse(hData); } catch(e) { hData = []; } }
       
@@ -616,49 +608,41 @@
       showScreen('form'); calculateProgress(); setLoading(false); 
     }
 
-    // --- 2. แสดงตาราง (กรองข้อมูลซ้ำ + เติมพ่อแม่ถ้าหาย) ---
+    // --- 2. แสดงตาราง (กรองข้อมูลซ้ำ + เติมแถวที่ขาด) ---
     function renderHouseholdTable(m) { 
       let rawData = Array.isArray(m) ? m : [];
       
-      // [แก้บัค] กรองเอาข้อมูลล่าสุด (ถ้ามีซ้ำ) โดยใช้ MemberNo เป็นหลัก
+      // [จุดสำคัญ] กรองเอาเฉพาะข้อมูลบรรทัดล่าสุด (ถ้ามีซ้ำ)
       const uniqueMap = new Map();
       rawData.forEach(item => {
-          // ใช้ MemberNo หรือ ชื่อ เป็นคีย์ (ถ้า MemberNo เป็น 1, 2, 3 ซ้ำกัน จะเอาอันหลังสุดมาทับ)
+          // ใช้ MemberNo เป็นเกณฑ์ (ถ้ามีเลข 1 ซ้ำกัน 3 รอบ จะเอาอันสุดท้ายมาแสดง)
           const key = item.MemberNo ? String(item.MemberNo) : (item.MemberName || Math.random());
           uniqueMap.set(key, item);
       });
       gState.householdMembers = Array.from(uniqueMap.values());
       
-      // เรียงลำดับ 1, 2, 3...
+      // เรียงลำดับ 1, 2, 3
       gState.householdMembers.sort((a, b) => (parseInt(a.MemberNo) || 99) - (parseInt(b.MemberNo) || 99));
 
       el.householdTbody.innerHTML = ''; 
       
-      // ถ้าไม่มีข้อมูล หรือ ขาดพ่อ/แม่ -> ให้เติมแถวว่างรอไว้เลย
-      const hasStudent = gState.householdMembers.find(x => x.Relation === 'นักเรียน' || x.MemberNo == 1);
-      const hasDad = gState.householdMembers.find(x => x.Relation === 'บิดา' || x.MemberNo == 2);
-      const hasMom = gState.householdMembers.find(x => x.Relation === 'มารดา' || x.MemberNo == 3);
-      
-      const sm = gState.originalData.studentMaster || {};
-
-      if (!hasStudent) {
-         gState.householdMembers.unshift({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName || ''} ${sm.LastName || ''}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 });
-      }
-      if (!hasDad) {
-         // แทรกต่อจากนักเรียน (index 1)
-         gState.householdMembers.splice(1, 0, { RecordID: gState.currentRecordId, MemberNo: 2, MemberName: '', Relation: 'บิดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
-      }
-      if (!hasMom) {
-         // แทรกต่อจากพ่อ (index 2)
-         gState.householdMembers.splice(2, 0, { RecordID: gState.currentRecordId, MemberNo: 3, MemberName: '', Relation: 'มารดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
+      // ถ้าไม่มีข้อมูลเลย ให้สร้างแถวรอ (1=นร, 2=พ่อ, 3=แม่)
+      if (gState.householdMembers.length === 0) {
+         const sm = gState.originalData.studentMaster || {};
+         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName || ''} ${sm.LastName || ''}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 });
+         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 2, MemberName: '', Relation: 'บิดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
+         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: '', Relation: 'มารดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
+      } else {
+         // ถ้ามีข้อมูลแต่ขาดพ่อ/แม่ ก็เติมให้ครบ
+         const hasStudent = gState.householdMembers.find(x => x.Relation === 'นักเรียน' || x.MemberNo == 1);
+         if (!hasStudent) gState.householdMembers.unshift({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: 'นักเรียน', Relation: 'นักเรียน', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
       }
 
-      // วาดตารางใหม่
+      // วาดตาราง
       gState.householdMembers.forEach((x, i) => { 
-        // อัปเดต MemberNo ให้เรียงสวยงาม (เผื่อของเก่ามามั่ว)
-        x.MemberNo = i + 1; 
-
-        // ดึงค่า (รองรับชื่อตัวแปรจาก CSV)
+        x.MemberNo = i + 1; // รันเลขใหม่ให้สวยงาม
+        
+        // ดักจับชื่อตัวแปร (กันพลาดจาก CSV)
         const job = x.MemberOccupation || x.Occupation || '-';
         const edu = x.MemberEducation || x.Education || '-';
         const income = x.Income_Total || x.Income || 0;
@@ -694,11 +678,10 @@
         const jobOpts = ["ไม่ได้ทำงาน", "ข้าราชการ/รัฐวิสาหกิจ", "พนักงานบริษัท", "รับจ้าง", "รับจ้างทั่วไป", "เกษตรกร", "ค้าขาย", "ธุรกิจส่วนตัว", "อื่นๆ"];
         const eduOpts = ["ไม่ได้เรียน", "ประถมศึกษา", "มัธยมศึกษา", "ปวช./ปวส.", "ปริญญาตรี", "ปริญญาโท/เอก", "อื่นๆ"];
 
-        // ดึงค่าเก่า
+        const checkOpt = (opts, val) => opts.includes(val) ? val : (val && val.trim() !== "" ? 'อื่นๆ' : '');
         const mJob = member.MemberOccupation || member.Occupation || '';
         const mEdu = member.MemberEducation || member.Education || '';
 
-        const checkOpt = (opts, val) => opts.includes(val) ? val : (val && val.trim() !== "" ? 'อื่นๆ' : '');
         const currentJobSelect = checkOpt(jobOpts, mJob);
         const currentJobOther = currentJobSelect === 'อื่นๆ' || !jobOpts.includes(mJob) ? mJob : '';
         const currentEduSelect = checkOpt(eduOpts, mEdu);
@@ -728,8 +711,8 @@
                 if (isNew) gState.householdMembers.push(updatedMember); else gState.householdMembers[index] = updatedMember;
                 
                 trackChange('household_changed', true); 
-                renderHouseholdTable(gState.householdMembers); // วาดใหม่ + เรียงลำดับ + เติมแถวที่ขาด
-                // ไม่ต้อง saveToLocalStorage() ตรงนี้ก็ได้ เพราะเราเน้น Server เป็นหลัก แต่ใส่ไว้กันเหนียว
+                renderHouseholdTable(gState.householdMembers); 
+                saveToLocalStorage(); 
             }
         });
     };
@@ -749,23 +732,18 @@
             await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveDeltaChanges', recordId: gState.currentRecordId, userEmail: gState.currentUser.email, changes: d }) });
 
             if (gState.changesToPush.householdData) {
-                // Map ข้อมูลให้ครบถ้วนก่อนส่ง
                 const membersToSend = gState.householdMembers.map((x, i) => ({ 
                     ...x, 
                     RecordID: gState.currentRecordId,
                     MemberNo: i + 1,
-                    // ส่งชื่อตัวแปรไปทั้ง 2 แบบ (กันพลาด)
                     Occupation: x.MemberOccupation, 
                     Education: x.MemberEducation,
                     Income: x.Income_Total
                 }));
                 await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'overwriteHouseholdData', recordId: gState.currentRecordId, members: membersToSend }) });
             }
-            
-            // สำเร็จ -> โหลดข้อมูลซ้ำจาก Server ทันทีเพื่อความชัวร์ว่าข้อมูลเข้าแล้ว
             onSaveSuccess();
-            handleStartForm(); // เรียกโหลดใหม่ทันที
-            
+            handleStartForm(); // บังคับโหลดข้อมูลใหม่ทันทีหลังบันทึก (เพื่อความชัวร์)
         } catch (e) { handleError(e); } finally { if (el.saveBtn) { el.saveBtn.disabled = false; el.saveBtn.innerHTML = 'บันทึก (0)'; } }
     }
 
@@ -786,12 +764,13 @@
     function deleteImage(n) { document.getElementById(n).value=""; document.getElementById(`wrapper_${n}`).style.display='none'; trackChange(n,""); saveToLocalStorage(); }
     async function handleFileUpload(e) { const f=e.target.files[0]; if(!f)return; const id=e.target.dataset.targetHidden; const prev=document.getElementById(`preview_${id}`), wrap=document.getElementById(`wrapper_${id}`), del=wrap.querySelector('.btn-delete-img'); wrap.style.display='inline-block'; prev.style.display='block'; prev.src='https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif'; del.style.display='none'; try { const fd=new FormData(); fd.append('file',f); fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET); const res=await fetch(CLOUDINARY_URL,{method:'POST',body:fd}); const d=await res.json(); prev.src=d.secure_url; del.style.display='block'; document.getElementById(id).value=d.secure_url; trackChange(id,d.secure_url); saveToLocalStorage(); } catch(e){ handleError(e); } }
     function onSaveSuccess() { Swal.fire('สำเร็จ','บันทึกข้อมูลเรียบร้อยแล้ว','success'); gState.changesToPush={}; }
-    function loadFromLocalStorage() { return null; } // ปิด LocalStorage ไปเลย
+    function loadFromLocalStorage() { return null; } // ปิด LocalStorage
   </script>
 </body>
 </html>
 </body>
 </html>
+
 
 
 
