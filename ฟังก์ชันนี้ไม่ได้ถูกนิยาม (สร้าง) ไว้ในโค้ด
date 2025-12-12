@@ -802,11 +802,50 @@
     async function handleFileUpload(e) { const f=e.target.files[0]; if(!f)return; const id=e.target.dataset.targetHidden; const prev=document.getElementById(`preview_${id}`), wrap=document.getElementById(`wrapper_${id}`), del=wrap.querySelector('.btn-delete-img'); wrap.style.display='inline-block'; prev.style.display='block'; prev.src='https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif'; del.style.display='none'; try { const fd=new FormData(); fd.append('file',f); fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET); const res=await fetch(CLOUDINARY_URL,{method:'POST',body:fd}); const d=await res.json(); prev.src=d.secure_url; del.style.display='block'; document.getElementById(id).value=d.secure_url; trackChange(id,d.secure_url); saveToLocalStorage(); } catch(e){ handleError(e); } }
     function onSaveSuccess() { Swal.fire('สำเร็จ','บันทึกข้อมูลเรียบร้อยแล้ว','success'); gState.changesToPush={}; }
     function loadFromLocalStorage() { return null; } // ปิด LocalStorage ไปเลย
+    // --- ฟังก์ชันคำนวณรายได้ครัวเรือน (ส่วนที่ขาดหายไป) ---
+    function calculateHouseholdIncome() {
+        // 1. ดึงข้อมูลสมาชิกครัวเรือนจากตัวแปร global
+        const members = gState.householdMembers || [];
+        const count = members.length;
+
+        // 2. วนลูปเพื่อรวมรายได้ทั้งหมด
+        let totalIncome = 0;
+        members.forEach(m => {
+            // ดึงค่าจาก Income_Total หรือ Income และแปลงเป็นตัวเลข
+            let val = parseFloat(m.Income_Total || m.Income || 0);
+            if (isNaN(val)) val = 0;
+            totalIncome += val;
+        });
+
+        // 3. คำนวณรายได้เฉลี่ยต่อคน
+        let perCapita = 0;
+        if (count > 0) {
+            perCapita = totalIncome / count;
+        }
+
+        // 4. แสดงผลตัวเลขลงในช่อง Input บนหน้าจอ
+        if (el.totalMembersInput) el.totalMembersInput.value = count;
+        if (el.totalIncomeInput) el.totalIncomeInput.value = totalIncome; // ปกติรายได้รวมไม่เอาทศนิยม
+        if (el.perCapitaIncomeInput) el.perCapitaIncomeInput.value = perCapita.toFixed(2); // รายได้เฉลี่ยเอาทศนิยม 2 ตำแหน่ง
+    }
+    // (แถม) หากเจอฟัญหา trackChange is not defined ให้เติมตัวนี้
+    function trackChange(field, value) {
+        gState.changesToPush[field] = value;
+        // อัปเดตปุ่มบันทึกให้แสดงจำนวนที่แก้ไข
+        if(el.saveBtn) el.saveBtn.innerHTML = `บันทึก (${Object.keys(gState.changesToPush).length})`;
+        calculateProgress(); // คำนวณ % ความคืบหน้าใหม่
+    }
+
+    // (แถม) หากเจอปัญหา saveToLocalStorage is not defined ให้เติมตัวนี้
+    function saveToLocalStorage() {
+        // ฟังก์ชันว่าง (เนื่องจากในโค้ดมี loadFromLocalStorage return null ไว้แล้ว)
+    }
   </script>
 </body>
 </html>
 </body>
 </html>
+
 
 
 
