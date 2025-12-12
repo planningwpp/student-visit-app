@@ -785,406 +785,221 @@
     function deleteImage(n) { document.getElementById(n).value=""; document.getElementById(`wrapper_${n}`).style.display='none'; trackChange(n,""); saveToLocalStorage(); }
     async function handleFileUpload(e) { const f=e.target.files[0]; if(!f)return; const id=e.target.dataset.targetHidden; const prev=document.getElementById(`preview_${id}`), wrap=document.getElementById(`wrapper_${id}`), del=wrap.querySelector('.btn-delete-img'); wrap.style.display='inline-block'; prev.style.display='block'; prev.src='https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif'; del.style.display='none'; try { const fd=new FormData(); fd.append('file',f); fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET); const res=await fetch(CLOUDINARY_URL,{method:'POST',body:fd}); const d=await res.json(); prev.src=d.secure_url; del.style.display='block'; document.getElementById(id).value=d.secure_url; trackChange(id,d.secure_url); saveToLocalStorage(); } catch(e){ handleError(e); } }
 // --- Dashboard Functions ---
+// ============================================================================
+    // 🔴 ส่วน Dashboard และกราฟ (ฉบับแก้ไข: ป้องกันหน้าเว็บค้าง)
+    // ============================================================================
 
-  async function loadDashboardData() {
-    setLoading(true, "กำลังประมวลผลข้อมูล...");
-    
-    // ดึงค่าเทอม/ปี จากหน้าจอเลือก (ถ้ามี) หรือใช้ค่า default
-    const sem = document.getElementById('semester-select')?.value || "2";
-    const yr = document.getElementById('year-select')?.value || "2568";
-
+    // ลงทะเบียน Plugin กราฟ (ใส่ระบบป้องกัน Error)
     try {
-        const res = await fetch(GAS_API_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'getDashboardStats', semester: sem, year: yr })
-        });
-        const data = await res.json();
+        if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
+            Chart.register(ChartDataLabels);
+        } else {
+            console.warn("Chart.js or DataLabels plugin not loaded yet.");
+        }
+    } catch (e) { console.error("Chart Register Error:", e); }
+
+    // ฟังก์ชันโหลดข้อมูล Dashboard
+    async function loadDashboardData() {
+        setLoading(true, "กำลังประมวลผลข้อมูล...");
         
-        if (data.error) throw new Error(data.error);
-        
-        renderDashboard(data);
-        setLoading(false);
+        // ดึงค่าเทอม/ปี จากหน้าจอเลือก (ถ้ามี) หรือใช้ค่า default
+        const sem = document.getElementById('semester-select')?.value || "2";
+        const yr = document.getElementById('year-select')?.value || "2568";
 
-    } catch (e) {
-        handleError(e);
-    }
-}
-
-// ลงทะเบียน Plugin (เพื่อให้ใช้ได้กับกราฟทุกตัว)
-Chart.register(ChartDataLabels);    
-
-/* แก้ไขใน index.html */
-
-function renderDashboard(data) {
-    const container = document.getElementById('dashboard-screen');
-    const currentSem = document.getElementById('semester-select')?.value || "2";
-    const currentYear = document.getElementById('year-select')?.value || "2568";
-    
-    // 🟢 เก็บค่าห้องที่เลือกไว้ปัจจุบัน (ถ้ามี)
-    const currentClass = window.dashboardCurrentClass || ""; 
-
-    let html = `
-      <div class="card shadow-sm mb-4 bg-white border-primary">
-        <div class="card-body py-3">
-          <div class="row align-items-center g-2">
-            <div class="col-auto"><span class="fw-bold text-primary"><i class="bi bi-funnel-fill"></i> ตัวเลือกข้อมูล:</span></div>
+        try {
+            const res = await fetch(GAS_API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'getDashboardStats', semester: sem, year: yr })
+            });
+            const data = await res.json();
             
-            <div class="col-auto">
-                <select id="dash-class" class="form-select form-select-sm">
-                    <option value="">-- ทุกระดับชั้น --</option>
-                    </select>
-            </div>
+            if (data.error) throw new Error(data.error);
+            
+            renderDashboard(data);
+            setLoading(false);
 
-            <div class="col-auto">
-                <select id="dash-sem" class="form-select form-select-sm">
-                    <option value="1" ${currentSem=="1"?"selected":""}>เทอม 1</option>
-                    <option value="2" ${currentSem=="2"?"selected":""}>เทอม 2</option>
-                </select>
-            </div>
-            <div class="col-auto">
-                <input type="number" id="dash-year" class="form-control form-control-sm" style="width: 80px;" value="${currentYear}">
-            </div>
-            <div class="col-auto">
-                <button onclick="refreshDashboard()" class="btn btn-sm btn-primary"><i class="bi bi-arrow-clockwise"></i> อัปเดต</button>
-            </div>
-            <div class="col text-end text-muted small">
-                 ${data.total} คน
+        } catch (e) {
+            handleError(e);
+        }
+    }
+
+    // ฟังก์ชันแสดงผล Dashboard (กราฟ + ตาราง)
+    function renderDashboard(data) {
+        const container = document.getElementById('dashboard-screen');
+        const currentSem = document.getElementById('semester-select')?.value || "2";
+        const currentYear = document.getElementById('year-select')?.value || "2568";
+        const currentClass = window.dashboardCurrentClass || ""; 
+
+        let html = `
+          <div class="card shadow-sm mb-4 bg-white border-primary">
+            <div class="card-body py-3">
+              <div class="row align-items-center g-2">
+                <div class="col-auto"><span class="fw-bold text-primary"><i class="bi bi-funnel-fill"></i> ตัวเลือกข้อมูล:</span></div>
+                <div class="col-auto"><select id="dash-class" class="form-select form-select-sm"><option value="">-- ทุกระดับชั้น --</option></select></div>
+                <div class="col-auto"><select id="dash-sem" class="form-select form-select-sm"><option value="1" ${currentSem=="1"?"selected":""}>เทอม 1</option><option value="2" ${currentSem=="2"?"selected":""}>เทอม 2</option></select></div>
+                <div class="col-auto"><input type="number" id="dash-year" class="form-control form-control-sm" style="width: 80px;" value="${currentYear}"></div>
+                <div class="col-auto"><button onclick="refreshDashboard()" class="btn btn-sm btn-primary"><i class="bi bi-arrow-clockwise"></i> อัปเดต</button></div>
+                <div class="col text-end text-muted small">${data.total} คน</div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-      
-      <div class="row g-3 mb-4">
-        <div class="col-md-3"><div class="card bg-primary text-white p-3 h-100 text-center"><h3>${data.total}</h3><p class="mb-0">เยี่ยมบ้านแล้ว (คน)</p></div></div>
-        <div class="col-md-3"><div class="card bg-danger text-white p-3 h-100 text-center"><h3>${data.risks.total_risk || 0}</h3><p class="mb-0">กลุ่มเสี่ยง (คน)</p></div></div>
-        <div class="col-md-3"><div class="card bg-warning text-dark p-3 h-100 text-center"><h3>${data.risks.learning || 0}</h3><p class="mb-0">เสี่ยงด้านการเรียน</p></div></div>
-        <div class="col-md-3"><div class="card bg-info text-white p-3 h-100 text-center"><h3>${data.risks.behavior || 0}</h3><p class="mb-0">เสี่ยงด้านพฤติกรรม</p></div></div>
-      </div>
-      
-      <div class="row">
-         <div class="col-md-6 mb-4"><div class="card shadow h-100"><div class="card-header fw-bold">รายได้ครอบครัว</div><div class="card-body"><canvas id="chartIncome"></canvas></div></div></div>
-         <div class="col-md-6 mb-4"><div class="card shadow h-100"><div class="card-header fw-bold">สถานภาพครอบครัว</div><div class="card-body"><canvas id="chartFamily"></canvas></div></div></div>
-      </div>
-      
-      <div class="card shadow mb-4">
-         <div class="card-header fw-bold bg-light">รายละเอียดตามหัวข้อรายงาน</div>
-         <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-sm table-hover" style="font-size: 0.9rem;">
-                    <thead class="table-light"><tr><th>รายการ</th><th class="text-center" style="width:100px">จำนวน</th><th class="text-center" style="width:100px">ร้อยละ</th></tr></thead>
-                    <tbody>
-                        ${createTableRows('1. บ้านที่พักอาศัย', data.q3_house_ownership, data.total)}
-                        ${createTableRows('2. ลักษณะบ้าน', data.q3_house_type, data.total)}
-                        ${createTableRows('3. สภาพแวดล้อม', data.q3_environment, data.total)}
-                        ${createTableRows('4. อาศัยอยู่กับ', data.q1_lives_with, data.total)}
-                        ${createTableRows('5. อาชีพผู้ปกครอง', data.q1_guardian_occupation, data.total)}
-                        ${createTableRows('6. ที่ทำงานผู้ปกครอง', data.q3_parents_workplace, data.total)}
-                        ${createTableRows('9. ความสัมพันธ์', data.q8_family_rel, data.total)}
-                        ${createTableRows('10. ความรู้สึกผู้ปกครอง', data.q8_parent_feeling, data.total)}
-                        ${createTableRows('11. วิธีเลี้ยงดู', data.q8_parenting_method, data.total)}
-                        ${createTableRows('12. พฤติกรรม (ตอบได้หลายข้อ)', data.behaviors, data.total)}
-                        ${createTableRows('15. ความเพียงพอรายได้', data.q3_income_sufficiency, data.total)}
-                        ${createTableRows('17. เพื่อนเล่น', data.q8_friends_at_home, data.total)}
-                        ${createTableRows('18. การเดินทาง', data.q5_travel_method, data.total)}
-                        ${createTableRows('19. ความต้องการในอนาคต', data.q8_future_goal, data.total)}
-                        ${createTableRows('20. สนิทกับใคร', data.q8_closest_person, data.total)}
-                        ${createTableRows('21. ปรึกษาใคร', data.q8_consultant, data.total)}
-                    </tbody>
-                </table>
-            </div>
-         </div>
-      </div>
-    `;
-    
-    container.innerHTML = html;
-
-    // 🟢 เติมตัวเลือกห้องเรียน (ปรับปรุงใหม่)
-    const dashClassSelect = document.getElementById('dash-class');
-    const mainClassSelect = document.getElementById('class-select');
-    
-    if (mainClassSelect && dashClassSelect) {
-        // ล้างตัวเลือกเก่าก่อน
-        dashClassSelect.innerHTML = "";
+          
+          <div class="row g-3 mb-4">
+            <div class="col-md-3"><div class="card bg-primary text-white p-3 h-100 text-center"><h3>${data.total}</h3><p class="mb-0">เยี่ยมบ้านแล้ว (คน)</p></div></div>
+            <div class="col-md-3"><div class="card bg-danger text-white p-3 h-100 text-center"><h3>${data.risks.total_risk || 0}</h3><p class="mb-0">กลุ่มเสี่ยง (คน)</p></div></div>
+            <div class="col-md-3"><div class="card bg-warning text-dark p-3 h-100 text-center"><h3>${data.risks.learning || 0}</h3><p class="mb-0">เสี่ยงด้านการเรียน</p></div></div>
+            <div class="col-md-3"><div class="card bg-info text-white p-3 h-100 text-center"><h3>${data.risks.behavior || 0}</h3><p class="mb-0">เสี่ยงด้านพฤติกรรม</p></div></div>
+          </div>
+          
+          <div class="row">
+             <div class="col-md-6 mb-4"><div class="card shadow h-100"><div class="card-header fw-bold">รายได้ครอบครัว</div><div class="card-body"><canvas id="chartIncome"></canvas></div></div></div>
+             <div class="col-md-6 mb-4"><div class="card shadow h-100"><div class="card-header fw-bold">สถานภาพครอบครัว</div><div class="card-body"><canvas id="chartFamily"></canvas></div></div></div>
+          </div>
+          
+          <div class="card shadow mb-4">
+             <div class="card-header fw-bold bg-light">รายละเอียดตามหัวข้อรายงาน</div>
+             <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm table-hover" style="font-size: 0.9rem;">
+                        <thead class="table-light"><tr><th>รายการ</th><th class="text-center" style="width:100px">จำนวน</th><th class="text-center" style="width:100px">ร้อยละ</th></tr></thead>
+                        <tbody>
+                            ${createTableRows('1. บ้านที่พักอาศัย', data.q3_house_ownership, data.total)}
+                            ${createTableRows('2. ลักษณะบ้าน', data.q3_house_type, data.total)}
+                            ${createTableRows('3. สภาพแวดล้อม', data.q3_environment, data.total)}
+                            ${createTableRows('4. อาศัยอยู่กับ', data.q1_lives_with, data.total)}
+                            ${createTableRows('5. อาชีพผู้ปกครอง', data.q1_guardian_occupation, data.total)}
+                            ${createTableRows('6. ที่ทำงานผู้ปกครอง', data.q3_parents_workplace, data.total)}
+                            ${createTableRows('9. ความสัมพันธ์', data.q8_family_rel, data.total)}
+                            ${createTableRows('10. ความรู้สึกผู้ปกครอง', data.q8_parent_feeling, data.total)}
+                            ${createTableRows('11. วิธีเลี้ยงดู', data.q8_parenting_method, data.total)}
+                            ${createTableRows('12. พฤติกรรม (ตอบได้หลายข้อ)', data.behaviors, data.total)}
+                            ${createTableRows('15. ความเพียงพอรายได้', data.q3_income_sufficiency, data.total)}
+                            ${createTableRows('17. เพื่อนเล่น', data.q8_friends_at_home, data.total)}
+                            ${createTableRows('18. การเดินทาง', data.q5_travel_method, data.total)}
+                            ${createTableRows('19. ความต้องการในอนาคต', data.q8_future_goal, data.total)}
+                            ${createTableRows('20. สนิทกับใคร', data.q8_closest_person, data.total)}
+                            ${createTableRows('21. ปรึกษาใคร', data.q8_consultant, data.total)}
+                        </tbody>
+                    </table>
+                </div>
+             </div>
+          </div>
+        `;
         
-        // 1. เพิ่มตัวเลือก "ทุกระดับชั้น" เป็นอันแรกเสมอ
-        dashClassSelect.add(new Option("-- ทุกระดับชั้น --", ""));
+        container.innerHTML = html;
 
-        // 2. วนลูปก๊อปปี้เฉพาะตัวเลือกที่เป็นชื่อห้องจริงๆ (ข้ามตัวเลือก "-- กรุณาเลือก --")
-        Array.from(mainClassSelect.options).forEach(opt => {
-            if (opt.value && opt.value.trim() !== "") {
-                // สร้าง Option ใหม่เพื่อป้องกันการย้าย (Cloning)
-                dashClassSelect.add(new Option(opt.text, opt.value));
+        // เติมตัวเลือกห้องเรียน
+        const dashClassSelect = document.getElementById('dash-class');
+        const mainClassSelect = document.getElementById('class-select');
+        if (mainClassSelect && dashClassSelect) {
+            dashClassSelect.innerHTML = "";
+            dashClassSelect.add(new Option("-- ทุกระดับชั้น --", ""));
+            Array.from(mainClassSelect.options).forEach(opt => {
+                if (opt.value && opt.value.trim() !== "") dashClassSelect.add(new Option(opt.text, opt.value));
+            });
+            if (currentClass) dashClassSelect.value = currentClass;
+        }
+
+        // --- สร้างกราฟ (พร้อม % DataLabels) ---
+        const labelOptions = {
+            color: '#fff', font: { weight: 'bold', size: 12 },
+            formatter: (value, ctx) => {
+                if (value === 0) return "";
+                let sum = 0;
+                let dataArr = ctx.chart.data.datasets[0].data;
+                dataArr.map(data => { sum += data; });
+                return (value * 100 / sum).toFixed(1) + "%";
             }
-        });
+        };
 
-        // 3. คืนค่าห้องที่เคยเลือกไว้ (ถ้ามี)
-        if (currentClass && currentClass !== "") {
-            dashClassSelect.value = currentClass;
-        }
-    }
-
-    // -------------------------------------------------------------
-    // 🟢 ส่วนสร้างกราฟ (ปรับปรุงให้โชว์ %)
-    // -------------------------------------------------------------
-    
-    // ตั้งค่า Default ของ Label ให้สวยงาม
-    const labelOptions = {
-        color: '#fff', // สีตัวหนังสือ (ขาว)
-        font: { weight: 'bold', size: 12 },
-        formatter: (value, ctx) => {
-            if (value === 0) return ""; // ถ้าเป็น 0 ไม่ต้องโชว์
-            let sum = 0;
-            let dataArr = ctx.chart.data.datasets[0].data;
-            dataArr.map(data => { sum += data; });
-            let percentage = (value * 100 / sum).toFixed(1) + "%";
-            return percentage; // คืนค่าเป็น %
-        }
-    };
-
-    // 1. กราฟแท่ง (รายได้)
-    if(data.q14_income_range) {
-       const ctxIncome = document.getElementById('chartIncome');
-       // ทำลายกราฟเก่าก่อนสร้างใหม่ (ป้องกันกราฟซ้อนกันเวลาอัปเดต)
-       if(window.myChartIncome) window.myChartIncome.destroy();
-
-       window.myChartIncome = new Chart(ctxIncome, {
-          type: 'bar',
-          data: {
-              labels: Object.keys(data.q14_income_range),
-              datasets: [{ 
-                  label: 'จำนวนครอบครัว', 
-                  data: Object.values(data.q14_income_range), 
-                  backgroundColor: '#36a2eb' 
-              }]
-          },
-          options: { 
-              responsive: true, 
-              maintainAspectRatio: false,
-              plugins: {
-                  datalabels: { // ใช้การตั้งค่าเดียวกัน แต่เปลี่ยนสีนิดหน่อยเพราะพื้นหลังกราฟแท่งอาจจะจาง
-                      color: '#000', // สีดำ
-                      anchor: 'end',
-                      align: 'top',
-                      formatter: (value, ctx) => {
-                          if (value === 0) return "";
-                          let sum = 0;
-                          let dataArr = ctx.chart.data.datasets[0].data;
-                          dataArr.map(data => { sum += data; });
-                          let percentage = (value * 100 / sum).toFixed(1) + "%";
-                          return percentage;
-                      }
+        if(data.q14_income_range) {
+           const ctx = document.getElementById('chartIncome');
+           if(window.myChartIncome) window.myChartIncome.destroy();
+           window.myChartIncome = new Chart(ctx, {
+              type: 'bar',
+              data: {
+                  labels: Object.keys(data.q14_income_range),
+                  datasets: [{ label: 'จำนวน', data: Object.values(data.q14_income_range), backgroundColor: '#36a2eb' }]
+              },
+              options: { 
+                  responsive: true, maintainAspectRatio: false,
+                  plugins: {
+                      datalabels: { ...labelOptions, color: '#000', anchor: 'end', align: 'top' }
                   }
               }
-          }
-       });
-    }
+           });
+        }
 
-    // 2. กราฟโดนัท (สถานภาพ)
-    if(data.q1_family_status) {
-       const ctxFamily = document.getElementById('chartFamily');
-       if(window.myChartFamily) window.myChartFamily.destroy();
-
-       window.myChartFamily = new Chart(ctxFamily, {
-          type: 'doughnut',
-          data: {
-              labels: Object.keys(data.q1_family_status),
-              datasets: [{ 
-                  data: Object.values(data.q1_family_status), 
-                  backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40', '#c9cbcf'] 
-              }]
-          },
-          options: { 
-              responsive: true, 
-              maintainAspectRatio: false,
-              plugins: {
-                  datalabels: labelOptions // เรียกใช้การตั้งค่าที่เตรียมไว้
+        if(data.q1_family_status) {
+           const ctx = document.getElementById('chartFamily');
+           if(window.myChartFamily) window.myChartFamily.destroy();
+           window.myChartFamily = new Chart(ctx, {
+              type: 'doughnut',
+              data: {
+                  labels: Object.keys(data.q1_family_status),
+                  datasets: [{ data: Object.values(data.q1_family_status), backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40', '#c9cbcf'] }]
+              },
+              options: { 
+                  responsive: true, maintainAspectRatio: false,
+                  plugins: { datalabels: labelOptions }
               }
-          }
-       });
-    }
-
-// 🟢 อัปเดตฟังก์ชัน refreshDashboard ให้ส่งห้องไปด้วย
-window.refreshDashboard = function() {
-    const s = document.getElementById('dash-sem').value;
-    const y = document.getElementById('dash-year').value;
-    const c = document.getElementById('dash-class').value; // เอาค่าห้อง
-    
-    // จำค่าห้องไว้ (Global)
-    window.dashboardCurrentClass = c;
-
-    setLoading(true, "กำลังโหลดข้อมูลใหม่...");
-    fetch(GAS_API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'getDashboardStats', semester: s, year: y, className: c }) // ส่ง c ไปด้วย
-    })
-    .then(r => r.json())
-    .then(d => {
-        if(d.error) throw new Error(d.error);
-        renderDashboard(d);
-        setLoading(false);
-    })
-    .catch(e => handleError(e));
-};
-
-// ============================================================================
-// 🔴 ฟังก์ชันสร้างแถวตาราง Dashboard (ฉบับเรียงตามหัวข้อเอกสาร + มีเลขนำหน้า)
-// ============================================================================
-function createTableRows(title, obj, total) {
-    if(!obj) return "";
-    
-    // กำหนดการตั้งค่าของแต่ละหัวข้อ (Config)
-    // format: { "ค่าในDatabase": "ข้อความที่จะแสดง" }
-    // ลำดับใน Object นี้จะเป็นลำดับที่แสดงผลในตาราง
-    
-    let mapping = {};
-
-    if (title.includes("1. บ้านที่พักอาศัย")) {
-        mapping = {
-            "บ้านตนเอง": "1.1 บ้านตนเอง",
-            "อาศัยผู้อื่น": "1.2 อาศัยอยู่กับผู้อื่น",
-            "หอพัก": "1.3 หอพัก",
-            "วัด": "1.4 วัด/มูลนิธิ"
-        };
-    } else if (title.includes("2. ลักษณะบ้าน")) {
-        mapping = {
-            "ชั้นเดียว": "2.1 บ้านชั้นเดียว",
-            "สองชั้น": "2.2 บ้านสองชั้น",
-            "ตึกแถว": "2.3 ลักษณะแบบอื่นๆ (ตึกแถว/อาคาร)"
-        };
-    } else if (title.includes("3. สภาพแวดล้อม")) {
-        mapping = {
-            "ปลอดภัยดี": "3.1 ปลอดภัยดี",
-            "พอใช้": "3.2 พอใช้",
-            "เสี่ยง/ไม่ดี": "3.3 ไม่ดี / มีความเสี่ยง"
-        };
-    } else if (title.includes("4. อาศัยอยู่กับ")) {
-        mapping = {
-            "พ่อ/แม่": "4.1 อยู่ร่วมกับ บิดา-มารดา",
-            "แม่": "4.2 อยู่กับมารดา",
-            "พ่อ": "4.3 อยู่กับบิดา",
-            "อยู่ลำพัง": "4.4 อยู่ตามลำพัง",
-            "ญาติ": "4.5 อยู่กับญาติ",
-            "ปู่ย่า": "4.5 อยู่กับปู่ย่า",
-            "ตายาย": "4.5 อยู่กับตายาย",
-            "ผู้อุปการะ/นายจ้าง": "4.5 อยู่กับผู้อื่น (ผู้อุปการะ)",
-            "ครัวเรือนสถาบัน": "4.5 อยู่กับผู้อื่น (สถาบัน)"
-        };
-    } else if (title.includes("5. อาชีพผู้ปกครอง")) {
-        mapping = {
-            "เกษตรกร": "5.1 เกษตรกร",
-            "ค้าขาย": "5.2 ค้าขาย",
-            "รับราชการ/รัฐวิสาหกิจ": "5.3 รับราชการ",
-            "รับจ้างทั่วไป": "5.4 รับจ้าง",
-            "พนักงานบริษัท": "5.4 รับจ้าง (พนักงานบริษัท)",
-            "ธุรกิจส่วนตัว": "5.5 อื่นๆ (ธุรกิจส่วนตัว)",
-            "ว่างงาน": "5.5 อื่นๆ (ว่างงาน)",
-            "อื่นๆ": "5.5 อื่นๆ"
-        };
-    } else if (title.includes("6. ที่ทำงาน")) {
-        mapping = {
-            "ในอำเภอเดียวกัน": "1. อยู่อำเภอเดียวกัน",
-            "ต่างอำเภอในจังหวัด": "2. อยู่ต่างอำเภอจังหวัดเดียวกัน",
-            "ต่างจังหวัด": "3. อยู่ต่างจังหวัด",
-            "ต่างประเทศ": "4. อยู่ต่างประเทศ"
-        };
-    } else if (title.includes("9. ความสัมพันธ์")) {
-        mapping = {
-            "อบอุ่น": "1. อบอุ่นดี",
-            "เฉยๆ": "2. เฉยๆ",
-            "ห่างเหิน": "3. ห่างเหิน"
-        };
-    } else if (title.includes("10. ความรู้สึก")) {
-        mapping = {
-            "พอใจ": "1. พอใจ",
-            "เฉยๆ": "2. เฉยๆ",
-            "ไม่พอใจ": "3. ไม่พอใจ"
-        };
-    } else if (title.includes("11. วิธีเลี้ยงดู")) {
-        mapping = {
-            "เข้มงวดกวดขัน": "1. เข้มงวดกวดขัน",
-            "ใช้เหตุผล": "2. ใช้เหตุผล",
-            "ปล่อยปละละเลย": "3. ปล่อยปละละเลย",
-            "ตามใจ": "4. ตามใจ"
-        };
-    } else if (title.includes("12. พฤติกรรม")) {
-        mapping = {
-            "Q8_Beh_Homework": "1. อ่านหนังสือทำการบ้าน",
-            "Q8_Beh_HelpParent": "2. ช่วยงานผู้ปกครอง",
-            "Q8_Beh_Housework": "3. ทำงานบ้าน",
-            "Q8_Beh_None": "4. ไม่ช่วยงานเลย"
-        };
-    } else if (title.includes("15. ความเพียงพอ")) {
-        mapping = {
-            "เพียงพอ": "1. เพียงพอ",
-            "ไม่พอในบางครั้ง": "2. ไม่เพียงพอในบางครั้ง",
-            "ขัดสน": "3. ขัดสน"
-        };
-    } else if (title.includes("17. เพื่อนเล่น")) {
-        mapping = {
-            "รุ่นเดียวกัน": "1. เพื่อนรุ่นเดียวกัน",
-            "รุ่นน้อง": "2. เพื่อนรุ่นน้อง",
-            "รุ่นพี่": "3. เพื่อนรุ่นพี่",
-            "ทุกรุ่น": "4. เพื่อนทุกรุ่น",
-            "ไม่มี": "5. ไม่มีเพื่อนเล่น"
-        };
-    } else if (title.includes("18. การเดินทาง")) {
-        mapping = {
-            "เดิน": "1. เดินมา",
-            "จักรยาน": "2. รถจักรยาน",
-            "รถจักรยานยนต์": "3. รถจักรยานยนต์",
-            "รถโรงเรียน": "4. รถรับส่ง/รถตู้",
-            "รถโดยสาร": "5. รถโดยสาร",
-            "ผู้ปกครองมาส่ง": "6. ผู้ปกครองมาส่ง",
-            "รถยนต์": "7. อื่นๆ (รถยนต์ส่วนตัว)"
-        };
-    } else if (title.includes("19. ความต้องการ")) {
-        mapping = {
-            "ศึกษาต่อ": "1. ศึกษาต่อ",
-            "ทำงาน": "2. ประกอบอาชีพ",
-            "ประกอบอาชีพ": "2. ประกอบอาชีพ"
-        };
-    } else if (title.includes("20.") || title.includes("21.")) {
-        // สนิทกับใคร / ปรึกษาใคร
-        mapping = {
-            "พ่อ": "1. พ่อ",
-            "แม่": "2. แม่",
-            "พี่": "3. พี่",
-            "น้อง": "4. น้อง",
-            "ครูที่ปรึกษา": "5. ครูที่ปรึกษา",
-            "เพื่อน": "6. เพื่อน", // เพิ่มเติมจาก Word
-            "ญาติ": "7. บุคคลอื่นๆ (ญาติ)"
-        };
-    } else {
-        // กรณีหัวข้ออื่นๆ ที่ไม่อยู่ในเงื่อนไข ให้แสดงตามที่มีจริง
-        for (let k in obj) mapping[k] = k;
-    }
-
-    // เริ่มสร้าง HTML
-    let rows = `<tr class="table-secondary"><td colspan="3"><strong>${title}</strong></td></tr>`;
-    
-    // วนลูปตามลำดับใน mapping (เพื่อให้เรียงตามหัวข้อ ไม่ใช่ตามจำนวน)
-    for (const [key, label] of Object.entries(mapping)) {
-        // ดึงค่าจำนวนจาก object ข้อมูลจริง (ถ้าไม่มีให้เป็น 0)
-        const val = obj[key] || 0;
-        
-        // ถ้าเป็น 0 จะซ่อน หรือจะโชว์ก็ได้ (ในที่นี้ขอซ่อนเพื่อความสะอาด แต่ถ้าอยากโชว์ให้ลบบรรทัดนี้)
-        if (val === 0) continue; 
-
-        const pct = total > 0 ? ((val / total) * 100).toFixed(2) : 0;
-        rows += `<tr><td class="ps-4">${label}</td><td class="text-center">${val}</td><td class="text-center">${pct}%</td></tr>`;
-    }
-    
-    // เก็บคก: เช็คว่ามีข้อมูลอื่นๆ ที่อยู่นอกเหนือ mapping หรือไม่ (เช่น พิมพ์มาเอง)
-    // (ส่วนนี้เป็น Optional ถ้าไม่ต้องการให้แสดงข้อมูลขยะ ก็ลบทิ้งได้ครับ)
-    for (const [k, v] of Object.entries(obj)) {
-        if (!mapping[k] && v > 0) {
-             const pct = total > 0 ? ((v / total) * 100).toFixed(2) : 0;
-             rows += `<tr><td class="ps-4 text-muted"><em>อื่นๆ: ${k}</em></td><td class="text-center">${v}</td><td class="text-center">${pct}%</td></tr>`;
+           });
         }
     }
 
-    return rows;
-}
+    // ฟังก์ชันอัปเดตข้อมูล (Refresh)
+    window.refreshDashboard = function() {
+        const s = document.getElementById('dash-sem').value;
+        const y = document.getElementById('dash-year').value;
+        const c = document.getElementById('dash-class').value;
+        window.dashboardCurrentClass = c;
+
+        setLoading(true, "กำลังโหลดข้อมูลใหม่...");
+        fetch(GAS_API_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'getDashboardStats', semester: s, year: y, className: c })
+        })
+        .then(r => r.json())
+        .then(d => {
+            if(d.error) throw new Error(d.error);
+            renderDashboard(d);
+            setLoading(false);
+        })
+        .catch(e => handleError(e));
+    };
+
+    // ฟังก์ชันสร้างแถวตาราง (Mapping ครบถ้วน + เรียงตามหัวข้อ)
+    function createTableRows(title, obj, total) {
+        if(!obj) return "";
+        let mapping = {};
+
+        // กำหนด Mapping ตามหัวข้อ
+        if (title.includes("1. บ้านที่พักอาศัย")) mapping = { "บ้านตนเอง": "1.1 บ้านตนเอง", "อาศัยผู้อื่น": "1.2 อาศัยอยู่กับผู้อื่น", "หอพัก": "1.3 หอพัก", "วัด": "1.4 วัด/มูลนิธิ" };
+        else if (title.includes("2. ลักษณะบ้าน")) mapping = { "ชั้นเดียว": "2.1 บ้านชั้นเดียว", "สองชั้น": "2.2 บ้านสองชั้น", "ตึกแถว": "2.3 ตึกแถว/อาคารพาณิชย์" };
+        else if (title.includes("3. สภาพแวดล้อม")) mapping = { "ปลอดภัยดี": "3.1 ปลอดภัยดี", "พอใช้": "3.2 พอใช้", "เสี่ยง/ไม่ดี": "3.3 มีความเสี่ยง" };
+        else if (title.includes("4. อาศัยอยู่กับ")) mapping = { "พ่อ/แม่": "4.1 อยู่ร่วมกับ บิดา-มารดา", "แม่": "4.2 อยู่กับมารดา", "พ่อ": "4.3 อยู่กับบิดา", "อยู่ลำพัง": "4.4 อยู่ตามลำพัง", "ญาติ": "4.5 อยู่กับญาติ", "ปู่ย่า": "4.5 อยู่กับปู่ย่า", "ตายาย": "4.5 อยู่กับตายาย", "ผู้อุปการะ/นายจ้าง": "4.5 อยู่กับผู้อื่น" };
+        else if (title.includes("5. อาชีพผู้ปกครอง")) mapping = { "เกษตรกร": "5.1 เกษตรกร", "ค้าขาย": "5.2 ค้าขาย", "รับราชการ/รัฐวิสาหกิจ": "5.3 รับราชการ", "รับจ้างทั่วไป": "5.4 รับจ้าง", "พนักงานบริษัท": "5.4 พนักงานบริษัท", "ธุรกิจส่วนตัว": "5.5 ธุรกิจส่วนตัว", "อื่นๆ": "5.5 อื่นๆ" };
+        else if (title.includes("6. ที่ทำงาน")) mapping = { "ในอำเภอเดียวกัน": "1. อยู่อำเภอเดียวกัน", "ต่างอำเภอในจังหวัด": "2. ต่างอำเภอ", "ต่างจังหวัด": "3. ต่างจังหวัด", "ต่างประเทศ": "4. ต่างประเทศ" };
+        else if (title.includes("9. ความสัมพันธ์")) mapping = { "อบอุ่น": "1. อบอุ่นดี", "เฉยๆ": "2. เฉยๆ", "ห่างเหิน": "3. ห่างเหิน" };
+        else if (title.includes("10. ความรู้สึก")) mapping = { "พอใจ": "1. พอใจ", "เฉยๆ": "2. เฉยๆ", "ไม่พอใจ": "3. ไม่พอใจ" };
+        else if (title.includes("11. วิธีเลี้ยงดู")) mapping = { "เข้มงวดกวดขัน": "1. เข้มงวด", "ใช้เหตุผล": "2. ใช้เหตุผล", "ปล่อยปละละเลย": "3. ปล่อยปละละเลย", "ตามใจ": "4. ตามใจ" };
+        else if (title.includes("12. พฤติกรรม")) mapping = { "Q8_Beh_Homework": "1. อ่านหนังสือ", "Q8_Beh_HelpParent": "2. ช่วยงานผู้ปกครอง", "Q8_Beh_Housework": "3. ทำงานบ้าน", "Q8_Beh_None": "4. ไม่ช่วยงานเลย" };
+        else if (title.includes("15. ความเพียงพอ")) mapping = { "เพียงพอ": "1. เพียงพอ", "ไม่พอในบางครั้ง": "2. ไม่พอในบางครั้ง", "ขัดสน": "3. ขัดสน" };
+        else if (title.includes("17. เพื่อนเล่น")) mapping = { "รุ่นเดียวกัน": "1. รุ่นเดียวกัน", "รุ่นน้อง": "2. รุ่นน้อง", "รุ่นพี่": "3. รุ่นพี่", "ทุกรุ่น": "4. ทุกรุ่น", "ไม่มี": "5. ไม่มี" };
+        else if (title.includes("18. การเดินทาง")) mapping = { "เดิน": "1. เดินเท้า", "จักรยาน": "2. จักรยาน", "รถจักรยานยนต์": "3. จักรยานยนต์", "รถโรงเรียน": "4. รถรับส่ง", "รถโดยสาร": "5. รถโดยสาร", "ผู้ปกครองมาส่ง": "6. ผู้ปกครองมาส่ง", "รถยนต์": "7. รถยนต์ส่วนตัว" };
+        else if (title.includes("19. ความต้องการ")) mapping = { "ศึกษาต่อ": "1. ศึกษาต่อ", "ทำงาน": "2. ประกอบอาชีพ", "ประกอบอาชีพ": "2. ประกอบอาชีพ" };
+        else if (title.includes("20.") || title.includes("21.")) mapping = { "พ่อ": "1. พ่อ", "แม่": "2. แม่", "พี่": "3. พี่", "น้อง": "4. น้อง", "ครูที่ปรึกษา": "5. ครูที่ปรึกษา", "เพื่อน": "6. เพื่อน", "ญาติ": "7. ญาติ" };
+        else { for (let k in obj) mapping[k] = k; }
+
+        let rows = `<tr class="table-secondary"><td colspan="3"><strong>${title}</strong></td></tr>`;
+        for (const [key, label] of Object.entries(mapping)) {
+            const val = obj[key] || 0;
+            if (val === 0) continue;
+            const pct = total > 0 ? ((val / total) * 100).toFixed(2) : 0;
+            rows += `<tr><td class="ps-4">${label}</td><td class="text-center">${val}</td><td class="text-center">${pct}%</td></tr>`;
+        }
+        return rows;
+    }
 // ============================================================================
 // 🔴 ส่วนจัดการสมาชิกครัวเรือน (วางไว้ล่างสุดของไฟล์ ก่อนแท็กปิด script)
 // ============================================================================
@@ -1418,6 +1233,7 @@ window.removeHouseholdMember = function(index) {
 </html>
 </body>
 </html>
+
 
 
 
