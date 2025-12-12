@@ -522,10 +522,10 @@
     </div>
   </div>
 
- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    // --- ตั้งค่าระบบ ---
+    // --- 1. ตั้งค่าระบบ ---
     const CLOUDINARY_CLOUD_NAME = "dzzdmlei5"; 
     const CLOUDINARY_UPLOAD_PRESET = "ml_default"; 
     const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
@@ -537,9 +537,10 @@
     const gState = { currentUser: null, selectedStudentId: null, selectedStudentName: null, currentRecordId: null, originalData: {}, changesToPush: {}, householdMembers: [], isLoading: false };
     let SCREENS = {}; let el = {};
 
-    // --- เริ่มต้นทำงาน ---
+    // --- 2. เริ่มต้นทำงาน (Init) ---
     document.addEventListener("DOMContentLoaded", () => {
       try {
+          // ผูกตัวแปรกับหน้าจอ
           SCREENS = { loading: document.getElementById('loading-screen'), login: document.getElementById('login-screen'), selection: document.getElementById('student-selection-screen'), dashboard: document.getElementById('dashboard-screen'), print: document.getElementById('print-screen'), form: document.getElementById('main-form-screen') };
           el = {
             mainNavbar: document.getElementById('main-navbar'), navHomeLink: document.getElementById('nav-home-link'), navDashboardLink: document.getElementById('nav-dashboard-link'), navPrintLink: document.getElementById('nav-print-link'), navLogoutBtn: document.getElementById('nav-logout-btn'), navUserEmail: document.getElementById('nav-user-email'),
@@ -550,18 +551,57 @@
             q3_1_Status: document.querySelectorAll('input[name="Q3_1_DependencyStatus"]'), q3_1_SubOptions: document.getElementById('q3-1-sub-options'), q3_4_Status: document.querySelectorAll('input[name="Q3_4_AgricultureStatus"]'), q3_4_SubOptions: document.getElementById('q3-4-sub-options'),
             householdTbody: document.getElementById('household-member-list'), addMemberBtn: document.getElementById('add-member-btn'), totalMembersInput: document.getElementById('Q2_TotalMembers'), totalIncomeInput: document.getElementById('Q2_HouseholdIncome_Total'), perCapitaIncomeInput: document.getElementById('Q2_HouseholdIncome_PerCapita'), progressBar: document.getElementById('progress-bar'), progressText: document.getElementById('progress-text')
           };
-          showScreen('login'); 
-          bindEventListeners(); 
           
-          // [จุดแก้สำคัญ] ตั้งค่าเริ่มต้นเป็น เทอม 2 / 2568 ให้ตรงกับไฟล์ CSV
-          if(el.semesterSelect) el.semesterSelect.value = "2"; 
+          showScreen('login'); // เรียกหน้า Login
+          bindEventListeners(); // ผูกปุ่มกดต่างๆ
+          
+          // ตั้งค่าเริ่มต้น ภาคเรียนที่ 2 ปี 2568 (แก้ปัญหาข้อมูลหาย)
+          if(el.semesterSelect) el.semesterSelect.value = "2";
           if(el.yearSelect) el.yearSelect.value = "2568";
           
           try { attachFormListeners(); } catch(e) { console.warn("Attach warning", e); }
       } catch (err) { alert("Init Error: " + err.message); if(SCREENS.loading) SCREENS.loading.style.display = 'none'; }
     });
 
-    // --- 1. โหลดข้อมูล (บังคับดึงใหม่เสมอ) ---
+    // --- 3. ฟังก์ชันหน้าจอ (Helper Functions) ---
+    function showScreen(id) { 
+        if(!SCREENS.loading) return; 
+        if(el.mainNavbar) el.mainNavbar.style.display=(id==='login'||id==='loading')?'none':'block'; 
+        Object.values(SCREENS).forEach(s=>s.style.display='none'); 
+        if(SCREENS[id]) SCREENS[id].style.display='block'; 
+        if(el.navHomeLink){ 
+            el.navHomeLink.classList.toggle('active',id==='selection'||id==='form'); 
+            el.navDashboardLink.classList.toggle('active',id==='dashboard'); 
+            el.navPrintLink.classList.toggle('active',id==='print'); 
+        } 
+    }
+    function setLoading(l,m='Loading...') { 
+        gState.isLoading=l; 
+        if(SCREENS.loading){ 
+            SCREENS.loading.querySelector('p').textContent=m; 
+            SCREENS.loading.style.display=l?'flex':'none'; 
+        } 
+    }
+    function handleError(e) { 
+        setLoading(false); 
+        Swal.fire('Error',e.message||e,'error'); 
+        if(el.loginBtn) el.loginBtn.disabled=false; 
+        if(el.saveBtn){ el.saveBtn.disabled=false; el.saveBtn.innerHTML=`บันทึก (${Object.keys(gState.changesToPush).length})`; } 
+    }
+
+    // --- 4. ระบบ Login & เลือกนักเรียน ---
+    async function handleManualLogin(e) { e.preventDefault(); setLoading(true); if(el.loginBtn) el.loginBtn.disabled=true; if(el.loginErrorMessage) el.loginErrorMessage.style.display='none'; 
+      try { const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'checkLogin', email: el.loginEmailInput.value, password: el.loginPasswordInput.value }) }); const data = await res.json(); if(data && data.email) handleLoginSuccess(data); else throw new Error("Login Failed"); } catch(err) { handleLoginFailure(err.message); } 
+    }
+    async function handleLoginSuccess(u) { gState.currentUser=u; if(el.navUserEmail) el.navUserEmail.textContent=u.email; showScreen('selection'); try { setLoading(true); const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getInitialData', assignedClasses: u.assignedClasses }) }); const cls = await res.json(); populateClassDropdown(cls); setLoading(false); } catch(e){ handleError(e); } }
+    function handleLoginFailure(e) { setLoading(false); gState.currentUser=null; showScreen('login'); if(el.loginBtn) el.loginBtn.disabled=false; if(el.loginErrorMessage){ el.loginErrorMessage.textContent=e; el.loginErrorMessage.style.display='block'; } else alert(e); }
+    function handleLogout() { Swal.fire({title:'Logout?', showCancelButton:true}).then(r=>{ if(r.isConfirmed){ localStorage.removeItem(`visit_${gState.currentRecordId}`); window.location.reload(); }}); }
+
+    function populateClassDropdown(c) { el.classSelect.innerHTML='<option value="">-- เลือก --</option>'; c.forEach(x=>el.classSelect.add(new Option(x,x))); }
+    async function handleClassChange() { const c=el.classSelect.value; if(!c){el.studentSelect.disabled=true;return;} el.studentSelect.disabled=true; setLoading(true); try{ const res=await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentsByClass', className: c }) }); const d=await res.json(); d.sort((a,b)=>parseInt(a.studentNumber||0)-parseInt(b.studentNumber||0)); el.studentSelect.innerHTML='<option value="">-- เลือก --</option>'; d.forEach(s=>el.studentSelect.add(new Option(`${s.name}`,s.id))); el.studentSelect.disabled=false; validateStartButton(); setLoading(false); }catch(e){handleError(e);} }
+    function validateStartButton() { el.startFormBtn.disabled=!(el.classSelect.value&&el.studentSelect.value); }
+
+    // --- 5. เริ่มต้นกรอกข้อมูล (บังคับโหลดใหม่เสมอ) ---
     async function handleStartForm() { 
        try { 
           gState.selectedStudentId = el.studentSelect.value; 
@@ -586,12 +626,7 @@
                  text: `ระบบกำลังสร้างแบบฟอร์มใหม่สำหรับเทอม ${sem}/${yr} ครับ`,
                  timer: 3000
              });
-             // สร้างโครงข้อมูลเปล่าๆ
-             const emptyData = { 
-                 studentMaster: data.studentMaster || {}, 
-                 visitData: {}, 
-                 householdData: [] 
-             };
+             const emptyData = { studentMaster: data.studentMaster || {}, visitData: {}, householdData: [] };
              loadStudentDataSuccess(emptyData); 
           } 
        } catch(e) { 
@@ -612,11 +647,11 @@
       showScreen('form'); calculateProgress(); setLoading(false); 
     }
 
-    // --- 2. แสดงตาราง (กรองข้อมูลซ้ำ + แยกอิสระ) ---
+    // --- 6. ตารางสมาชิกครัวเรือน (Logic: แยกอิสระ + กรองข้อมูลล่าสุด) ---
     function renderHouseholdTable(m) { 
       let rawData = Array.isArray(m) ? m : [];
       
-      // กรองเอาเฉพาะข้อมูลบรรทัดล่าสุด (Last Write Wins)
+      // กรองเอาเฉพาะข้อมูลบรรทัดล่าสุด (แก้ปัญหาข้อมูลเก่าค้าง)
       const uniqueMap = new Map();
       rawData.forEach(item => {
           const key = item.MemberNo ? String(item.MemberNo) : (item.MemberName || Math.random());
@@ -624,12 +659,11 @@
       });
       gState.householdMembers = Array.from(uniqueMap.values());
       
-      // เรียงลำดับ
       gState.householdMembers.sort((a, b) => (parseInt(a.MemberNo) || 99) - (parseInt(b.MemberNo) || 99));
 
       el.householdTbody.innerHTML = ''; 
       
-      // ถ้าไม่มีข้อมูลเลย ให้สร้างแถวรอ (1=นร, 2=พ่อ, 3=แม่) แต่เป็นค่าว่าง
+      // ถ้าไม่มีข้อมูลเลย ให้สร้างแถวรอ (1=นร, 2=พ่อ, 3=แม่)
       if (gState.householdMembers.length === 0) {
          const sm = gState.originalData.studentMaster || {};
          gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName || ''} ${sm.LastName || ''}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 });
@@ -637,10 +671,8 @@
          gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: '', Relation: 'มารดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
       }
 
-      // วาดตาราง
       gState.householdMembers.forEach((x, i) => { 
         x.MemberNo = i + 1; 
-        
         const job = x.MemberOccupation || x.Occupation || '-';
         const edu = x.MemberEducation || x.Education || '-';
         const income = x.Income_Total || x.Income || 0;
@@ -668,7 +700,6 @@
       calculateHouseholdIncome(); 
     }
 
-    // --- 3. แก้ไขสมาชิก (บันทึกเฉพาะตาราง ไม่ยุ่งกับ Section 1) ---
     window.editHouseholdMember = (index) => {
         const isNew = index === -1;
         const member = isNew ? { RecordID: gState.currentRecordId, IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE" } : { ...gState.householdMembers[index] };
@@ -676,11 +707,10 @@
         const jobOpts = ["ไม่ได้ทำงาน", "ข้าราชการ/รัฐวิสาหกิจ", "พนักงานบริษัท", "รับจ้าง", "รับจ้างทั่วไป", "เกษตรกร", "ค้าขาย", "ธุรกิจส่วนตัว", "อื่นๆ"];
         const eduOpts = ["ไม่ได้เรียน", "ประถมศึกษา", "มัธยมศึกษา", "ปวช./ปวส.", "ปริญญาตรี", "ปริญญาโท/เอก", "อื่นๆ"];
 
-        // ดึงค่าเก่า
+        const checkOpt = (opts, val) => opts.includes(val) ? val : (val && val.trim() !== "" ? 'อื่นๆ' : '');
         const mJob = member.MemberOccupation || member.Occupation || '';
         const mEdu = member.MemberEducation || member.Education || '';
 
-        const checkOpt = (opts, val) => opts.includes(val) ? val : (val && val.trim() !== "" ? 'อื่นๆ' : '');
         const currentJobSelect = checkOpt(jobOpts, mJob);
         const currentJobOther = currentJobSelect === 'อื่นๆ' || !jobOpts.includes(mJob) ? mJob : '';
         const currentEduSelect = checkOpt(eduOpts, mEdu);
@@ -708,10 +738,9 @@
             if (result.isConfirmed) {
                 const updatedMember = { ...member, ...result.value };
                 if (isNew) gState.householdMembers.push(updatedMember); else gState.householdMembers[index] = updatedMember;
-                
                 trackChange('household_changed', true); 
-                renderHouseholdTable(gState.householdMembers); // วาดใหม่
-                saveToLocalStorage(); 
+                renderHouseholdTable(gState.householdMembers); 
+                // ไม่ต้อง saveToLocalStorage() ตรงนี้ เพราะเราเน้น Server
             }
         });
     };
@@ -720,7 +749,7 @@
        Swal.fire({ title: 'ลบรายการนี้?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', confirmButtonColor: '#d33' }).then((r) => { if (r.isConfirmed) { gState.householdMembers.splice(index, 1); trackChange('household_changed', true); renderHouseholdTable(gState.householdMembers); } });
     };
 
-    // --- 4. บันทึกข้อมูล (แยกส่วน 1 กับ 2 ชัดเจน) ---
+    // --- 7. บันทึกข้อมูล (แยกอิสระ 100%) ---
     async function handleSaveToSheets() {
         el.saveBtn.disabled = true; el.saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
         try {
@@ -741,12 +770,15 @@
                 }));
                 await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'overwriteHouseholdData', recordId: gState.currentRecordId, members: membersToSend }) });
             }
+            
+            // บันทึกเสร็จแล้ว โหลดข้อมูลใหม่จาก Server ทันที
             onSaveSuccess();
-            handleStartForm(); // บังคับโหลดข้อมูลใหม่ทันทีหลังบันทึก
+            handleStartForm(); 
+            
         } catch (e) { handleError(e); } finally { if (el.saveBtn) { el.saveBtn.disabled = false; el.saveBtn.innerHTML = 'บันทึก (0)'; } }
     }
 
-    // --- Helper Functions ---
+    // --- 8. ฟังก์ชันเสริมต่างๆ ---
     function formatDateForInput(ds) { if(!ds)return''; if(/^\d{4}-\d{2}-\d{2}$/.test(ds))return ds; const d=new Date(ds); if(isNaN(d.getTime()))return''; return d.toISOString().split('T')[0]; }
     function prefillForm(m, v) { if(!m){return;} document.getElementById('s1-name').innerText=`${m.Prefix||''} ${m.FirstName} ${m.LastName}`; document.getElementById('s1-class').innerText=m.Class; document.getElementById('s1-citizenid').innerText=m.CitizenID||'N/A'; const sv = (val) => (val===undefined||val===null)?"":val; document.getElementById('Q1_GuardianFirstName').value = sv((v&&v.Q1_GuardianFirstName)||m.DefaultGuardianName); document.getElementById('Q1_GuardianPhone').value = sv((v&&v.Q1_GuardianPhone)||m.DefaultGuardianPhone); if(document.getElementById('Q1_StudentPhone')) document.getElementById('Q1_StudentPhone').value = sv((v&&v.Q1_StudentPhone)||m.Phone); if(document.getElementById('Q1_StudentNickname')) document.getElementById('Q1_StudentNickname').value = sv((v&&v.Q1_StudentNickname)||m.Nickname); if(document.getElementById('Q1_FatherName')) document.getElementById('Q1_FatherName').value = sv((v&&v.Q1_FatherName)||m.FatherName); if(document.getElementById('Q1_FatherPhone')) document.getElementById('Q1_FatherPhone').value = sv((v&&v.Q1_FatherPhone)||m.FatherPhone); if(document.getElementById('Q1_FatherJob')) document.getElementById('Q1_FatherJob').value = sv((v&&v.Q1_FatherJob)||m.FatherJob); if(document.getElementById('Q1_MotherName')) document.getElementById('Q1_MotherName').value = sv((v&&v.Q1_MotherName)||m.MotherName); if(document.getElementById('Q1_MotherPhone')) document.getElementById('Q1_MotherPhone').value = sv((v&&v.Q1_MotherPhone)||m.MotherPhone); if(document.getElementById('Q1_MotherJob')) document.getElementById('Q1_MotherJob').value = sv((v&&v.Q1_MotherJob)||m.MotherJob); if(document.getElementById('Q1_StudentDOB')) { const dob = (v&&v.Q1_StudentDOB)||m.DOB; document.getElementById('Q1_StudentDOB').value = formatDateForInput(dob); } if(v) { const f = document.getElementById('visit-form'); for(const k in v) { const inp = f.elements[k]; if(inp) { if(k==='Q1_StudentDOB') continue; if(inp.type==='checkbox') inp.checked=(v[k]==='TRUE'); else if(inp.length>0 && inp[0].type==='radio') { const r=f.querySelector(`input[name="${k}"][value="${v[k]}"]`); if(r) r.checked=true; } else if(inp.type==='hidden' && k.includes('PhotoURL')) { inp.value=v[k]; if(v[k]) { const img=document.getElementById(`preview_${k}`); if(img){img.src=v[k]; img.style.display='block';} const wrap=document.getElementById(`wrapper_${k}`); if(wrap)wrap.style.display='inline-block'; const del=wrap?wrap.querySelector('.btn-delete-img'):null; if(del)del.style.display='block'; } } else if(inp.type!=='file') inp.value=v[k]; if(['Q3_1_DependencyStatus','Q3_4_AgricultureStatus','Q1_LivesWith','Q3_StudentIncome_Has'].includes(k)) { const el = document.getElementsByName(k)[0] || document.getElementById(k); if(el) el.dispatchEvent(new Event('change')); } if(['Q11_IsAtRisk','Q11_Risk_Behavior'].includes(k)) { const el = document.getElementById(k); if(el) el.dispatchEvent(new Event('change')); } } } } }
     function handleBackToSelection(cb) { if(Object.keys(gState.changesToPush).length){ Swal.fire({title:'ยังไม่บันทึก',showCancelButton:true}).then(r=>{if(r.isConfirmed){resetFormState(); cb?cb():showScreen('selection');}})}else{resetFormState(); cb?cb():showScreen('selection');} }
@@ -762,17 +794,14 @@
     function handleGPSButton() { navigator.geolocation.getCurrentPosition(p=>{ const [lat,lon]=[p.coords.latitude.toFixed(6),p.coords.longitude.toFixed(6)]; document.getElementById('Q6_Addr_Latitude').value=lat; document.getElementById('Q6_Addr_Longitude').value=lon; trackChange('Q6_Addr_Latitude',lat); trackChange('Q6_Addr_Longitude',lon); saveToLocalStorage(); }, e=>Swal.fire('Error',e.message,'error')); }
     function deleteImage(n) { document.getElementById(n).value=""; document.getElementById(`wrapper_${n}`).style.display='none'; trackChange(n,""); saveToLocalStorage(); }
     async function handleFileUpload(e) { const f=e.target.files[0]; if(!f)return; const id=e.target.dataset.targetHidden; const prev=document.getElementById(`preview_${id}`), wrap=document.getElementById(`wrapper_${id}`), del=wrap.querySelector('.btn-delete-img'); wrap.style.display='inline-block'; prev.style.display='block'; prev.src='https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif'; del.style.display='none'; try { const fd=new FormData(); fd.append('file',f); fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET); const res=await fetch(CLOUDINARY_URL,{method:'POST',body:fd}); const d=await res.json(); prev.src=d.secure_url; del.style.display='block'; document.getElementById(id).value=d.secure_url; trackChange(id,d.secure_url); saveToLocalStorage(); } catch(e){ handleError(e); } }
-    function calculateHouseholdIncome() { const t=gState.householdMembers.length; const s=gState.householdMembers.reduce((a,b)=>a+(parseFloat(b.Income_Total)||0),0); el.totalMembersInput.value=t; el.totalIncomeInput.value=s; el.perCapitaIncomeInput.value=t>0?(s/t).toFixed(2):0; }
-    function attachFormListeners() { document.querySelectorAll('#visit-form input, select, textarea').forEach(e=>{ if(e.type!='file') e.addEventListener('change', (ev)=>{ trackChange(ev.target.name, ev.target.type=='checkbox'?(ev.target.checked?"TRUE":"FALSE"):ev.target.value); saveToLocalStorage(); calculateProgress(); }); }); }
-    function trackChange(n,v) { if(!n)return; if(n=='household_changed')gState.changesToPush['householdData']=true; else gState.changesToPush[n]=v; el.saveBtn.disabled=false; el.saveBtn.innerHTML=`บันทึก (${Object.keys(gState.changesToPush).length})`; }
-    function saveToLocalStorage() { const d={studentMaster:gState.originalData.studentMaster, visitData:{}, householdData:gState.householdMembers}; const fd=new FormData(document.getElementById('visit-form')); fd.forEach((v,k)=>d.visitData[k]=v); document.querySelectorAll('input[type=checkbox]').forEach(c=>d.visitData[c.name]=c.checked?"TRUE":"FALSE"); localStorage.setItem(`visit_${gState.currentRecordId}`, JSON.stringify(d)); }
-    function loadFromLocalStorage() { const d=localStorage.getItem(`visit_${gState.currentRecordId}`); return d?JSON.parse(d):null; }
-    function onSaveSuccess() { setLoading(false); Swal.fire('สำเร็จ','','success'); gState.changesToPush={}; gState.originalData=JSON.parse(JSON.stringify(loadFromLocalStorage())); }
+    function onSaveSuccess() { Swal.fire('สำเร็จ','บันทึกข้อมูลเรียบร้อยแล้ว','success'); gState.changesToPush={}; }
+    function loadFromLocalStorage() { return null; } // ปิด LocalStorage ไปเลย
   </script>
 </body>
 </html>
 </body>
 </html>
+
 
 
 
