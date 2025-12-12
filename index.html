@@ -545,22 +545,6 @@
     const gState = { currentUser: null, selectedStudentId: null, selectedStudentName: null, currentRecordId: null, originalData: {}, changesToPush: {}, householdMembers: [], isLoading: false };
     let SCREENS = {}; let el = {};
 
-    // ==========================================
-    // 2. ฟังก์ชันคำนวณและตัวช่วย (Helper Functions)
-    // ==========================================
-    
-    // ฟังก์ชันนี้หายไปครับ ให้เพิ่มกลับเข้ามา
-    function showScreen(id) { 
-        if(!SCREENS.loading) return; 
-        if(el.mainNavbar) el.mainNavbar.style.display=(id==='login'||id==='loading')?'none':'block'; 
-        Object.values(SCREENS).forEach(s=>s.style.display='none'); 
-        if(SCREENS[id]) SCREENS[id].style.display='block'; 
-        if(el.navHomeLink){ 
-            el.navHomeLink.classList.toggle('active',id==='selection'||id==='form'); 
-            el.navDashboardLink.classList.toggle('active',id==='dashboard'); 
-            el.navPrintLink.classList.toggle('active',id==='print'); 
-        } 
-    }
   
     // ฟังก์ชันช่วยดึงค่าจาก Object แบบไม่สนตัวพิมพ์เล็ก/ใหญ่ (Case Insensitive Getter)
     function getValue(obj, key) {
@@ -871,6 +855,35 @@
     function saveToLocalStorage() { return; } 
     function loadFromLocalStorage() { return null; }
     function onSaveSuccess() { Swal.fire('สำเร็จ','บันทึกข้อมูลเรียบร้อยแล้ว','success'); gState.changesToPush={}; }
+
+    // 1. ฟังก์ชันสลับหน้าจอ (สำคัญมาก! ไม่มีอันนี้จอจะค้าง)
+    function showScreen(id) { 
+        if(!SCREENS.loading) return; 
+        if(el.mainNavbar) el.mainNavbar.style.display=(id==='login'||id==='loading')?'none':'block'; 
+        Object.values(SCREENS).forEach(s=>s.style.display='none'); 
+        if(SCREENS[id]) SCREENS[id].style.display='block'; 
+        if(el.navHomeLink){ 
+            el.navHomeLink.classList.toggle('active',id==='selection'||id==='form'); 
+            el.navDashboardLink.classList.toggle('active',id==='dashboard'); 
+            el.navPrintLink.classList.toggle('active',id==='print'); 
+        } 
+    }
+
+    // 2. ฟังก์ชันคำนวณรายได้ (สำคัญ! ไม่มีอันนี้ตารางส่วนที่ 2 จะไม่แสดงผล)
+    function calculateHouseholdIncome() { 
+        if(!el.totalMembersInput || !el.totalIncomeInput) return;
+        
+        const t = gState.householdMembers.length; 
+        const s = gState.householdMembers.reduce((a,b) => {
+             // ดึงค่าแบบยืดหยุ่น (กันชื่อตัวแปรไม่ตรง)
+             const val = b.Income_Total || b.Income || 0;
+             return a + (parseFloat(val) || 0);
+        }, 0); 
+        
+        el.totalMembersInput.value = t; 
+        el.totalIncomeInput.value = s; 
+        if(el.perCapitaIncomeInput) el.perCapitaIncomeInput.value = t>0 ? (s/t).toFixed(2) : 0; 
+    }
     function bindEventListeners() { if (el.navHomeLink) el.navHomeLink.onclick = (e) => { e.preventDefault(); if (SCREENS.form.style.display === 'block') handleBackToSelection(); else showScreen('selection'); }; if (el.navDashboardLink) el.navDashboardLink.onclick = (e) => { e.preventDefault(); if (SCREENS.form.style.display === 'block') handleBackToSelection(() => showScreen('dashboard')); else showScreen('dashboard'); }; if (el.navPrintLink) el.navPrintLink.onclick = (e) => { e.preventDefault(); if (SCREENS.form.style.display === 'block') handleBackToSelection(() => showScreen('print')); else showScreen('print'); if (el.classSelect.value) { el.printClassSelect.innerHTML = el.classSelect.innerHTML; el.printClassSelect.value = el.classSelect.value; } }; if (el.navLogoutBtn) el.navLogoutBtn.onclick = handleLogout; if (el.loginForm) el.loginForm.onsubmit = handleManualLogin; if (el.classSelect) el.classSelect.onchange = handleClassChange; if (el.studentSelect) el.studentSelect.onchange = validateStartButton; if (el.startFormBtn) el.startFormBtn.onclick = handleStartForm; if (el.backBtn) el.backBtn.onclick = (e) => { e.preventDefault(); handleBackToSelection(); }; if (el.saveBtn) el.saveBtn.onclick = handleSaveToSheets; if (el.gpsBtn) el.gpsBtn.onclick = handleGPSButton; if (el.addMemberBtn) el.addMemberBtn.onclick = () => editHouseholdMember(-1); if (el.loadPrintListBtn) el.loadPrintListBtn.onclick = handleLoadPrintList; if (el.printAllBtn) el.printAllBtn.onclick = handleBatchPrint; if (el.printTableBody) el.printTableBody.onclick = handlePrintTableClick; if (el.backFromPrintBtn) el.backFromPrintBtn.onclick = () => showScreen('selection'); el.sidebarLinks.forEach(link => { link.onclick = (e) => { e.preventDefault(); showSection(link.getAttribute('data-section')); }; }); if (el.livesWithSelect) el.livesWithSelect.onchange = (e) => el.q4Content.style.display = (e.target.value === 'ครัวเรือนสถาบัน') ? 'block' : 'none'; el.q3_1_Status.forEach(r => r.onchange = (e) => el.q3_1_SubOptions.style.display = (e.target.value === 'มี') ? 'block' : 'none'); el.q3_4_Status.forEach(r => r.onchange = (e) => el.q3_4_SubOptions.style.display = (e.target.value === 'ทำ') ? 'block' : 'none'); const incChk = document.getElementById('Q3_StudentIncome_Has'); if (incChk) incChk.onchange = (e) => { const inps = [document.getElementsByName('Q3_StudentIncome_Detail')[0], document.getElementsByName('Q3_StudentIncome_Amount')[0]]; inps.forEach(i => { if (i) { i.disabled = !e.target.checked; if (!e.target.checked) i.value = ''; } }); trackChange('Q3_StudentIncome_Has', e.target.checked ? "TRUE" : "FALSE"); }; document.querySelectorAll('.file-upload-input').forEach(i => i.onchange = handleFileUpload); const cpBtn = document.getElementById('open-change-pwd-btn'); if (cpBtn) cpBtn.onclick = (e) => { e.preventDefault(); new bootstrap.Modal(document.getElementById('changePasswordModal')).show(); }; const savePassBtn = document.getElementById('save-new-pass-btn'); if(savePassBtn) savePassBtn.onclick = async () => { const [em,o,n] = [document.getElementById('cp-email').value, document.getElementById('cp-old-pass').value, document.getElementById('cp-new-pass').value]; if (!em || !o || !n) return Swal.fire('เตือน', 'กรอกให้ครบ', 'warning'); try { setLoading(true, 'เปลี่ยนรหัส...'); const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'changePassword', email: em, oldPass: o, newPass: n }) }); const json = await res.json(); if (json.success) { Swal.fire('สำเร็จ', 'เรียบร้อย', 'success'); bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide(); } else throw new Error(json.error); } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { setLoading(false); } }; const riskToggle = document.getElementById('Q11_IsAtRisk'); const riskDetails = document.getElementById('risk-details'); if (riskToggle) { riskToggle.addEventListener('change', (e) => { riskDetails.style.display = e.target.checked ? 'block' : 'none'; trackChange('Q11_IsAtRisk', e.target.checked ? "TRUE" : "FALSE"); }); } const behToggle = document.getElementById('Q11_Risk_Behavior'); const behOptions = document.getElementById('risk-behavior-options'); if (behToggle) { behToggle.addEventListener('change', (e) => { behOptions.style.display = e.target.checked ? 'block' : 'none'; }); } const othRiskCheck = document.getElementById('Q11_B_Other_Check'); const othRiskText = document.getElementById('Q11_B_Other_Text'); if (othRiskCheck) { othRiskCheck.addEventListener('change', (e) => { othRiskText.style.display = e.target.checked ? 'block' : 'none'; if (!e.target.checked) othRiskText.value = ''; }); } }
     async function handleLoadPrintList() { const cls = el.printClassSelect.value; if(!cls) return Swal.fire('เตือน','เลือกชั้น','warning'); setLoading(true); el.printListContainer.style.display='none'; el.printTableBody.innerHTML=''; try { const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentsByClass', className: cls }) }); const d = await res.json(); if(d && Array.isArray(d)) { d.forEach(s=>{ const rid = `${s.id}_${el.printSemester.value}_${el.printYear.value}`; el.printTableBody.innerHTML += `<tr><td class="text-center">${s.studentNumber}</td><td>${s.name}</td><td class="text-center"><button class="btn btn-sm btn-danger print-single-btn" data-rid="${rid}" data-name="${s.name}">PDF</button></td></tr>`; }); el.printListContainer.style.display='block'; } } catch(e){handleError(e);} finally{setLoading(false);} }
     function handlePrintTableClick(e) { const btn=e.target.closest('.print-single-btn'); if(btn) generateSinglePDF(btn.dataset.rid, btn.dataset.name); }
@@ -883,4 +896,5 @@
   </script>
 </body>
 </html>
+
 
