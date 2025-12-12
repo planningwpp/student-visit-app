@@ -942,37 +942,45 @@
             else r.style.display = (r.dataset.status === status) ? '' : 'none';
         });
     };
-    // --- 5. เริ่มต้นกรอกข้อมูล (Load Data) ---
+    // =========================================================
+    // 🟡 FIXED: แก้บั๊กบันทึกแล้ว Error (ให้รองรับแบบไม่มี Dropdown)
+    // =========================================================
     async function handleStartForm() { 
        try { 
-          gState.selectedStudentId = el.studentSelect.value; 
-          gState.selectedStudentName = el.studentSelect.options[el.studentSelect.selectedIndex].text; 
+          // ตรวจสอบ: ถ้าไม่มี Dropdown (แบบใหม่) ให้ใช้ ID ที่จำไว้ (gState)
+          // ถ้ามี Dropdown (แบบเก่า) ก็ให้อ่านค่าตามปกติ
+          if (!el.studentSelect && gState.selectedStudentId) {
+              // ใช้ค่าเดิม ไม่ต้องทำอะไร
+          } else if (el.studentSelect) {
+              gState.selectedStudentId = el.studentSelect.value; 
+              if(el.studentSelect.selectedIndex >= 0) {
+                  gState.selectedStudentName = el.studentSelect.options[el.studentSelect.selectedIndex].text; 
+              }
+          }
           
-          const sem = el.semesterSelect.value || "2";
-          const yr = el.yearSelect.value || "2568";
+          if(!gState.selectedStudentId) return; // ถ้าไม่มี ID หลุดออกไปเลย
+
+          const sem = el.semesterSelect ? el.semesterSelect.value : "2";
+          const yr = el.yearSelect ? el.yearSelect.value : "2568";
           gState.currentRecordId = `${gState.selectedStudentId}_${sem}_${yr}`; 
           
           if(el.studentNameHeader) el.studentNameHeader.textContent = `${gState.selectedStudentName} (${sem}/${yr})`; 
           
           setLoading(true, 'กำลังดึงข้อมูล...'); 
           
-          // ดึงจาก Server เสมอ
           const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentVisitData', recordId: gState.currentRecordId }) }); 
           const data = await res.json(); 
           
           if(data.studentMaster) { 
              loadStudentDataSuccess(data); 
           } else { 
-             Swal.fire({
-                 icon: 'info', title: 'ไม่พบข้อมูลเก่า', 
-                 text: `ระบบกำลังสร้างแบบฟอร์มใหม่สำหรับเทอม ${sem}/${yr} ครับ`,
-                 timer: 3000
-             });
-             const emptyData = { studentMaster: data.studentMaster || {}, visitData: {}, householdData: [] };
-             loadStudentDataSuccess(emptyData); 
+             // กรณีเริ่มใหม่
+             loadStudentDataSuccess({ studentMaster: data.studentMaster || {}, visitData: {}, householdData: [] }); 
           } 
        } catch(e) { 
           console.error(e); 
+          // ปิด Swal เดิมก่อนเผื่อมีค้าง
+          Swal.close();
           Swal.fire('ข้อผิดพลาด', 'ไม่สามารถดึงข้อมูลได้: ' + e.message, 'error');
           setLoading(false);
        } 
@@ -1746,6 +1754,7 @@ window.exportTableToExcel = function() {
 </html>
 </body>
 </html>
+
 
 
 
