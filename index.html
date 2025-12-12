@@ -809,41 +809,177 @@ function renderHouseholdTable(m) {
     calculateHouseholdIncome();
 }
     // --- 7. แก้ไขสมาชิก (บันทึกทันที) ---
+    // ฟังก์ชันแก้ไข/เพิ่มสมาชิก (ใช้ SweetAlert สร้างฟอร์ม)
     window.editHouseholdMember = (index) => {
-        const isNew = index === -1;
-        const member = isNew ? { RecordID: gState.currentRecordId, IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE" } : { ...gState.householdMembers[index] };
-        const jobOpts = ["ไม่ได้ทำงาน", "ข้าราชการ/รัฐวิสาหกิจ", "พนักงานบริษัท", "รับจ้าง", "รับจ้างทั่วไป", "เกษตรกร", "ค้าขาย", "ธุรกิจส่วนตัว", "อื่นๆ"];
-        const eduOpts = ["ไม่ได้เรียน", "ประถมศึกษา", "มัธยมศึกษา", "ปวช./ปวส.", "ปริญญาตรี", "ปริญญาโท/เอก", "อื่นๆ"];
-        const checkOpt = (opts, val) => opts.includes(val) ? val : (val && val.trim() !== "" ? 'อื่นๆ' : '');
-        const mJob = member.MemberOccupation || member.Occupation || '';
-        const mEdu = member.MemberEducation || member.Education || '';
-        const currentJobSelect = checkOpt(jobOpts, mJob);
-        const currentJobOther = currentJobSelect === 'อื่นๆ' || !jobOpts.includes(mJob) ? mJob : '';
-        const currentEduSelect = checkOpt(eduOpts, mEdu);
-        const currentEduOther = currentEduSelect === 'อื่นๆ' || !eduOpts.includes(mEdu) ? mEdu : '';
+        const isNew = index === -1; // ถ้า index เป็น -1 คือการเพิ่มใหม่
+        const m = isNew ? {} : gState.householdMembers[index];
+
+        // เตรียมค่าเดิม (กัน Error)
+        const val = (v) => v || '';
+        const check = (v) => (String(v).toUpperCase() === 'TRUE' ? 'checked' : '');
+
+        // รายชื่อตัวเลือกอาชีพ
+        const jobs = ["ไม่ได้ทำงาน", "รับราชการ/รัฐวิสาหกิจ", "พนักงานบริษัท", "รับจ้างทั่วไป", "เกษตรกร", "ค้าขาย", "ธุรกิจส่วนตัว", "อื่นๆ"];
+        const jobOptions = jobs.map(j => `<option value="${j}" ${val(m.MemberOccupation)===j ? 'selected' : ''}>${j}</option>`).join('');
+        
+        // HTML ของฟอร์มใน Popup
+        const formHtml = `
+            <div class="row g-2 text-start" style="font-size: 0.9rem;">
+                <div class="col-12">
+                    <label class="form-label fw-bold">ชื่อ-นามสกุล</label>
+                    <input id="sw-name" class="form-control" value="${val(m.MemberName)}" placeholder="ระบุชื่อ...">
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-bold">ความสัมพันธ์</label>
+                    <select id="sw-rel" class="form-select">
+                        <option value="บิดา" ${val(m.Relation)==='บิดา'?'selected':''}>บิดา</option>
+                        <option value="มารดา" ${val(m.Relation)==='มารดา'?'selected':''}>มารดา</option>
+                        <option value="พี่" ${val(m.Relation)==='พี่'?'selected':''}>พี่</option>
+                        <option value="น้อง" ${val(m.Relation)==='น้อง'?'selected':''}>น้อง</option>
+                        <option value="ปู่" ${val(m.Relation)==='ปู่'?'selected':''}>ปู่</option>
+                        <option value="ย่า" ${val(m.Relation)==='ย่า'?'selected':''}>ย่า</option>
+                        <option value="ตา" ${val(m.Relation)==='ตา'?'selected':''}>ตา</option>
+                        <option value="ยาย" ${val(m.Relation)==='ยาย'?'selected':''}>ยาย</option>
+                        <option value="ลุง/ป้า/น้า/อา" ${val(m.Relation)==='ลุง/ป้า/น้า/อา'?'selected':''}>ลุง/ป้า/น้า/อา</option>
+                        <option value="ผู้อุปการะ" ${val(m.Relation)==='ผู้อุปการะ'?'selected':''}>ผู้อุปการะ</option>
+                        <option value="อื่นๆ" ${!['บิดา','มารดา','พี่','น้อง','ปู่','ย่า','ตา','ยาย'].includes(val(m.Relation))?'selected':''}>อื่นๆ</option>
+                    </select>
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-bold">เบอร์โทร</label>
+                    <input id="sw-phone" class="form-control" value="${val(m.Phone)}">
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-bold">อาชีพ</label>
+                    <select id="sw-job" class="form-select" onchange="document.getElementById('sw-job-other').style.display = (this.value==='อื่นๆ'?'block':'none')">
+                        <option value="">-- เลือก --</option>
+                        ${jobOptions}
+                    </select>
+                    <input id="sw-job-other" class="form-control mt-1" placeholder="ระบุอาชีพ..." style="display: ${val(m.MemberOccupation)==='อื่นๆ' || !jobs.includes(val(m.MemberOccupation)) && val(m.MemberOccupation)!=='' ? 'block' : 'none'}" value="${!jobs.includes(val(m.MemberOccupation)) ? val(m.MemberOccupation) : ''}">
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-bold">การศึกษา</label>
+                    <select id="sw-edu" class="form-select">
+                        <option value="">-- เลือก --</option>
+                        <option value="ประถมศึกษา" ${val(m.MemberEducation)==='ประถมศึกษา'?'selected':''}>ประถมศึกษา</option>
+                        <option value="มัธยมศึกษา" ${val(m.MemberEducation)==='มัธยมศึกษา'?'selected':''}>มัธยมศึกษา</option>
+                        <option value="ปวช./ปวส." ${val(m.MemberEducation)==='ปวช./ปวส.'?'selected':''}>ปวช./ปวส.</option>
+                        <option value="ปริญญาตรี" ${val(m.MemberEducation)==='ปริญญาตรี'?'selected':''}>ปริญญาตรี</option>
+                        <option value="สูงกว่าป.ตรี" ${val(m.MemberEducation)==='สูงกว่าป.ตรี'?'selected':''}>สูงกว่าป.ตรี</option>
+                        <option value="ไม่ได้เรียน" ${val(m.MemberEducation)==='ไม่ได้เรียน'?'selected':''}>ไม่ได้เรียน</option>
+                    </select>
+                </div>
+                <div class="col-7">
+                    <label class="form-label fw-bold">เลขบัตร ปชช.</label>
+                    <input id="sw-cit" class="form-control" value="${val(m.CitizenID)}">
+                </div>
+                <div class="col-5">
+                    <label class="form-label fw-bold">อายุ (ปี)</label>
+                    <input id="sw-age" type="number" class="form-control" value="${val(m.Age)}">
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-bold">รายได้เฉลี่ย (บาท/เดือน)</label>
+                    <input id="sw-income" type="number" class="form-control" value="${val(m.Income_Total)}">
+                </div>
+                <div class="col-12 mt-2 pt-2 border-top">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="sw-dis" ${check(m.IsDisabledOrChronic)}>
+                        <label class="form-check-label" for="sw-dis">พิการ/เจ็บป่วยเรื้อรัง</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="sw-10k" ${check(m.Got10kDigitalWallet)}>
+                        <label class="form-check-label" for="sw-10k">ได้รับเงิน 10,000 บาท</label>
+                    </div>
+                </div>
+            </div>
+        `;
 
         Swal.fire({
-            title: isNew ? 'เพิ่มสมาชิก' : 'แก้ไขข้อมูล', width: '700px',
-            html: `<div class="row g-2 text-start"><div class="col-6"><label>ชื่อ-สกุล</label><input id="sw-Name" class="form-control" value="${member.MemberName || ''}"></div><div class="col-6"><label>ความสัมพันธ์</label><input id="sw-Rel" class="form-control" value="${member.Relation || ''}"></div><div class="col-6"><label>อาชีพ</label><select id="sw-Job" class="form-select mb-2" onchange="document.getElementById('sw-Job-Other').style.display=this.value=='อื่นๆ'?'block':'none'"><option value="">-- เลือก --</option>${jobOpts.map(o => `<option value="${o}" ${currentJobSelect === o ? 'selected' : ''}>${o}</option>`).join('')}</select><input id="sw-Job-Other" class="form-control" placeholder="ระบุอาชีพ..." style="display:${currentJobSelect === 'อื่นๆ' ? 'block' : 'none'}" value="${currentJobOther}"></div><div class="col-6"><label>การศึกษา</label><select id="sw-Edu" class="form-select mb-2" onchange="document.getElementById('sw-Edu-Other').style.display=this.value=='อื่นๆ'?'block':'none'"><option value="">-- เลือก --</option>${eduOpts.map(o => `<option value="${o}" ${currentEduSelect === o ? 'selected' : ''}>${o}</option>`).join('')}</select><input id="sw-Edu-Other" class="form-control" placeholder="ระบุ..." style="display:${currentEduSelect === 'อื่นๆ' ? 'block' : 'none'}" value="${currentEduOther}"></div><div class="col-6"><label>เบอร์โทร</label><input id="sw-Phone" class="form-control" value="${member.Phone || ''}"></div><div class="col-6"><label>เลข ปชช.</label><input id="sw-Cit" class="form-control" value="${member.CitizenID || ''}"></div><div class="col-4"><label>อายุ</label><input id="sw-Age" class="form-control" value="${member.Age || ''}"></div><div class="col-8"><label>รายได้รวม</label><input id="sw-Inc" type="number" class="form-control" value="${member.Income_Total || 0}"></div><div class="col-12 mt-2"><input type="checkbox" id="sw-Dis" ${String(member.IsDisabledOrChronic) === 'TRUE' ? 'checked' : ''}> พิการ/ป่วย &nbsp;&nbsp; <input type="checkbox" id="sw-10k" ${String(member.Got10kDigitalWallet) === 'TRUE' ? 'checked' : ''}> ได้เงิน 10k</div></div>`,
+            title: isNew ? 'เพิ่มสมาชิกใหม่' : 'แก้ไขข้อมูลสมาชิก',
+            html: formHtml,
+            width: '600px',
+            showCancelButton: true,
+            confirmButtonText: 'บันทึก',
+            cancelButtonText: 'ยกเลิก',
             focusConfirm: false,
             preConfirm: () => {
-                let job = document.getElementById('sw-Job').value; if (job === 'อื่นๆ') job = document.getElementById('sw-Job-Other').value;
-                let edu = document.getElementById('sw-Edu').value; if (edu === 'อื่นๆ') edu = document.getElementById('sw-Edu-Other').value;
-                return { MemberName: document.getElementById('sw-Name').value, Relation: document.getElementById('sw-Rel').value, MemberOccupation: job, MemberEducation: edu, Phone: document.getElementById('sw-Phone').value, CitizenID: document.getElementById('sw-Cit').value, Age: document.getElementById('sw-Age').value, Income_Total: document.getElementById('sw-Inc').value, IsDisabledOrChronic: document.getElementById('sw-Dis').checked ? "TRUE" : "FALSE", Got10kDigitalWallet: document.getElementById('sw-10k').checked ? "TRUE" : "FALSE" };
+                // ดึงค่าจากฟอร์ม
+                const name = document.getElementById('sw-name').value.trim();
+                if (!name) return Swal.showValidationMessage('กรุณาระบุชื่อ-นามสกุล');
+
+                let job = document.getElementById('sw-job').value;
+                if (job === 'อื่นๆ' || document.getElementById('sw-job-other').value !== '') {
+                     // ถ้าเลือกอื่นๆ หรือกรอกช่องอื่นๆ ให้เอาค่าจากช่อง input
+                     const otherJob = document.getElementById('sw-job-other').value.trim();
+                     if(otherJob) job = otherJob;
+                }
+
+                return {
+                    MemberName: name,
+                    Relation: document.getElementById('sw-rel').value,
+                    Phone: document.getElementById('sw-phone').value,
+                    MemberOccupation: job,
+                    MemberEducation: document.getElementById('sw-edu').value,
+                    CitizenID: document.getElementById('sw-cit').value,
+                    Age: document.getElementById('sw-age').value,
+                    Income_Total: document.getElementById('sw-income').value || 0,
+                    IsDisabledOrChronic: document.getElementById('sw-dis').checked ? "TRUE" : "FALSE",
+                    Got10kDigitalWallet: document.getElementById('sw-10k').checked ? "TRUE" : "FALSE",
+                    // คงค่าเดิมไว้ถ้ามี
+                    RecordID: gState.currentRecordId,
+                    MemberNo: m.MemberNo || (gState.householdMembers.length + 1)
+                };
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                const updatedMember = { ...member, ...result.value };
-                if (isNew) gState.householdMembers.push(updatedMember); else gState.householdMembers[index] = updatedMember;
-                trackChange('household_changed', true); 
-                renderHouseholdTable(gState.householdMembers); 
-                saveToLocalStorage(); 
+                // อัปเดตข้อมูลลง Array
+                const newData = result.value;
+                
+                if (isNew) {
+                    gState.householdMembers.push(newData);
+                } else {
+                    gState.householdMembers[index] = { ...m, ...newData }; // Merge ค่าเดิมกับค่าใหม่
+                }
+
+                // แจ้งระบบว่ามีการแก้ไข
+                trackChange('household_changed', true);
+                
+                // วาดตารางใหม่
+                renderHouseholdTable(gState.householdMembers);
+                
+                Swal.fire('บันทึกเรียบร้อย', '', 'success');
             }
         });
     };
 
+    // ฟังก์ชันลบสมาชิก
     window.removeHouseholdMember = (index) => {
-       Swal.fire({ title: 'ลบรายการนี้?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', confirmButtonColor: '#d33' }).then((r) => { if (r.isConfirmed) { gState.householdMembers.splice(index, 1); trackChange('household_changed', true); renderHouseholdTable(gState.householdMembers); } });
+        const member = gState.householdMembers[index];
+        if (!member) return;
+
+        Swal.fire({
+            title: 'ยืนยันการลบ?',
+            text: `ต้องการลบ "${member.MemberName}" ออกจากรายการใช่หรือไม่?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'ใช่, ลบเลย',
+            cancelButtonText: 'ยกเลิก'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // ลบออกจาก Array
+                gState.householdMembers.splice(index, 1);
+                
+                // แจ้งระบบว่ามีการแก้ไขแล้ว (เพื่อให้ปุ่มบันทึกทำงาน)
+                trackChange('household_changed', true);
+                
+                // วาดตารางใหม่
+                renderHouseholdTable(gState.householdMembers);
+                
+                Swal.fire('ลบสำเร็จ!', '', 'success');
+            }
+        });
     };
 
     // --- 8. บันทึกข้อมูล ---
@@ -1026,19 +1162,29 @@ function renderDashboard(data) {
     
     container.innerHTML = html;
 
-    // 🟢 เติมตัวเลือกห้องเรียน (ดึงจากหน้า Login)
+    // 🟢 เติมตัวเลือกห้องเรียน (ปรับปรุงใหม่)
     const dashClassSelect = document.getElementById('dash-class');
     const mainClassSelect = document.getElementById('class-select');
+    
     if (mainClassSelect && dashClassSelect) {
-        // ก๊อปปี้ตัวเลือกทั้งหมดมา
-        dashClassSelect.innerHTML = mainClassSelect.innerHTML;
-        // เพิ่มตัวเลือก "ทั้งหมด" ไว้บนสุด
-        const allOpt = new Option("-- ทุกระดับชั้น --", "");
-        dashClassSelect.insertBefore(allOpt, dashClassSelect.firstChild);
-        dashClassSelect.selectedIndex = 0; // default เลือกทั้งหมด
+        // ล้างตัวเลือกเก่าก่อน
+        dashClassSelect.innerHTML = "";
         
-        // คืนค่าที่เลือกไว้ล่าสุด
-        if(currentClass) dashClassSelect.value = currentClass;
+        // 1. เพิ่มตัวเลือก "ทุกระดับชั้น" เป็นอันแรกเสมอ
+        dashClassSelect.add(new Option("-- ทุกระดับชั้น --", ""));
+
+        // 2. วนลูปก๊อปปี้เฉพาะตัวเลือกที่เป็นชื่อห้องจริงๆ (ข้ามตัวเลือก "-- กรุณาเลือก --")
+        Array.from(mainClassSelect.options).forEach(opt => {
+            if (opt.value && opt.value.trim() !== "") {
+                // สร้าง Option ใหม่เพื่อป้องกันการย้าย (Cloning)
+                dashClassSelect.add(new Option(opt.text, opt.value));
+            }
+        });
+
+        // 3. คืนค่าห้องที่เคยเลือกไว้ (ถ้ามี)
+        if (currentClass && currentClass !== "") {
+            dashClassSelect.value = currentClass;
+        }
     }
 
     // Render Charts
@@ -1124,6 +1270,7 @@ function createTableRows(title, obj, total) {
 </html>
 </body>
 </html>
+
 
 
 
