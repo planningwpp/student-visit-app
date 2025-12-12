@@ -712,199 +712,7 @@
     // --- 6. ตารางสมาชิกครัวเรือน (Logic: กรองข้อมูลล่าสุด) ---
     // --- แก้ไขฟังก์ชันนี้ในส่วน JavaScript ---
 
-    // =============================================================
-    // 🔴 ชุดคำสั่งจัดการสมาชิกครัวเรือน (แก้ชื่อให้ตรงกับระบบเดิม)
-    // =============================================================
 
-    // 1. ฟังก์ชันวาดตาราง (Render Table)
-    function renderHouseholdTable(m) {
-        console.log("Rendering Table...", m);
-        let rawData = Array.isArray(m) ? m : [];
-        const uniqueMap = new Map();
-
-        // กรองข้อมูลซ้ำ
-        rawData.forEach((item, index) => {
-            let key;
-            const memNo = String(item.MemberNo || "").trim();
-            const memName = String(item.MemberName || "").trim();
-
-            if (memNo !== "" && memNo !== "undefined") key = "NO_" + memNo;
-            else if (memName !== "") key = "NAME_" + memName;
-            else key = "IDX_" + index;
-            uniqueMap.set(key, item);
-        });
-
-        gState.householdMembers = Array.from(uniqueMap.values());
-        
-        // เรียงลำดับ
-        gState.householdMembers.sort((a, b) => (parseInt(a.MemberNo)||999) - (parseInt(b.MemberNo)||999));
-
-        if(el.householdTbody) el.householdTbody.innerHTML = '';
-
-        // ข้อมูล Default
-        if (gState.householdMembers.length === 0) {
-             const sm = gState.originalData.studentMaster || {};
-             gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName || ''} ${sm.LastName || ''}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 });
-             gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 2, MemberName: '', Relation: 'บิดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
-             gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: '', Relation: 'มารดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
-        }
-
-        gState.householdMembers.forEach((x, i) => {
-            x.MemberNo = i + 1; 
-            const job = x.MemberOccupation || x.Occupation || '-';
-            const edu = x.MemberEducation || x.Education || '-';
-            const income = x.Income_Total || x.Income || 0;
-            const isDisabled = String(x.IsDisabledOrChronic).toUpperCase() === 'TRUE';
-            const got10k = String(x.Got10kDigitalWallet).toUpperCase() === 'TRUE';
-
-            const tr = document.createElement('tr');
-            // 🟢 ใช้ชื่อฟังก์ชัน editHouseholdMember และ removeHouseholdMember ให้ตรงกับที่ประกาศไว้
-            tr.innerHTML = `
-                <td>${x.MemberNo}</td>
-                <td class="text-start">${x.MemberName || ''}</td>
-                <td>${x.Relation || ''}</td>
-                <td>${x.Phone || '-'}</td>
-                <td>${edu}</td>
-                <td>${x.CitizenID || '-'}</td>
-                <td>${x.Age || '-'}</td>
-                <td class="text-center">${isDisabled ? '/' : ''}</td>
-                <td class="text-center">${got10k ? '/' : ''}</td>
-                <td class="text-end">${Number(income).toLocaleString()}</td>
-                <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-warning" onclick="editHouseholdMember(${i})"><i class="bi bi-pencil"></i> แก้</button>
-                </td>
-                <td class="text-center">
-                    ${x.Relation !== 'นักเรียน' ? `<button type="button" class="btn btn-sm btn-danger" onclick="removeHouseholdMember(${i})"><i class="bi bi-trash"></i> ลบ</button>` : ''}
-                </td>
-            `;
-            el.householdTbody.appendChild(tr);
-        });
-        calculateHouseholdIncome();
-    }
-
-    // 2. ฟังก์ชันเพิ่ม/แก้ไข (ใช้ชื่อเดิม editHouseholdMember เพื่อให้ปุ่มเพิ่มใช้งานได้)
-    window.editHouseholdMember = (index) => {
-        const isNew = index === -1;
-        const m = isNew ? {} : gState.householdMembers[index];
-        const val = (v) => v || '';
-        const check = (v) => (String(v).toUpperCase() === 'TRUE' ? 'checked' : '');
-
-        const jobs = ["ไม่ได้ทำงาน", "รับราชการ/รัฐวิสาหกิจ", "พนักงานบริษัท", "รับจ้างทั่วไป", "เกษตรกร", "ค้าขาย", "ธุรกิจส่วนตัว", "อื่นๆ"];
-        const jobOptions = jobs.map(j => `<option value="${j}" ${val(m.MemberOccupation)===j ? 'selected' : ''}>${j}</option>`).join('');
-
-        const html = `
-            <div class="row g-2 text-start fs-6">
-                <div class="col-12"><label>ชื่อ-นามสกุล</label><input id="sw-name" class="form-control" value="${val(m.MemberName)}"></div>
-                <div class="col-6"><label>ความสัมพันธ์</label>
-                    <select id="sw-rel" class="form-select">
-                        <option value="บิดา" ${val(m.Relation)==='บิดา'?'selected':''}>บิดา</option>
-                        <option value="มารดา" ${val(m.Relation)==='มารดา'?'selected':''}>มารดา</option>
-                        <option value="พี่" ${val(m.Relation)==='พี่'?'selected':''}>พี่</option>
-                        <option value="น้อง" ${val(m.Relation)==='น้อง'?'selected':''}>น้อง</option>
-                        <option value="ปู่" ${val(m.Relation)==='ปู่'?'selected':''}>ปู่</option>
-                        <option value="ย่า" ${val(m.Relation)==='ย่า'?'selected':''}>ย่า</option>
-                        <option value="ตา" ${val(m.Relation)==='ตา'?'selected':''}>ตา</option>
-                        <option value="ยาย" ${val(m.Relation)==='ยาย'?'selected':''}>ยาย</option>
-                        <option value="ญาติ" ${val(m.Relation)==='ญาติ'?'selected':''}>ญาติ</option>
-                        <option value="ผู้อุปการะ" ${val(m.Relation)==='ผู้อุปการะ'?'selected':''}>ผู้อุปการะ</option>
-                    </select>
-                </div>
-                <div class="col-6"><label>เบอร์โทร</label><input id="sw-phone" class="form-control" value="${val(m.Phone)}"></div>
-                <div class="col-6"><label>อาชีพ</label>
-                    <select id="sw-job" class="form-select" onchange="document.getElementById('sw-job-other').style.display=(this.value==='อื่นๆ'?'block':'none')">
-                        <option value="">-เลือก-</option>${jobOptions}
-                    </select>
-                    <input id="sw-job-other" class="form-control mt-1" style="display:${val(m.MemberOccupation)==='อื่นๆ'||!jobs.includes(val(m.MemberOccupation))&&val(m.MemberOccupation)!==''?'block':'none'}" value="${!jobs.includes(val(m.MemberOccupation))?val(m.MemberOccupation):''}" placeholder="ระบุ...">
-                </div>
-                <div class="col-6"><label>การศึกษา</label>
-                    <select id="sw-edu" class="form-select">
-                        <option value="">-เลือก-</option>
-                        <option value="ประถมศึกษา" ${val(m.MemberEducation)==='ประถมศึกษา'?'selected':''}>ประถมศึกษา</option>
-                        <option value="มัธยมศึกษา" ${val(m.MemberEducation)==='มัธยมศึกษา'?'selected':''}>มัธยมศึกษา</option>
-                        <option value="ปวช./ปวส." ${val(m.MemberEducation)==='ปวช./ปวส.'?'selected':''}>ปวช./ปวส.</option>
-                        <option value="ปริญญาตรี" ${val(m.MemberEducation)==='ปริญญาตรี'?'selected':''}>ปริญญาตรี</option>
-                        <option value="สูงกว่า" ${val(m.MemberEducation)==='สูงกว่า'?'selected':''}>สูงกว่า</option>
-                        <option value="ไม่ได้เรียน" ${val(m.MemberEducation)==='ไม่ได้เรียน'?'selected':''}>ไม่ได้เรียน</option>
-                    </select>
-                </div>
-                <div class="col-7"><label>เลข ปชช.</label><input id="sw-cit" class="form-control" value="${val(m.CitizenID)}"></div>
-                <div class="col-5"><label>อายุ</label><input id="sw-age" type="number" class="form-control" value="${val(m.Age)}"></div>
-                <div class="col-12"><label>รายได้ (บาท/เดือน)</label><input id="sw-inc" type="number" class="form-control" value="${val(m.Income_Total)}"></div>
-                <div class="col-12 border-top pt-2">
-                    <input type="checkbox" id="sw-dis" ${check(m.IsDisabledOrChronic)}> พิการ/ป่วย &nbsp;
-                    <input type="checkbox" id="sw-10k" ${check(m.Got10kDigitalWallet)}> ได้เงิน 10k
-                </div>
-            </div>
-        `;
-
-        Swal.fire({
-            title: isNew?'เพิ่มสมาชิก':'แก้ไขข้อมูล',
-            html: html,
-            width: '600px',
-            showCancelButton: true,
-            confirmButtonText: 'บันทึก',
-            preConfirm: () => {
-                const name = document.getElementById('sw-name').value;
-                if(!name) return Swal.showValidationMessage('กรุณาใส่ชื่อ');
-                let job = document.getElementById('sw-job').value;
-                if(job==='อื่นๆ' || document.getElementById('sw-job-other').value) job = document.getElementById('sw-job-other').value || job;
-                
-                return {
-                    MemberName: name,
-                    Relation: document.getElementById('sw-rel').value,
-                    Phone: document.getElementById('sw-phone').value,
-                    MemberOccupation: job,
-                    MemberEducation: document.getElementById('sw-edu').value,
-                    CitizenID: document.getElementById('sw-cit').value,
-                    Age: document.getElementById('sw-age').value,
-                    Income_Total: document.getElementById('sw-inc').value,
-                    IsDisabledOrChronic: document.getElementById('sw-dis').checked?"TRUE":"FALSE",
-                    Got10kDigitalWallet: document.getElementById('sw-10k').checked?"TRUE":"FALSE",
-                    RecordID: gState.currentRecordId
-                };
-            }
-        }).then(res => {
-            if(res.isConfirmed) {
-                if(isNew) gState.householdMembers.push(res.value);
-                else gState.householdMembers[index] = {...m, ...res.value};
-                trackChange('household_changed', true);
-                renderHouseholdTable(gState.householdMembers);
-                Swal.fire('บันทึกแล้ว', '', 'success');
-            }
-        });
-    };
-
-    // 3. ฟังก์ชันลบสมาชิก (ใช้ชื่อ removeHouseholdMember ให้ตรงกับที่เรียกในตาราง)
-    window.removeHouseholdMember = (index) => {
-        const mem = gState.householdMembers[index];
-        if(!mem) return;
-
-        Swal.fire({
-            title: 'ลบรายการ?',
-            text: `ต้องการลบ "${mem.MemberName}" หรือไม่?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            confirmButtonText: 'ลบเลย'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                gState.householdMembers.splice(index, 1); 
-                trackChange('household_changed', true);
-                renderHouseholdTable(gState.householdMembers);
-                Swal.fire('ลบเรียบร้อย', '', 'success');
-            }
-        });
-    };
-    
-    // 🔴 4. บังคับผูกปุ่ม "เพิ่ม" ใหม่อีกครั้ง (เพื่อความชัวร์ 100%)
-    // วางโค้ดนี้ไว้ท้ายสุดของ script block นี้เลย
-    const addBtn = document.getElementById('add-member-btn');
-    if(addBtn) {
-        addBtn.onclick = function() {
-            // เรียกฟังก์ชัน editHouseholdMember(-1)
-            window.editHouseholdMember(-1); 
-        };
-    }
     // --- 8. บันทึกข้อมูล ---
     async function handleSaveToSheets() {
         el.saveBtn.disabled = true; el.saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
@@ -1188,11 +996,183 @@ function createTableRows(title, obj, total) {
     }
     return rows;
 }
+// ============================================================================
+// 🔴 ย้ายฟังก์ชันเหล่านี้มาไว้นอกสุด (Global Scope) เพื่อให้ HTML เรียกใช้ได้แน่นอน
+// ============================================================================
+
+// 1. ฟังก์ชันวาดตาราง
+function renderHouseholdTable(m) {
+    // ถ้ามีการส่งข้อมูลมาใหม่อัปเดตตัวแปร Global
+    if (m) gState.householdMembers = m;
+    
+    // ถ้าไม่มีข้อมูลใน gState ให้ดึงจาก m หรือสร้างใหม่
+    let data = gState.householdMembers || [];
+    
+    // กรองข้อมูลซ้ำ (Last Write Wins)
+    const uniqueMap = new Map();
+    data.forEach((item, index) => {
+        let key = item.MemberNo ? "NO_" + item.MemberNo : "IDX_" + index;
+        if(item.MemberName) key += "_" + item.MemberName; // เพิ่มชื่อในคีย์กันพลาด
+        uniqueMap.set(key, item);
+    });
+    
+    // แปลงกลับเป็น Array และเรียงลำดับ
+    gState.householdMembers = Array.from(uniqueMap.values());
+    gState.householdMembers.sort((a, b) => (parseInt(a.MemberNo) || 99) - (parseInt(b.MemberNo) || 99));
+
+    const tbody = document.getElementById('household-member-list');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    // สร้าง Default ถ้าว่าง
+    if (gState.householdMembers.length === 0 && gState.originalData?.studentMaster) {
+         const sm = gState.originalData.studentMaster;
+         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName || ''} ${sm.LastName || ''}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 });
+         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 2, MemberName: '', Relation: 'บิดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
+         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: '', Relation: 'มารดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
+    }
+
+    // วาดแถว
+    gState.householdMembers.forEach((x, i) => {
+        x.MemberNo = i + 1; // รันเลขใหม่
+        const isDisabled = String(x.IsDisabledOrChronic).toUpperCase() === 'TRUE';
+        const got10k = String(x.Got10kDigitalWallet).toUpperCase() === 'TRUE';
+        const income = x.Income_Total || 0;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${x.MemberNo}</td>
+            <td class="text-start">${x.MemberName || ''}</td>
+            <td>${x.Relation || ''}</td>
+            <td>${x.Phone || '-'}</td>
+            <td>${x.MemberEducation || x.Education || '-'}</td>
+            <td>${x.CitizenID || '-'}</td>
+            <td>${x.Age || '-'}</td>
+            <td class="text-center">${isDisabled ? '/' : ''}</td>
+            <td class="text-center">${got10k ? '/' : ''}</td>
+            <td class="text-end">${Number(income).toLocaleString()}</td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-warning" onclick="editHouseholdMember(${i})"><i class="bi bi-pencil"></i> แก้</button>
+            </td>
+            <td class="text-center">
+                ${x.Relation !== 'นักเรียน' ? `<button type="button" class="btn btn-sm btn-danger" onclick="removeHouseholdMember(${i})"><i class="bi bi-trash"></i> ลบ</button>` : ''}
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    if(typeof calculateHouseholdIncome === 'function') calculateHouseholdIncome();
+}
+
+// 2. ฟังก์ชันแก้ไข/เพิ่ม (Global)
+window.editHouseholdMember = function(index) {
+    const isNew = index === -1;
+    const m = isNew ? {} : gState.householdMembers[index];
+    const val = (v) => v || '';
+    const check = (v) => (String(v).toUpperCase() === 'TRUE' ? 'checked' : '');
+    
+    // HTML Form (ย่อ)
+    const jobs = ["ไม่ได้ทำงาน", "รับราชการ/รัฐวิสาหกิจ", "พนักงานบริษัท", "รับจ้างทั่วไป", "เกษตรกร", "ค้าขาย", "ธุรกิจส่วนตัว", "อื่นๆ"];
+    const jobOpts = jobs.map(j => `<option value="${j}" ${val(m.MemberOccupation)===j ? 'selected' : ''}>${j}</option>`).join('');
+
+    Swal.fire({
+        title: isNew ? 'เพิ่มสมาชิก' : 'แก้ไขข้อมูล',
+        html: `
+            <div class="row g-2 text-start fs-6">
+                <div class="col-12"><label>ชื่อ-นามสกุล</label><input id="sw-name" class="form-control" value="${val(m.MemberName)}"></div>
+                <div class="col-6"><label>ความสัมพันธ์</label>
+                    <select id="sw-rel" class="form-select">
+                        <option value="บิดา" ${val(m.Relation)==='บิดา'?'selected':''}>บิดา</option>
+                        <option value="มารดา" ${val(m.Relation)==='มารดา'?'selected':''}>มารดา</option>
+                        <option value="พี่" ${val(m.Relation)==='พี่'?'selected':''}>พี่</option>
+                        <option value="น้อง" ${val(m.Relation)==='น้อง'?'selected':''}>น้อง</option>
+                        <option value="ปู่" ${val(m.Relation)==='ปู่'?'selected':''}>ปู่</option>
+                        <option value="ย่า" ${val(m.Relation)==='ย่า'?'selected':''}>ย่า</option>
+                        <option value="ตา" ${val(m.Relation)==='ตา'?'selected':''}>ตา</option>
+                        <option value="ยาย" ${val(m.Relation)==='ยาย'?'selected':''}>ยาย</option>
+                        <option value="ญาติ" ${val(m.Relation)==='ญาติ'?'selected':''}>ญาติ</option>
+                        <option value="ผู้อุปการะ" ${val(m.Relation)==='ผู้อุปการะ'?'selected':''}>ผู้อุปการะ</option>
+                        <option value="อื่นๆ" ${!['บิดา','มารดา','พี่','น้อง','ปู่','ย่า','ตา','ยาย','ญาติ','ผู้อุปการะ'].includes(val(m.Relation))?'selected':''}>อื่นๆ</option>
+                    </select>
+                </div>
+                <div class="col-6"><label>เบอร์โทร</label><input id="sw-phone" class="form-control" value="${val(m.Phone)}"></div>
+                <div class="col-6"><label>อาชีพ</label><select id="sw-job" class="form-select">${jobOpts}</select></div>
+                <div class="col-6"><label>การศึกษา</label><select id="sw-edu" class="form-select"><option value="">-เลือก-</option><option value="ประถมศึกษา" ${val(m.MemberEducation)==='ประถมศึกษา'?'selected':''}>ประถมศึกษา</option><option value="มัธยมศึกษา" ${val(m.MemberEducation)==='มัธยมศึกษา'?'selected':''}>มัธยมศึกษา</option><option value="ไม่ได้เรียน" ${val(m.MemberEducation)==='ไม่ได้เรียน'?'selected':''}>ไม่ได้เรียน</option></select></div>
+                <div class="col-6"><label>อายุ</label><input id="sw-age" type="number" class="form-control" value="${val(m.Age)}"></div>
+                <div class="col-6"><label>รายได้</label><input id="sw-inc" type="number" class="form-control" value="${val(m.Income_Total)}"></div>
+                <div class="col-12"><label>เลขบัตร ปชช.</label><input id="sw-cit" class="form-control" value="${val(m.CitizenID)}"></div>
+                <div class="col-12 border-top pt-2 mt-2">
+                    <input type="checkbox" id="sw-dis" ${check(m.IsDisabledOrChronic)}> พิการ/ป่วย &nbsp;
+                    <input type="checkbox" id="sw-10k" ${check(m.Got10kDigitalWallet)}> ได้เงิน 10k
+                </div>
+            </div>
+        `,
+        width: '600px',
+        showCancelButton: true,
+        confirmButtonText: 'บันทึก',
+        preConfirm: () => {
+            return {
+                MemberName: document.getElementById('sw-name').value,
+                Relation: document.getElementById('sw-rel').value,
+                Phone: document.getElementById('sw-phone').value,
+                MemberOccupation: document.getElementById('sw-job').value,
+                MemberEducation: document.getElementById('sw-edu').value,
+                CitizenID: document.getElementById('sw-cit').value,
+                Age: document.getElementById('sw-age').value,
+                Income_Total: document.getElementById('sw-inc').value,
+                IsDisabledOrChronic: document.getElementById('sw-dis').checked ? "TRUE" : "FALSE",
+                Got10kDigitalWallet: document.getElementById('sw-10k').checked ? "TRUE" : "FALSE",
+                RecordID: gState.currentRecordId
+            };
+        }
+    }).then(res => {
+        if(res.isConfirmed) {
+            if(isNew) gState.householdMembers.push(res.value);
+            else gState.householdMembers[index] = { ...m, ...res.value };
+            
+            // แจ้งเตือนว่ามีการแก้ (สำคัญมาก เพื่อให้ปุ่มบันทึกทำงาน)
+            if(typeof trackChange === 'function') trackChange('household_changed', true);
+            
+            renderHouseholdTable(gState.householdMembers);
+            Swal.fire('เรียบร้อย', '', 'success');
+        }
+    });
+};
+
+// 3. ฟังก์ชันลบสมาชิก (Global)
+window.removeHouseholdMember = function(index) {
+    console.log("Delete called for index:", index); // เช็คใน Console
+    const mem = gState.householdMembers[index];
+    
+    if(!mem) {
+        console.error("Member not found at index:", index);
+        return;
+    }
+
+    Swal.fire({
+        title: 'ลบรายการ?',
+        text: `ต้องการลบ "${mem.MemberName}" ใช่ไหม?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'ลบเลย'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            gState.householdMembers.splice(index, 1);
+            
+            if(typeof trackChange === 'function') trackChange('household_changed', true);
+            
+            renderHouseholdTable(gState.householdMembers);
+            Swal.fire('ลบแล้ว', '', 'success');
+        }
+    });
+};    
   </script>
 </body>
 </html>
 </body>
 </html>
+
 
 
 
