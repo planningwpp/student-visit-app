@@ -773,11 +773,10 @@
     // =========================================================
     let currentFilterStatus = 'all';
 
-// =========================================================
-    // 🟡 UPDATED: ฟังก์ชันวาดตารางหน้าแรก (เพิ่มระยะทาง + Filter)
+    // =========================================================
+    // 🟡 FIXED: ตารางหน้าแรก (ดึงระยะทางจาก Q5_Distance_km)
     // =========================================================
     function renderStudentListTable(data) {
-        // เก็บข้อมูลไว้ทำ Filter
         currentStudentList = data; 
         const tbody = document.getElementById('student-list-tbody');
         tbody.innerHTML = '';
@@ -792,22 +791,32 @@
             
             // Dataset สำหรับ Filter
             tr.dataset.status = s.status; 
+            
+            // จัดการเรื่องรายได้ (Income)
             let incomeNum = 0;
-            if(s.income) incomeNum = parseFloat(String(s.income).replace(/,/g, '')) || 0;
+            // เช็คเผื่อ backend ส่งมาชื่อ income หรือ Q2_HouseholdIncome_Total
+            let incomeVal = s.income || s.Q2_HouseholdIncome_Total || 0;
+            if(incomeVal) incomeNum = parseFloat(String(incomeVal).replace(/,/g, '')) || 0;
             tr.dataset.income = incomeNum;
+
+            // 🟢 จุดที่แก้ไข: ดึงข้อมูลระยะทาง (จาก Section 5)
+            // เช็คทั้งชื่อ 'distance' และ 'Q5_Distance_km' เผื่อ backend ส่งมาแบบไหน
+            let distVal = s.distance || s.Q5_Distance_km; 
+            
+            // จัดรูปแบบการแสดงผล
+            let distanceDisplay = '-';
+            if (distVal && distVal !== "") {
+                distanceDisplay = `${distVal} กม.`;
+            }
 
             // Badge สถานะ
             const statusBadge = s.status === 'visited' 
                 ? `<span class="badge bg-success">เรียบร้อย</span>` 
                 : `<span class="badge bg-warning text-dark">รอเยี่ยม</span>`;
             
-            // Income Display
-            const incomeText = s.status === 'visited' ? Number(incomeNum).toLocaleString() : '-';
-            const incomeClass = (s.status === 'visited' && incomeNum < 15000) ? 'text-danger fw-bold' : '';
-
-            // (จุดที่ 4) ดึงระยะทาง (Backend ต้องส่ง field 'distance' มาด้วย)
-            // ถ้าไม่มีข้อมูล ให้ขีด -
-            const distanceDisplay = s.distance ? `${s.distance} กม.` : '-';
+            // แสดงรายได้ (เฉพาะคนเยี่ยมแล้ว หรือมีข้อมูล)
+            const incomeText = (incomeNum > 0) ? Number(incomeNum).toLocaleString() : '-';
+            const incomeClass = (incomeNum > 0 && incomeNum < 15000) ? 'text-danger fw-bold' : '';
 
             const btnClass = s.status === 'visited' ? 'btn-outline-primary' : 'btn-primary shadow-sm';
             const btnText = s.status === 'visited' ? '<i class="bi bi-pencil"></i> แก้ไข' : '<i class="bi bi-house-door-fill"></i> เยี่ยมบ้าน';
@@ -821,7 +830,7 @@
                 <td class="text-center">${statusBadge}</td>
                 <td class="text-end ${incomeClass}">${incomeText}</td>
                 
-                <td class="text-center">${distanceDisplay}</td>
+                <td class="text-center text-primary fw-bold">${distanceDisplay}</td>
 
                 <td class="text-center small">${s.lastUpdated}</td>
                 <td class="text-center">
@@ -833,7 +842,8 @@
             tbody.appendChild(tr);
         });
         
-        applyFilters(); // เรียกใช้ Filter
+        // เรียก Filter (ถ้ามีฟังก์ชันนี้อยู่)
+        if(typeof applyFilters === 'function') applyFilters();
     }
 
     // =========================================================
@@ -1263,11 +1273,16 @@
                             ${createTableRows('4. อาศัยอยู่กับ', data.q1_lives_with, calculatedVisited)}
                             ${createTableRows('5. อาชีพผู้ปกครอง', data.q1_guardian_occupation, calculatedVisited)}
                             ${createTableRows('6. ที่ทำงานผู้ปกครอง', data.q3_parents_workplace, calculatedVisited)}
+                            ${createTableRows('7. สถานภาพบิดา-มารดา', data.q1_family_status, calculatedVisited)}
+                            ${createTableRows('8. โรคประจำตัวนักเรียน', data.new_chronic_disease, calculatedVisited)}
                             ${createTableRows('9. ความสัมพันธ์', data.q8_family_rel, calculatedVisited)}
                             ${createTableRows('10. ความรู้สึกผู้ปกครอง', data.q8_parent_feeling, calculatedVisited)}
                             ${createTableRows('11. วิธีเลี้ยงดู', data.q8_parenting_method, calculatedVisited)}
                             ${createTableRows('12. พฤติกรรม (ตอบได้หลายข้อ)', data.behaviors, calculatedVisited)}
+                            ${createTableRows('13. หน้าที่รับผิดชอบในบ้าน', data.new_student_duty, calculatedVisited)}
+                            ${createTableRows('14. รายได้ของครอบครัวต่อเดือน', data.q14_income_range, calculatedVisited)}
                             ${createTableRows('15. ความเพียงพอรายได้', data.q3_income_sufficiency, calculatedVisited)}
+                            ${createTableRows('16. รายได้พิเศษของนักเรียน', data.new_student_income, calculatedVisited)} 
                             ${createTableRows('17. เพื่อนเล่น', data.q8_friends_at_home, calculatedVisited)}
                             ${createTableRows('18. การเดินทาง', data.q5_travel_method, calculatedVisited)}
                             ${createTableRows('19. ความต้องการในอนาคต', data.q8_future_goal, calculatedVisited)}
@@ -1381,14 +1396,44 @@
         else if (title.includes("4. อาศัยอยู่กับ")) mapping = { "พ่อ/แม่": "4.1 อยู่ร่วมกับ บิดา-มารดา", "แม่": "4.2 อยู่กับมารดา", "พ่อ": "4.3 อยู่กับบิดา", "อยู่ลำพัง": "4.4 อยู่ตามลำพัง", "ญาติ": "4.5 อยู่กับญาติ", "ปู่ย่า": "4.6 อยู่กับปู่ย่า", "ตายาย": "4.7 อยู่กับตายาย", "ผู้อุปการะ/นายจ้าง": "4.8 อยู่กับผู้อื่น" };
         else if (title.includes("5. อาชีพผู้ปกครอง")) mapping = { "เกษตรกร": "5.1 เกษตรกร", "ค้าขาย": "5.2 ค้าขาย", "รับราชการ/รัฐวิสาหกิจ": "5.3 รับราชการ", "รับจ้างทั่วไป": "5.4 รับจ้าง", "พนักงานบริษัท": "5.4 พนักงานบริษัท", "ธุรกิจส่วนตัว": "5.5 ธุรกิจส่วนตัว", "อื่นๆ": "5.5 อื่นๆ" };
         else if (title.includes("6. ที่ทำงาน")) mapping = { "ในอำเภอเดียวกัน": "1. อยู่อำเภอเดียวกัน", "ต่างอำเภอในจังหวัด": "2. ต่างอำเภอ", "ต่างจังหวัด": "3. ต่างจังหวัด", "ต่างประเทศ": "4. ต่างประเทศ" };
+        // 🟢 เพิ่ม Mapping ใหม่
+        else if (title.includes("7. สถานภาพบิดา-มารดา")) {
+            mapping = { 
+                "พ่อแม่อยู่ด้วยกัน": "1. บิดามารดาอยู่ร่วมกัน", 
+                "พ่อแม่แยกกันอยู่": "2. บิดามารดาแยกกันอยู่", // ปรับคำให้ตรงกับแบบฟอร์ม
+                "พ่อแม่หย่าร้าง": "3. บิดามารดาหย่าร้าง",
+                "พ่อเสียชีวิต/สาบสูญ": "4. บิดาถึงแก่กรรม",
+                "แม่เสียชีวิต/สาบสูญ": "5. มารดาถึงแก่กรรม",
+                "เสียชีวิตทั้งคู่/สาบสูญ": "6. บิดาและมารดาถึงแก่กรรม"
+            };
+        }
+        else if (title.includes("8. โรคประจำตัว")) {
+            mapping = { "ไม่มี": "1. ไม่มี", "มี": "2. มี" };
+        }
         else if (title.includes("9. ความสัมพันธ์")) mapping = { "อบอุ่น": "1. อบอุ่นดี", "เฉยๆ": "2. เฉยๆ", "ห่างเหิน": "3. ห่างเหิน" };
         else if (title.includes("10. ความรู้สึก")) mapping = { "พอใจ": "1. พอใจ", "เฉยๆ": "2. เฉยๆ", "ไม่พอใจ": "3. ไม่พอใจ" };
         else if (title.includes("11. วิธีเลี้ยงดู")) mapping = { "เข้มงวดกวดขัน": "1. เข้มงวด", "ใช้เหตุผล": "2. ใช้เหตุผล", "ปล่อยปละละเลย": "3. ปล่อยปละละเลย", "ตามใจ": "4. ตามใจ" };
         else if (title.includes("12. พฤติกรรม")) mapping = { "Q8_Beh_Homework": "1. อ่านหนังสือ", "Q8_Beh_HelpParent": "2. ช่วยงานผู้ปกครอง", "Q8_Beh_Housework": "3. ทำงานบ้าน", "Q8_Beh_None": "4. ไม่ช่วยงานเลย" };
+        else if (title.includes("13. หน้าที่รับผิดชอบ")) {
+             // เนื่องจากในฟอร์มเป็นช่องกรอกข้อความอิสระ เราจึงนับได้แค่ว่า "มี" หรือ "ไม่มี"
+            mapping = { "มีหน้าที่": "1. มีหน้าที่ประจำ/ทำเป็นครั้งคราว", "ไม่ระบุ": "3. ไม่มี" };
+        }
+        else if (title.includes("14. รายได้ของครอบครัว")) {
+            mapping = { 
+                "น้อยกว่า 15,000": "1. น้อยกว่า 15,000 บาท",
+                "15,000 - 25,000": "2. ตั้งแต่ 15,000 - 25,000 บาท",
+                "26,000 - 35,000": "3. ตั้งแต่ 26,000 - 35,000 บาท",
+                "36,000 - 45,000": "4. ตั้งแต่ 36,000 - 45,000 บาท",
+                "46,000 ขึ้นไป": "5. ตั้งแต่ 46,000 บาทขึ้นไป"
+            };
+        }
         else if (title.includes("15. ความเพียงพอ")) mapping = { "เพียงพอ": "1. เพียงพอ", "ไม่พอในบางครั้ง": "2. ไม่พอในบางครั้ง", "ขัดสน": "3. ขัดสน" };
+        else if (title.includes("16. รายได้พิเศษ")) {
+            mapping = { "ไม่มี": "1. ไม่มีรายได้พิเศษ", "มี": "2. มีรายได้พิเศษจากการทำงาน" };
+        }
         else if (title.includes("17. เพื่อนเล่น")) mapping = { "รุ่นเดียวกัน": "1. รุ่นเดียวกัน", "รุ่นน้อง": "2. รุ่นน้อง", "รุ่นพี่": "3. รุ่นพี่", "ทุกรุ่น": "4. ทุกรุ่น", "ไม่มี": "5. ไม่มี" };
         else if (title.includes("18. การเดินทาง")) mapping = { "เดิน": "1. เดินเท้า", "จักรยาน": "2. จักรยาน", "รถจักรยานยนต์": "3. จักรยานยนต์", "รถโรงเรียน": "4. รถรับส่ง", "รถโดยสาร": "5. รถโดยสาร", "ผู้ปกครองมาส่ง": "6. ผู้ปกครองมาส่ง", "รถยนต์": "7. รถยนต์ส่วนตัว" };
-        else if (title.includes("19. ความต้องการ")) mapping = { "ศึกษาต่อ": "1. ศึกษาต่อ", "ทำงาน": "2. ประกอบอาชีพ", "ประกอบอาชีพ": "2. ประกอบอาชีพ" };
+        else if (title.includes("19. ความต้องการ")) mapping = { "ศึกษาต่อ": "1. ศึกษาต่อ", "ประกอบอาชีพ": "2. ประกอบอาชีพ" };
         else if (title.includes("20.") || title.includes("21.")) mapping = { "พ่อ": "1. พ่อ", "แม่": "2. แม่", "พี่": "3. พี่", "น้อง": "4. น้อง", "ครูที่ปรึกษา": "5. ครูที่ปรึกษา", "เพื่อน": "6. เพื่อน", "ญาติ": "7. ญาติ" };
         else if (title.includes("22. ข้อเสนอแนะ")) {
         mapping = {
@@ -1701,6 +1746,7 @@ window.exportTableToExcel = function() {
 </html>
 </body>
 </html>
+
 
 
 
