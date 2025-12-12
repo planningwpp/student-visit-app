@@ -10,6 +10,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
   
 
@@ -823,46 +824,70 @@
         }
     }
 
-    // ฟังก์ชันแสดงผล Dashboard (กราฟ + ตาราง)
-    function renderDashboard(data) {
-        const container = document.getElementById('dashboard-screen');
-        const currentSem = document.getElementById('semester-select')?.value || "2";
-        const currentYear = document.getElementById('year-select')?.value || "2568";
-        const currentClass = window.dashboardCurrentClass || ""; 
+    /* แก้ไขใน index.html: เพิ่มปุ่ม Export ใน renderDashboard */
+function renderDashboard(data) {
+    const container = document.getElementById('dashboard-screen');
+    const currentSem = document.getElementById('semester-select')?.value || "2";
+    const currentYear = document.getElementById('year-select')?.value || "2568";
+    
+    // เก็บค่าห้องที่เลือกไว้ปัจจุบัน (ถ้ามี)
+    const currentClass = window.dashboardCurrentClass || ""; 
 
-        let html = `
-          <div class="card shadow-sm mb-4 bg-white border-primary">
-            <div class="card-body py-3">
-              <div class="row align-items-center g-2">
-                <div class="col-auto"><span class="fw-bold text-primary"><i class="bi bi-funnel-fill"></i> ตัวเลือกข้อมูล:</span></div>
-                <div class="col-auto"><select id="dash-class" class="form-select form-select-sm"><option value="">-- ทุกระดับชั้น --</option></select></div>
-                <div class="col-auto"><select id="dash-sem" class="form-select form-select-sm"><option value="1" ${currentSem=="1"?"selected":""}>เทอม 1</option><option value="2" ${currentSem=="2"?"selected":""}>เทอม 2</option></select></div>
-                <div class="col-auto"><input type="number" id="dash-year" class="form-control form-control-sm" style="width: 80px;" value="${currentYear}"></div>
-                <div class="col-auto"><button onclick="refreshDashboard()" class="btn btn-sm btn-primary"><i class="bi bi-arrow-clockwise"></i> อัปเดต</button></div>
-                <div class="col text-end text-muted small">${data.total} คน</div>
-              </div>
+    let html = `
+      <div class="card shadow-sm mb-4 bg-white border-primary">
+        <div class="card-body py-3">
+          <div class="row align-items-center g-2">
+            <div class="col-auto"><span class="fw-bold text-primary"><i class="bi bi-funnel-fill"></i> ตัวเลือกข้อมูล:</span></div>
+            
+            <div class="col-auto">
+                <select id="dash-class" class="form-select form-select-sm">
+                    <option value="">-- ทุกระดับชั้น --</option>
+                </select>
+            </div>
+
+            <div class="col-auto">
+                <select id="dash-sem" class="form-select form-select-sm">
+                    <option value="1" ${currentSem=="1"?"selected":""}>เทอม 1</option>
+                    <option value="2" ${currentSem=="2"?"selected":""}>เทอม 2</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <input type="number" id="dash-year" class="form-control form-control-sm" style="width: 80px;" value="${currentYear}">
+            </div>
+            <div class="col-auto">
+                <button onclick="refreshDashboard()" class="btn btn-sm btn-primary"><i class="bi bi-arrow-clockwise"></i> อัปเดต</button>
+            </div>
+            
+            <div class="col-auto">
+                <button onclick="exportTableToExcel()" class="btn btn-sm btn-success"><i class="bi bi-file-earmark-excel"></i> Export Excel</button>
+            </div>
+
+            <div class="col text-end text-muted small">
+                 ${data.total} คน
             </div>
           </div>
-          
-          <div class="row g-3 mb-4">
-            <div class="col-md-3"><div class="card bg-primary text-white p-3 h-100 text-center"><h3>${data.total}</h3><p class="mb-0">เยี่ยมบ้านแล้ว (คน)</p></div></div>
-            <div class="col-md-3"><div class="card bg-danger text-white p-3 h-100 text-center"><h3>${data.risks.total_risk || 0}</h3><p class="mb-0">กลุ่มเสี่ยง (คน)</p></div></div>
-            <div class="col-md-3"><div class="card bg-warning text-dark p-3 h-100 text-center"><h3>${data.risks.learning || 0}</h3><p class="mb-0">เสี่ยงด้านการเรียน</p></div></div>
-            <div class="col-md-3"><div class="card bg-info text-white p-3 h-100 text-center"><h3>${data.risks.behavior || 0}</h3><p class="mb-0">เสี่ยงด้านพฤติกรรม</p></div></div>
-          </div>
-          
-          <div class="row">
-             <div class="col-md-6 mb-4"><div class="card shadow h-100"><div class="card-header fw-bold">รายได้ครอบครัว</div><div class="card-body"><canvas id="chartIncome"></canvas></div></div></div>
-             <div class="col-md-6 mb-4"><div class="card shadow h-100"><div class="card-header fw-bold">สถานภาพครอบครัว</div><div class="card-body"><canvas id="chartFamily"></canvas></div></div></div>
-          </div>
-          
-          <div class="card shadow mb-4">
-             <div class="card-header fw-bold bg-light">รายละเอียดตามหัวข้อรายงาน</div>
-             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-bordered table-sm table-hover" style="font-size: 0.9rem;">
-                        <thead class="table-light"><tr><th>รายการ</th><th class="text-center" style="width:100px">จำนวน</th><th class="text-center" style="width:100px">ร้อยละ</th></tr></thead>
-                        <tbody>
+        </div>
+      </div>
+      
+      <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="card bg-primary text-white p-3 h-100 text-center"><h3>${data.total}</h3><p class="mb-0">เยี่ยมบ้านแล้ว (คน)</p></div></div>
+        <div class="col-md-3"><div class="card bg-danger text-white p-3 h-100 text-center"><h3>${data.risks.total_risk || 0}</h3><p class="mb-0">กลุ่มเสี่ยง (คน)</p></div></div>
+        <div class="col-md-3"><div class="card bg-warning text-dark p-3 h-100 text-center"><h3>${data.risks.learning || 0}</h3><p class="mb-0">เสี่ยงด้านการเรียน</p></div></div>
+        <div class="col-md-3"><div class="card bg-info text-white p-3 h-100 text-center"><h3>${data.risks.behavior || 0}</h3><p class="mb-0">เสี่ยงด้านพฤติกรรม</p></div></div>
+      </div>
+      
+      <div class="row">
+         <div class="col-md-6 mb-4"><div class="card shadow h-100"><div class="card-header fw-bold">รายได้ครอบครัว</div><div class="card-body"><canvas id="chartIncome"></canvas></div></div></div>
+         <div class="col-md-6 mb-4"><div class="card shadow h-100"><div class="card-header fw-bold">สถานภาพครอบครัว</div><div class="card-body"><canvas id="chartFamily"></canvas></div></div></div>
+      </div>
+      
+      <div class="card shadow mb-4">
+         <div class="card-header fw-bold bg-light">รายละเอียดตามหัวข้อรายงาน</div>
+         <div class="card-body">
+            <div class="table-responsive">
+                <table id="dashboard-table" class="table table-bordered table-sm table-hover" style="font-size: 0.9rem;">
+                    <thead class="table-light"><tr><th>รายการ</th><th class="text-center" style="width:100px">จำนวน</th><th class="text-center" style="width:100px">ร้อยละ</th></tr></thead>
+                    <tbody>
                         ${createTableRows('1. บ้านที่พักอาศัย', data.q3_house_ownership, data.total)}
                         ${createTableRows('2. ลักษณะบ้าน', data.q3_house_type, data.total)}
                         ${createTableRows('3. สภาพแวดล้อม', data.q3_environment, data.total)}
@@ -879,76 +904,67 @@
                         ${createTableRows('19. ความต้องการในอนาคต', data.q8_future_goal, data.total)}
                         ${createTableRows('20. สนิทกับใคร', data.q8_closest_person, data.total)}
                         ${createTableRows('21. ปรึกษาใคร', data.q8_consultant, data.total)}
-                        
                         ${createTableRows('22. ข้อเสนอแนะต่อโรงเรียน (จำนวนผู้ให้ข้อเสนอแนะ)', data.suggestions, data.total)}
                         ${createTableRows('24. นักเรียนกลุ่มเสี่ยง (จำแนกตามพฤติกรรม)', data.risks.behavior_details, data.total)}
                     </tbody>
-                    </table>
-                </div>
-             </div>
-          </div>
-        `;
-        
-        container.innerHTML = html;
+                </table>
+            </div>
+         </div>
+      </div>
+    `;
+    
+    container.innerHTML = html;
 
-        // เติมตัวเลือกห้องเรียน
-        const dashClassSelect = document.getElementById('dash-class');
-        const mainClassSelect = document.getElementById('class-select');
-        if (mainClassSelect && dashClassSelect) {
-            dashClassSelect.innerHTML = "";
-            dashClassSelect.add(new Option("-- ทุกระดับชั้น --", ""));
-            Array.from(mainClassSelect.options).forEach(opt => {
-                if (opt.value && opt.value.trim() !== "") dashClassSelect.add(new Option(opt.text, opt.value));
-            });
-            if (currentClass) dashClassSelect.value = currentClass;
-        }
-
-        // --- สร้างกราฟ (พร้อม % DataLabels) ---
-        const labelOptions = {
-            color: '#fff', font: { weight: 'bold', size: 12 },
-            formatter: (value, ctx) => {
-                if (value === 0) return "";
-                let sum = 0;
-                let dataArr = ctx.chart.data.datasets[0].data;
-                dataArr.map(data => { sum += data; });
-                return (value * 100 / sum).toFixed(1) + "%";
-            }
-        };
-
-        if(data.q14_income_range) {
-           const ctx = document.getElementById('chartIncome');
-           if(window.myChartIncome) window.myChartIncome.destroy();
-           window.myChartIncome = new Chart(ctx, {
-              type: 'bar',
-              data: {
-                  labels: Object.keys(data.q14_income_range),
-                  datasets: [{ label: 'จำนวน', data: Object.values(data.q14_income_range), backgroundColor: '#36a2eb' }]
-              },
-              options: { 
-                  responsive: true, maintainAspectRatio: false,
-                  plugins: {
-                      datalabels: { ...labelOptions, color: '#000', anchor: 'end', align: 'top' }
-                  }
-              }
-           });
-        }
-
-        if(data.q1_family_status) {
-           const ctx = document.getElementById('chartFamily');
-           if(window.myChartFamily) window.myChartFamily.destroy();
-           window.myChartFamily = new Chart(ctx, {
-              type: 'doughnut',
-              data: {
-                  labels: Object.keys(data.q1_family_status),
-                  datasets: [{ data: Object.values(data.q1_family_status), backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40', '#c9cbcf'] }]
-              },
-              options: { 
-                  responsive: true, maintainAspectRatio: false,
-                  plugins: { datalabels: labelOptions }
-              }
-           });
-        }
+    // เติมตัวเลือกห้องเรียน (เหมือนเดิม)
+    const dashClassSelect = document.getElementById('dash-class');
+    const mainClassSelect = document.getElementById('class-select');
+    if (mainClassSelect && dashClassSelect) {
+        dashClassSelect.innerHTML = "";
+        dashClassSelect.add(new Option("-- ทุกระดับชั้น --", ""));
+        Array.from(mainClassSelect.options).forEach(opt => {
+            if (opt.value && opt.value.trim() !== "") dashClassSelect.add(new Option(opt.text, opt.value));
+        });
+        if (currentClass && currentClass !== "") dashClassSelect.value = currentClass;
     }
+
+    // Render Charts (เหมือนเดิม แต่เพิ่ม options สำหรับ DataLabels)
+    const labelOptions = {
+        color: '#fff', font: { weight: 'bold', size: 12 },
+        formatter: (value, ctx) => {
+            if (value === 0) return "";
+            let sum = 0;
+            let dataArr = ctx.chart.data.datasets[0].data;
+            dataArr.map(data => { sum += data; });
+            return (value * 100 / sum).toFixed(1) + "%";
+        }
+    };
+
+    if(data.q14_income_range) {
+       const ctxIncome = document.getElementById('chartIncome');
+       if(window.myChartIncome) window.myChartIncome.destroy();
+       window.myChartIncome = new Chart(ctxIncome, {
+          type: 'bar',
+          data: {
+              labels: Object.keys(data.q14_income_range),
+              datasets: [{ label: 'จำนวนครอบครัว', data: Object.values(data.q14_income_range), backgroundColor: '#36a2eb' }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { ...labelOptions, color: '#000', anchor: 'end', align: 'top' } } }
+       });
+    }
+
+    if(data.q1_family_status) {
+       const ctxFamily = document.getElementById('chartFamily');
+       if(window.myChartFamily) window.myChartFamily.destroy();
+       window.myChartFamily = new Chart(ctxFamily, {
+          type: 'doughnut',
+          data: {
+              labels: Object.keys(data.q1_family_status),
+              datasets: [{ data: Object.values(data.q1_family_status), backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40', '#c9cbcf'] }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: labelOptions } }
+       });
+    }
+}
 
     // ฟังก์ชันอัปเดตข้อมูล (Refresh)
     window.refreshDashboard = function() {
@@ -1275,11 +1291,35 @@ window.removeHouseholdMember = function(index) {
         }
     });
 };
+// ฟังก์ชัน Export ตารางเป็น Excel (.xlsx)
+window.exportTableToExcel = function() {
+    // 1. หาตาราง
+    const table = document.getElementById("dashboard-table");
+    
+    if (!table) {
+        Swal.fire('ข้อผิดพลาด', 'ไม่พบข้อมูลตารางให้ดาวน์โหลด', 'error');
+        return;
+    }
+
+    // 2. แปลง HTML Table เป็น Worksheet
+    const wb = XLSX.utils.table_to_book(table, { sheet: "สรุปเยี่ยมบ้าน" });
+
+    // 3. ตั้งชื่อไฟล์ (เอาเทอม/ปี มาตั้งชื่อ)
+    const sem = document.getElementById('dash-sem')?.value || "2";
+    const year = document.getElementById('dash-year')?.value || "2568";
+    const cls = document.getElementById('dash-class')?.value || "All";
+    
+    const fileName = `สรุปเยี่ยมบ้าน_${cls}_เทอม${sem}_${year}.xlsx`;
+
+    // 4. สั่งดาวน์โหลด
+    XLSX.writeFile(wb, fileName);
+};    
   </script>
 </body>
 </html>
 </body>
 </html>
+
 
 
 
