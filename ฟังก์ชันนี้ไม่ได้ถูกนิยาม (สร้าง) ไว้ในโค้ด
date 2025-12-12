@@ -108,16 +108,18 @@
               <div class="col-md-6"><label class="form-label fw-bold">1. เลือกระดับชั้น</label><select id="class-select" class="form-select form-select-lg"><option value="">-- กรุณาเลือก --</option></select></div>
               <div class="col-md-6"><label class="form-label fw-bold">2. เลือกนักเรียน</label><select id="student-select" class="form-select form-select-lg" disabled><option value="">-- กรุณาเลือกระดับชั้นก่อน --</option></select></div>
             </div>
+            
             <div class="row g-3 mt-3">
               <div class="col-md-6">
-                  <label class="form-label fw-bold">3. ภาคเรียน</label>
-                  <input type="number" id="semester-select" class="form-control form-control-lg" value="2">
+                 <label class="form-label fw-bold">3. ภาคเรียน</label>
+                 <input type="number" id="semester-select" class="form-control form-control-lg" value="2">
               </div>
               <div class="col-md-6">
-                  <label class="form-label fw-bold">4. ปีการศึกษา</label>
-                  <input type="number" id="year-select" class="form-control form-control-lg" value="2568">
+                 <label class="form-label fw-bold">4. ปีการศึกษา</label>
+                 <input type="number" id="year-select" class="form-control form-control-lg" value="2568">
               </div>
             </div>
+
             <button id="start-form-btn" class="btn btn-success btn-lg w-100 mt-4" disabled><i class="bi bi-pencil-square me-2"></i> เริ่มกรอกข้อมูล</button>
           </div>
         </div>
@@ -145,7 +147,7 @@
             </div>
             <div class="row g-3 mb-4 bg-light p-3 rounded">
               <div class="col-md-4"><label class="form-label fw-bold">เลือกระดับชั้น</label><select id="print-class-select" class="form-select"><option value="">-- กรุณาเลือก --</option></select></div>
-              <div class="col-md-3"><label class="form-label fw-bold">ภาคเรียน</label><input type="number" id="print-semester" class="form-control" value="1"></div>
+              <div class="col-md-3"><label class="form-label fw-bold">ภาคเรียน</label><input type="number" id="print-semester" class="form-control" value="2"></div>
               <div class="col-md-3"><label class="form-label fw-bold">ปีการศึกษา</label><input type="number" id="print-year" class="form-control" value="2568"></div>
               <div class="col-md-2 align-self-end"><button id="load-print-list-btn" class="btn btn-primary w-100"><i class="bi bi-search"></i> ค้นหา</button></div>
             </div>
@@ -206,8 +208,8 @@
                   <input type="file" id="file_Q1_PhotoURL" class="form-control file-upload-input" accept="image/*" data-target-hidden="Q1_PhotoURL">
                   <input type="hidden" id="Q1_PhotoURL" name="Q1_PhotoURL">
                   <div class="img-wrapper" id="wrapper_Q1_PhotoURL" style="display:none;">
-                     <img id="preview_Q1_PhotoURL" class="img-preview">
-                     <button type="button" class="btn btn-danger btn-delete-img" onclick="deleteImage('Q1_PhotoURL')">X</button>
+                      <img id="preview_Q1_PhotoURL" class="img-preview">
+                      <button type="button" class="btn btn-danger btn-delete-img" onclick="deleteImage('Q1_PhotoURL')">X</button>
                   </div>
                 </div>
                 <div class="col-md-3 mb-3"><label class="form-label">ชื่อเล่น</label> <input type="text" name="Q1_StudentNickname" id="Q1_StudentNickname" class="form-control"></div>
@@ -395,8 +397,8 @@
                   <input type="file" id="file_Q7_Photo1_URL" class="form-control file-upload-input" accept="image/*" data-target-hidden="Q7_Photo1_URL">
                   <input type="hidden" id="Q7_Photo1_URL" name="Q7_Photo1_URL">
                   <div class="img-wrapper" id="wrapper_Q7_Photo1_URL" style="display:none;">
-                     <img id="preview_Q7_Photo1_URL" class="img-preview">
-                     <button type="button" class="btn btn-danger btn-delete-img" onclick="deleteImage('Q7_Photo1_URL')">X</button>
+                      <img id="preview_Q7_Photo1_URL" class="img-preview">
+                      <button type="button" class="btn btn-danger btn-delete-img" onclick="deleteImage('Q7_Photo1_URL')">X</button>
                   </div>
                 </div>
                 <div class="col-md-6 mb-3">
@@ -404,8 +406,8 @@
                   <input type="file" id="file_Q7_Photo2_URL" class="form-control file-upload-input" accept="image/*" data-target-hidden="Q7_Photo2_URL">
                   <input type="hidden" id="Q7_Photo2_URL" name="Q7_Photo2_URL">
                   <div class="img-wrapper" id="wrapper_Q7_Photo2_URL" style="display:none;">
-                     <img id="preview_Q7_Photo2_URL" class="img-preview">
-                     <button type="button" class="btn btn-danger btn-delete-img" onclick="deleteImage('Q7_Photo2_URL')">X</button>
+                      <img id="preview_Q7_Photo2_URL" class="img-preview">
+                      <button type="button" class="btn btn-danger btn-delete-img" onclick="deleteImage('Q7_Photo2_URL')">X</button>
                   </div>
                 </div>
               </div>
@@ -531,17 +533,22 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    // --- ตั้งค่าระบบ ---
+    // --- 1. ตั้งค่าระบบ ---
     const CLOUDINARY_CLOUD_NAME = "dzzdmlei5"; 
     const CLOUDINARY_UPLOAD_PRESET = "ml_default"; 
     const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+    
+    // 🔴 ตรวจสอบ URL ของคุณอีกครั้ง 🔴
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyZBFYUglarDmKqt_uvubHyjbd7cByHviNcfwOhMWCVT7eDwQyfEwEoMR2ISoMGgE-h/exec"; 
 
+    // ตัวแปรระบบ
     const gState = { currentUser: null, selectedStudentId: null, selectedStudentName: null, currentRecordId: null, originalData: {}, changesToPush: {}, householdMembers: [], isLoading: false };
     let SCREENS = {}; let el = {};
 
+    // --- 2. เริ่มต้นทำงาน (Init) ---
     document.addEventListener("DOMContentLoaded", () => {
       try {
+          // ผูกตัวแปรกับหน้าจอ
           SCREENS = { loading: document.getElementById('loading-screen'), login: document.getElementById('login-screen'), selection: document.getElementById('student-selection-screen'), dashboard: document.getElementById('dashboard-screen'), print: document.getElementById('print-screen'), form: document.getElementById('main-form-screen') };
           el = {
             mainNavbar: document.getElementById('main-navbar'), navHomeLink: document.getElementById('nav-home-link'), navDashboardLink: document.getElementById('nav-dashboard-link'), navPrintLink: document.getElementById('nav-print-link'), navLogoutBtn: document.getElementById('nav-logout-btn'), navUserEmail: document.getElementById('nav-user-email'),
@@ -552,21 +559,59 @@
             q3_1_Status: document.querySelectorAll('input[name="Q3_1_DependencyStatus"]'), q3_1_SubOptions: document.getElementById('q3-1-sub-options'), q3_4_Status: document.querySelectorAll('input[name="Q3_4_AgricultureStatus"]'), q3_4_SubOptions: document.getElementById('q3-4-sub-options'),
             householdTbody: document.getElementById('household-member-list'), addMemberBtn: document.getElementById('add-member-btn'), totalMembersInput: document.getElementById('Q2_TotalMembers'), totalIncomeInput: document.getElementById('Q2_HouseholdIncome_Total'), perCapitaIncomeInput: document.getElementById('Q2_HouseholdIncome_PerCapita'), progressBar: document.getElementById('progress-bar'), progressText: document.getElementById('progress-text')
           };
-          showScreen('login'); bindEventListeners(); 
-          if(el.semesterSelect) el.semesterSelect.value = "2"; // บังคับเทอม 2
+          
+          showScreen('login'); // เรียกหน้า Login
+          bindEventListeners(); // ผูกปุ่มกดต่างๆ
+          
+          // ตั้งค่าเริ่มต้น ภาคเรียนที่ 2 ปี 2568 (แก้ปัญหาข้อมูลหาย)
+          if(el.semesterSelect) el.semesterSelect.value = "2";
           if(el.yearSelect) el.yearSelect.value = "2568";
+          
           try { attachFormListeners(); } catch(e) { console.warn("Attach warning", e); }
       } catch (err) { alert("Init Error: " + err.message); if(SCREENS.loading) SCREENS.loading.style.display = 'none'; }
     });
 
-    // --- 1. โหลดข้อมูล (เพิ่ม Safety Check กัน Error null) ---
+    // --- 3. ฟังก์ชันหน้าจอ (Helper Functions) ---
+    function showScreen(id) { 
+        if(!SCREENS.loading) return; 
+        if(el.mainNavbar) el.mainNavbar.style.display=(id==='login'||id==='loading')?'none':'block'; 
+        Object.values(SCREENS).forEach(s=>s.style.display='none'); 
+        if(SCREENS[id]) SCREENS[id].style.display='block'; 
+        if(el.navHomeLink){ 
+            el.navHomeLink.classList.toggle('active',id==='selection'||id==='form'); 
+            el.navDashboardLink.classList.toggle('active',id==='dashboard'); 
+            el.navPrintLink.classList.toggle('active',id==='print'); 
+        } 
+    }
+    function setLoading(l,m='Loading...') { 
+        gState.isLoading=l; 
+        if(SCREENS.loading){ 
+            SCREENS.loading.querySelector('p').textContent=m; 
+            SCREENS.loading.style.display=l?'flex':'none'; 
+        } 
+    }
+    function handleError(e) { 
+        setLoading(false); 
+        Swal.fire('Error',e.message||e,'error'); 
+        if(el.loginBtn) el.loginBtn.disabled=false; 
+        if(el.saveBtn){ el.saveBtn.disabled=false; el.saveBtn.innerHTML=`บันทึก (${Object.keys(gState.changesToPush).length})`; } 
+    }
+
+    // --- 4. ระบบ Login & เลือกนักเรียน ---
+    async function handleManualLogin(e) { e.preventDefault(); setLoading(true); if(el.loginBtn) el.loginBtn.disabled=true; if(el.loginErrorMessage) el.loginErrorMessage.style.display='none'; 
+      try { const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'checkLogin', email: el.loginEmailInput.value, password: el.loginPasswordInput.value }) }); const data = await res.json(); if(data && data.email) handleLoginSuccess(data); else throw new Error("Login Failed"); } catch(err) { handleLoginFailure(err.message); } 
+    }
+    async function handleLoginSuccess(u) { gState.currentUser=u; if(el.navUserEmail) el.navUserEmail.textContent=u.email; showScreen('selection'); try { setLoading(true); const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getInitialData', assignedClasses: u.assignedClasses }) }); const cls = await res.json(); populateClassDropdown(cls); setLoading(false); } catch(e){ handleError(e); } }
+    function handleLoginFailure(e) { setLoading(false); gState.currentUser=null; showScreen('login'); if(el.loginBtn) el.loginBtn.disabled=false; if(el.loginErrorMessage){ el.loginErrorMessage.textContent=e; el.loginErrorMessage.style.display='block'; } else alert(e); }
+    function handleLogout() { Swal.fire({title:'Logout?', showCancelButton:true}).then(r=>{ if(r.isConfirmed){ localStorage.removeItem(`visit_${gState.currentRecordId}`); window.location.reload(); }}); }
+
+    function populateClassDropdown(c) { el.classSelect.innerHTML='<option value="">-- เลือก --</option>'; c.forEach(x=>el.classSelect.add(new Option(x,x))); }
+    async function handleClassChange() { const c=el.classSelect.value; if(!c){el.studentSelect.disabled=true;return;} el.studentSelect.disabled=true; setLoading(true); try{ const res=await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentsByClass', className: c }) }); const d=await res.json(); d.sort((a,b)=>parseInt(a.studentNumber||0)-parseInt(b.studentNumber||0)); el.studentSelect.innerHTML='<option value="">-- เลือก --</option>'; d.forEach(s=>el.studentSelect.add(new Option(`${s.name}`,s.id))); el.studentSelect.disabled=false; validateStartButton(); setLoading(false); }catch(e){handleError(e);} }
+    function validateStartButton() { el.startFormBtn.disabled=!(el.classSelect.value&&el.studentSelect.value); }
+
+    // --- 5. เริ่มต้นกรอกข้อมูล (บังคับโหลดใหม่เสมอ) ---
     async function handleStartForm() { 
        try { 
-          // ป้องกัน Error กรณีหา element ไม่เจอ
-          if (!el.studentSelect || !el.semesterSelect || !el.yearSelect) {
-              throw new Error("ไม่พบช่องเลือกนักเรียน/ภาคเรียน/ปีการศึกษา กรุณารีเฟรชหน้าเว็บ");
-          }
-
           gState.selectedStudentId = el.studentSelect.value; 
           gState.selectedStudentName = el.studentSelect.options[el.studentSelect.selectedIndex].text; 
           
@@ -584,8 +629,13 @@
           if(data.studentMaster) { 
              loadStudentDataSuccess(data); 
           } else { 
-             Swal.fire({ icon: 'info', title: 'ไม่พบข้อมูลเก่า', text: `ระบบกำลังสร้างแบบฟอร์มใหม่สำหรับเทอม ${sem}/${yr}`, timer: 3000 });
-             loadStudentDataSuccess({ studentMaster: data.studentMaster || {}, visitData: {}, householdData: [] }); 
+             Swal.fire({
+                 icon: 'info', title: 'ไม่พบข้อมูลเก่า', 
+                 text: `ระบบกำลังสร้างแบบฟอร์มใหม่สำหรับเทอม ${sem}/${yr} ครับ`,
+                 timer: 3000
+             });
+             const emptyData = { studentMaster: data.studentMaster || {}, visitData: {}, householdData: [] };
+             loadStudentDataSuccess(emptyData); 
           } 
        } catch(e) { 
           console.error(e); 
@@ -597,25 +647,31 @@
     function loadStudentDataSuccess(d) { 
       gState.originalData = JSON.parse(JSON.stringify(d)); 
       prefillForm(d.studentMaster, d.visitData); 
+      
       let hData = d.householdData;
       if (typeof hData === 'string') { try { hData = JSON.parse(hData); } catch(e) { hData = []; } }
+      
       renderHouseholdTable(hData || []); 
       showScreen('form'); calculateProgress(); setLoading(false); 
     }
 
-    // --- 2. แสดงตาราง (กรองข้อมูลล่าสุด) ---
+    // --- 6. ตารางสมาชิกครัวเรือน (Logic: แยกอิสระ + กรองข้อมูลล่าสุด) ---
     function renderHouseholdTable(m) { 
       let rawData = Array.isArray(m) ? m : [];
+      
+      // กรองเอาเฉพาะข้อมูลบรรทัดล่าสุด (แก้ปัญหาข้อมูลเก่าค้าง)
       const uniqueMap = new Map();
       rawData.forEach(item => {
           const key = item.MemberNo ? String(item.MemberNo) : (item.MemberName || Math.random());
           uniqueMap.set(key, item);
       });
       gState.householdMembers = Array.from(uniqueMap.values());
+      
       gState.householdMembers.sort((a, b) => (parseInt(a.MemberNo) || 99) - (parseInt(b.MemberNo) || 99));
 
-      if (el.householdTbody) el.householdTbody.innerHTML = ''; 
+      el.householdTbody.innerHTML = ''; 
       
+      // ถ้าไม่มีข้อมูลเลย ให้สร้างแถวรอ (1=นร, 2=พ่อ, 3=แม่)
       if (gState.householdMembers.length === 0) {
          const sm = gState.originalData.studentMaster || {};
          gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName || ''} ${sm.LastName || ''}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 });
@@ -628,24 +684,41 @@
         const job = x.MemberOccupation || x.Occupation || '-';
         const edu = x.MemberEducation || x.Education || '-';
         const income = x.Income_Total || x.Income || 0;
+
         const tr = document.createElement('tr'); 
-        tr.innerHTML = `<td>${x.MemberNo}</td><td class="text-start">${x.MemberName || ''}</td><td>${x.Relation || ''}</td><td>${x.Phone || '-'}</td><td>${edu}</td><td>${x.CitizenID || '-'}</td><td>${x.Age || '-'}</td><td>${String(x.IsDisabledOrChronic) === 'TRUE' ? '/' : ''}</td><td>${String(x.Got10kDigitalWallet) === 'TRUE' ? '/' : ''}</td><td class="text-end">${Number(income).toLocaleString()}</td><td><button type="button" class="btn btn-sm btn-primary edit-btn">แก้</button></td><td>${x.Relation != 'นักเรียน' ? `<button type="button" class="btn btn-sm btn-danger del-btn">ลบ</button>` : ''}</td>`;
+        tr.innerHTML = `
+            <td>${x.MemberNo}</td>
+            <td class="text-start">${x.MemberName || ''}</td>
+            <td>${x.Relation || ''}</td>
+            <td>${x.Phone || '-'}</td>
+            <td>${edu}</td>
+            <td>${x.CitizenID || '-'}</td>
+            <td>${x.Age || '-'}</td>
+            <td>${String(x.IsDisabledOrChronic) === 'TRUE' ? '/' : ''}</td>
+            <td>${String(x.Got10kDigitalWallet) === 'TRUE' ? '/' : ''}</td>
+            <td class="text-end">${Number(income).toLocaleString()}</td>
+            <td><button type="button" class="btn btn-sm btn-primary edit-btn">แก้</button></td>
+            <td>${x.Relation != 'นักเรียน' ? `<button type="button" class="btn btn-sm btn-danger del-btn">ลบ</button>` : ''}</td>
+        `;
         tr.querySelector('.edit-btn').onclick = () => editHouseholdMember(i); 
         if (tr.querySelector('.del-btn')) tr.querySelector('.del-btn').onclick = () => removeHouseholdMember(i); 
         el.householdTbody.appendChild(tr); 
       }); 
+      
       calculateHouseholdIncome(); 
     }
 
-    // --- 3. แก้ไขสมาชิก (บันทึกทันที) ---
     window.editHouseholdMember = (index) => {
         const isNew = index === -1;
         const member = isNew ? { RecordID: gState.currentRecordId, IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE" } : { ...gState.householdMembers[index] };
+        
         const jobOpts = ["ไม่ได้ทำงาน", "ข้าราชการ/รัฐวิสาหกิจ", "พนักงานบริษัท", "รับจ้าง", "รับจ้างทั่วไป", "เกษตรกร", "ค้าขาย", "ธุรกิจส่วนตัว", "อื่นๆ"];
         const eduOpts = ["ไม่ได้เรียน", "ประถมศึกษา", "มัธยมศึกษา", "ปวช./ปวส.", "ปริญญาตรี", "ปริญญาโท/เอก", "อื่นๆ"];
+
         const checkOpt = (opts, val) => opts.includes(val) ? val : (val && val.trim() !== "" ? 'อื่นๆ' : '');
         const mJob = member.MemberOccupation || member.Occupation || '';
         const mEdu = member.MemberEducation || member.Education || '';
+
         const currentJobSelect = checkOpt(jobOpts, mJob);
         const currentJobOther = currentJobSelect === 'อื่นๆ' || !jobOpts.includes(mJob) ? mJob : '';
         const currentEduSelect = checkOpt(eduOpts, mEdu);
@@ -653,7 +726,16 @@
 
         Swal.fire({
             title: isNew ? 'เพิ่มสมาชิก' : 'แก้ไขข้อมูล', width: '700px',
-            html: `<div class="row g-2 text-start"><div class="col-6"><label>ชื่อ-สกุล</label><input id="sw-Name" class="form-control" value="${member.MemberName || ''}"></div><div class="col-6"><label>ความสัมพันธ์</label><input id="sw-Rel" class="form-control" value="${member.Relation || ''}"></div><div class="col-6"><label>อาชีพ</label><select id="sw-Job" class="form-select mb-2" onchange="document.getElementById('sw-Job-Other').style.display=this.value=='อื่นๆ'?'block':'none'"><option value="">-- เลือก --</option>${jobOpts.map(o => `<option value="${o}" ${currentJobSelect === o ? 'selected' : ''}>${o}</option>`).join('')}</select><input id="sw-Job-Other" class="form-control" placeholder="ระบุอาชีพ..." style="display:${currentJobSelect === 'อื่นๆ' ? 'block' : 'none'}" value="${currentJobOther}"></div><div class="col-6"><label>การศึกษา</label><select id="sw-Edu" class="form-select mb-2" onchange="document.getElementById('sw-Edu-Other').style.display=this.value=='อื่นๆ'?'block':'none'"><option value="">-- เลือก --</option>${eduOpts.map(o => `<option value="${o}" ${currentEduSelect === o ? 'selected' : ''}>${o}</option>`).join('')}</select><input id="sw-Edu-Other" class="form-control" placeholder="ระบุ..." style="display:${currentEduSelect === 'อื่นๆ' ? 'block' : 'none'}" value="${currentEduOther}"></div><div class="col-6"><label>เบอร์โทร</label><input id="sw-Phone" class="form-control" value="${member.Phone || ''}"></div><div class="col-6"><label>เลข ปชช.</label><input id="sw-Cit" class="form-control" value="${member.CitizenID || ''}"></div><div class="col-4"><label>อายุ</label><input id="sw-Age" class="form-control" value="${member.Age || ''}"></div><div class="col-8"><label>รายได้รวม</label><input id="sw-Inc" type="number" class="form-control" value="${member.Income_Total || 0}"></div><div class="col-12 mt-2"><input type="checkbox" id="sw-Dis" ${String(member.IsDisabledOrChronic) === 'TRUE' ? 'checked' : ''}> พิการ/ป่วย &nbsp;&nbsp; <input type="checkbox" id="sw-10k" ${String(member.Got10kDigitalWallet) === 'TRUE' ? 'checked' : ''}> ได้เงิน 10k</div></div>`,
+            html: `<div class="row g-2 text-start">
+                 <div class="col-6"><label>ชื่อ-สกุล</label><input id="sw-Name" class="form-control" value="${member.MemberName || ''}"></div>
+                 <div class="col-6"><label>ความสัมพันธ์</label><input id="sw-Rel" class="form-control" value="${member.Relation || ''}"></div>
+                 <div class="col-6"><label>อาชีพ</label><select id="sw-Job" class="form-select mb-2" onchange="document.getElementById('sw-Job-Other').style.display=this.value=='อื่นๆ'?'block':'none'"><option value="">-- เลือก --</option>${jobOpts.map(o => `<option value="${o}" ${currentJobSelect === o ? 'selected' : ''}>${o}</option>`).join('')}</select><input id="sw-Job-Other" class="form-control" placeholder="ระบุอาชีพ..." style="display:${currentJobSelect === 'อื่นๆ' ? 'block' : 'none'}" value="${currentJobOther}"></div>
+                 <div class="col-6"><label>การศึกษา</label><select id="sw-Edu" class="form-select mb-2" onchange="document.getElementById('sw-Edu-Other').style.display=this.value=='อื่นๆ'?'block':'none'"><option value="">-- เลือก --</option>${eduOpts.map(o => `<option value="${o}" ${currentEduSelect === o ? 'selected' : ''}>${o}</option>`).join('')}</select><input id="sw-Edu-Other" class="form-control" placeholder="ระบุ..." style="display:${currentEduSelect === 'อื่นๆ' ? 'block' : 'none'}" value="${currentEduOther}"></div>
+                 <div class="col-6"><label>เบอร์โทร</label><input id="sw-Phone" class="form-control" value="${member.Phone || ''}"></div>
+                 <div class="col-6"><label>เลข ปชช.</label><input id="sw-Cit" class="form-control" value="${member.CitizenID || ''}"></div>
+                 <div class="col-4"><label>อายุ</label><input id="sw-Age" class="form-control" value="${member.Age || ''}"></div>
+                 <div class="col-8"><label>รายได้รวม</label><input id="sw-Inc" type="number" class="form-control" value="${member.Income_Total || 0}"></div>
+                 <div class="col-12 mt-2"><input type="checkbox" id="sw-Dis" ${String(member.IsDisabledOrChronic) === 'TRUE' ? 'checked' : ''}> พิการ/ป่วย &nbsp;&nbsp; <input type="checkbox" id="sw-10k" ${String(member.Got10kDigitalWallet) === 'TRUE' ? 'checked' : ''}> ได้เงิน 10k</div></div>`,
             focusConfirm: false,
             preConfirm: () => {
                 let job = document.getElementById('sw-Job').value; if (job === 'อื่นๆ') job = document.getElementById('sw-Job-Other').value;
@@ -675,36 +757,36 @@
        Swal.fire({ title: 'ลบรายการนี้?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', confirmButtonColor: '#d33' }).then((r) => { if (r.isConfirmed) { gState.householdMembers.splice(index, 1); trackChange('household_changed', true); renderHouseholdTable(gState.householdMembers); } });
     };
 
-    // --- 4. บันทึกข้อมูล (แยกอิสระ) ---
+    // --- 7. บันทึกข้อมูล (แยกอิสระ 100%) ---
     async function handleSaveToSheets() {
         el.saveBtn.disabled = true; el.saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
         try {
             const d = {}; const fd = new FormData(document.getElementById('visit-form'));
             fd.forEach((v, k) => d[k] = v);
             document.querySelectorAll('input[type=checkbox]').forEach(c => d[c.name] = c.checked ? "TRUE" : "FALSE");
+
             await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveDeltaChanges', recordId: gState.currentRecordId, userEmail: gState.currentUser.email, changes: d }) });
+
             if (gState.changesToPush.householdData) {
-                const membersToSend = gState.householdMembers.map((x, i) => ({ ...x, RecordID: gState.currentRecordId, MemberNo: i + 1, Occupation: x.MemberOccupation, Education: x.MemberEducation, Income: x.Income_Total }));
+                const membersToSend = gState.householdMembers.map((x, i) => ({ 
+                    ...x, 
+                    RecordID: gState.currentRecordId,
+                    MemberNo: i + 1,
+                    Occupation: x.MemberOccupation, 
+                    Education: x.MemberEducation,
+                    Income: x.Income_Total
+                }));
                 await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'overwriteHouseholdData', recordId: gState.currentRecordId, members: membersToSend }) });
             }
+            
+            // บันทึกเสร็จแล้ว โหลดข้อมูลใหม่จาก Server ทันที
             onSaveSuccess();
             handleStartForm(); 
+            
         } catch (e) { handleError(e); } finally { if (el.saveBtn) { el.saveBtn.disabled = false; el.saveBtn.innerHTML = 'บันทึก (0)'; } }
     }
 
-    // --- Helper Functions ---
-    async function handleManualLogin(e) { e.preventDefault(); setLoading(true); if(el.loginBtn) el.loginBtn.disabled=true; if(el.loginErrorMessage) el.loginErrorMessage.style.display='none'; 
-      try { const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'checkLogin', email: el.loginEmailInput.value, password: el.loginPasswordInput.value }) }); const data = await res.json(); if(data && data.email) handleLoginSuccess(data); else throw new Error("Login Failed"); } catch(err) { handleLoginFailure(err.message); } 
-    }
-    async function handleLoginSuccess(u) { gState.currentUser=u; if(el.navUserEmail) el.navUserEmail.textContent=u.email; showScreen('selection'); try { setLoading(true); const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getInitialData', assignedClasses: u.assignedClasses }) }); const cls = await res.json(); populateClassDropdown(cls); setLoading(false); } catch(e){ handleError(e); } }
-    function handleLoginFailure(e) { setLoading(false); gState.currentUser=null; showScreen('login'); if(el.loginBtn) el.loginBtn.disabled=false; if(el.loginErrorMessage){ el.loginErrorMessage.textContent=e; el.loginErrorMessage.style.display='block'; } else alert(e); }
-    function handleLogout() { Swal.fire({title:'Logout?', showCancelButton:true}).then(r=>{ if(r.isConfirmed){ localStorage.removeItem(`visit_${gState.currentRecordId}`); window.location.reload(); }}); }
-    function showScreen(id) { if(!SCREENS.loading)return; if(el.mainNavbar) el.mainNavbar.style.display=(id==='login'||id==='loading')?'none':'block'; Object.values(SCREENS).forEach(s=>s.style.display='none'); if(SCREENS[id]) SCREENS[id].style.display='block'; if(el.navHomeLink){ el.navHomeLink.classList.toggle('active',id==='selection'||id==='form'); el.navDashboardLink.classList.toggle('active',id==='dashboard'); el.navPrintLink.classList.toggle('active',id==='print'); } }
-    function setLoading(l,m='Loading...') { gState.isLoading=l; if(SCREENS.loading){ SCREENS.loading.querySelector('p').textContent=m; SCREENS.loading.style.display=l?'flex':'none'; } }
-    function handleError(e) { setLoading(false); Swal.fire('Error',e.message||e,'error'); if(el.loginBtn)el.loginBtn.disabled=false; if(el.saveBtn){el.saveBtn.disabled=false; el.saveBtn.innerHTML=`บันทึก (${Object.keys(gState.changesToPush).length})`;} }
-    function populateClassDropdown(c) { el.classSelect.innerHTML='<option value="">-- เลือก --</option>'; c.forEach(x=>el.classSelect.add(new Option(x,x))); }
-    async function handleClassChange() { const c=el.classSelect.value; if(!c){el.studentSelect.disabled=true;return;} el.studentSelect.disabled=true; setLoading(true); try{ const res=await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentsByClass', className: c }) }); const d=await res.json(); d.sort((a,b)=>parseInt(a.studentNumber||0)-parseInt(b.studentNumber||0)); el.studentSelect.innerHTML='<option value="">-- เลือก --</option>'; d.forEach(s=>el.studentSelect.add(new Option(`${s.name}`,s.id))); el.studentSelect.disabled=false; validateStartButton(); setLoading(false); }catch(e){handleError(e);} }
-    function validateStartButton() { el.startFormBtn.disabled=!(el.classSelect.value&&el.studentSelect.value); }
+    // --- 8. ฟังก์ชันเสริมต่างๆ ---
     function formatDateForInput(ds) { if(!ds)return''; if(/^\d{4}-\d{2}-\d{2}$/.test(ds))return ds; const d=new Date(ds); if(isNaN(d.getTime()))return''; return d.toISOString().split('T')[0]; }
     function prefillForm(m, v) { if(!m){return;} document.getElementById('s1-name').innerText=`${m.Prefix||''} ${m.FirstName} ${m.LastName}`; document.getElementById('s1-class').innerText=m.Class; document.getElementById('s1-citizenid').innerText=m.CitizenID||'N/A'; const sv = (val) => (val===undefined||val===null)?"":val; document.getElementById('Q1_GuardianFirstName').value = sv((v&&v.Q1_GuardianFirstName)||m.DefaultGuardianName); document.getElementById('Q1_GuardianPhone').value = sv((v&&v.Q1_GuardianPhone)||m.DefaultGuardianPhone); if(document.getElementById('Q1_StudentPhone')) document.getElementById('Q1_StudentPhone').value = sv((v&&v.Q1_StudentPhone)||m.Phone); if(document.getElementById('Q1_StudentNickname')) document.getElementById('Q1_StudentNickname').value = sv((v&&v.Q1_StudentNickname)||m.Nickname); if(document.getElementById('Q1_FatherName')) document.getElementById('Q1_FatherName').value = sv((v&&v.Q1_FatherName)||m.FatherName); if(document.getElementById('Q1_FatherPhone')) document.getElementById('Q1_FatherPhone').value = sv((v&&v.Q1_FatherPhone)||m.FatherPhone); if(document.getElementById('Q1_FatherJob')) document.getElementById('Q1_FatherJob').value = sv((v&&v.Q1_FatherJob)||m.FatherJob); if(document.getElementById('Q1_MotherName')) document.getElementById('Q1_MotherName').value = sv((v&&v.Q1_MotherName)||m.MotherName); if(document.getElementById('Q1_MotherPhone')) document.getElementById('Q1_MotherPhone').value = sv((v&&v.Q1_MotherPhone)||m.MotherPhone); if(document.getElementById('Q1_MotherJob')) document.getElementById('Q1_MotherJob').value = sv((v&&v.Q1_MotherJob)||m.MotherJob); if(document.getElementById('Q1_StudentDOB')) { const dob = (v&&v.Q1_StudentDOB)||m.DOB; document.getElementById('Q1_StudentDOB').value = formatDateForInput(dob); } if(v) { const f = document.getElementById('visit-form'); for(const k in v) { const inp = f.elements[k]; if(inp) { if(k==='Q1_StudentDOB') continue; if(inp.type==='checkbox') inp.checked=(v[k]==='TRUE'); else if(inp.length>0 && inp[0].type==='radio') { const r=f.querySelector(`input[name="${k}"][value="${v[k]}"]`); if(r) r.checked=true; } else if(inp.type==='hidden' && k.includes('PhotoURL')) { inp.value=v[k]; if(v[k]) { const img=document.getElementById(`preview_${k}`); if(img){img.src=v[k]; img.style.display='block';} const wrap=document.getElementById(`wrapper_${k}`); if(wrap)wrap.style.display='inline-block'; const del=wrap?wrap.querySelector('.btn-delete-img'):null; if(del)del.style.display='block'; } } else if(inp.type!=='file') inp.value=v[k]; if(['Q3_1_DependencyStatus','Q3_4_AgricultureStatus','Q1_LivesWith','Q3_StudentIncome_Has'].includes(k)) { const el = document.getElementsByName(k)[0] || document.getElementById(k); if(el) el.dispatchEvent(new Event('change')); } if(['Q11_IsAtRisk','Q11_Risk_Behavior'].includes(k)) { const el = document.getElementById(k); if(el) el.dispatchEvent(new Event('change')); } } } } }
     function handleBackToSelection(cb) { if(Object.keys(gState.changesToPush).length){ Swal.fire({title:'ยังไม่บันทึก',showCancelButton:true}).then(r=>{if(r.isConfirmed){resetFormState(); cb?cb():showScreen('selection');}})}else{resetFormState(); cb?cb():showScreen('selection');} }
@@ -726,34 +808,3 @@
   </script>
 </body>
 </html>
-</body>
-</html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
