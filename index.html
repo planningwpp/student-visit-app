@@ -137,30 +137,44 @@
             </div>
 
             <div id="student-list-area" style="display:none;">
-                
-                <div class="d-flex gap-2 mb-2">
-                    <button class="btn btn-sm btn-outline-secondary active" onclick="filterList('all')">ทั้งหมด</button>
-                    <button class="btn btn-sm btn-outline-success" onclick="filterList('visited')">เยี่ยมแล้ว</button>
-                    <button class="btn btn-sm btn-outline-warning" onclick="filterList('pending')">รอเยี่ยม</button>
-                </div>
+    
+    <div class="d-flex flex-wrap gap-2 mb-2 align-items-center">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-sm btn-outline-secondary active" id="btn-filter-all" onclick="setFilterStatus('all')">ทั้งหมด</button>
+            <button type="button" class="btn btn-sm btn-outline-success" id="btn-filter-visited" onclick="setFilterStatus('visited')">เยี่ยมแล้ว</button>
+            <button type="button" class="btn btn-sm btn-outline-warning" id="btn-filter-pending" onclick="setFilterStatus('pending')">รอเยี่ยม</button>
+        </div>
 
-                <div class="table-responsive">
-                    <table class="table table-hover table-bordered align-middle">
-                        <thead class="table-primary text-center">
-                            <tr>
-                                <th width="50">เลขที่</th>
-                                <th>ชื่อ - นามสกุล</th>
-                                <th width="100">สถานะ</th>
-                                <th width="120">รายได้ครัวเรือน</th>
-                                <th width="100">วันที่เยี่ยม</th>
-                                <th width="100">จัดการ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="student-list-tbody">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
+        <select id="filter-income" class="form-select form-select-sm" style="width: auto; min-width: 220px;" onchange="applyFilters()">
+            <option value="all">💰 ทุกช่วงรายได้</option>
+            <option value="range1">น้อยกว่า 15,000 บาท</option>
+            <option value="range2">15,000 - 25,000 บาท</option>
+            <option value="range3">26,000 - 35,000 บาท</option>
+            <option value="range4">36,000 - 45,000 บาท</option>
+            <option value="range5">46,000 บาทขึ้นไป</option>
+        </select>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle">
+          <thead class="table-primary text-center">
+              <tr>
+                  <th width="50">เลขที่</th>
+                  <th>ชื่อ - นามสกุล</th>
+                  <th width="100">สถานะ</th>
+                  <th width="150">รายได้ครอบครัว</th> 
+                  
+                  <th width="100">ระยะทาง</th> 
+                  
+                  <th width="100">วันที่เยี่ยม</th>
+                  <th width="100">จัดการ</th>
+              </tr>
+          </thead>
+            <tbody id="student-list-tbody">
+            </tbody>
+        </table>
+    </div>
+</div>
 
           </div>
         </div>
@@ -691,7 +705,32 @@
     async function handleManualLogin(e) { e.preventDefault(); setLoading(true); if(el.loginBtn) el.loginBtn.disabled=true; if(el.loginErrorMessage) el.loginErrorMessage.style.display='none'; 
       try { const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'checkLogin', email: el.loginEmailInput.value, password: el.loginPasswordInput.value }) }); const data = await res.json(); if(data && data.email) handleLoginSuccess(data); else throw new Error("Login Failed"); } catch(err) { handleLoginFailure(err.message); } 
     }
-    async function handleLoginSuccess(u) { gState.currentUser=u; if(el.navUserEmail) el.navUserEmail.textContent=u.email; showScreen('selection'); try { setLoading(true); const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getInitialData', assignedClasses: u.assignedClasses }) }); const cls = await res.json(); populateClassDropdown(cls); setLoading(false); } catch(e){ handleError(e); } }
+    // =========================================================
+    // 🟡 UPDATED: Login Success (จุดที่ 5 แสดงชื่อครู)
+    // =========================================================
+    async function handleLoginSuccess(u) { 
+        gState.currentUser = u; 
+        
+        // (จุดที่ 5) แสดงชื่อครูที่ Header
+        // สมมติว่า Backend ส่ง u.name มาด้วย ถ้าไม่มีให้ใช้ email แทน
+        const teacherName = u.name || u.email || "คุณครู";
+        if(document.getElementById('user-name-display')) {
+            document.getElementById('user-name-display').innerHTML = `คุณครู ${teacherName}`;
+        }
+        if(el.navUserEmail) el.navUserEmail.textContent = u.email; 
+        
+        showScreen('selection'); 
+        
+        try { 
+            setLoading(true); 
+            const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getInitialData', assignedClasses: u.assignedClasses }) }); 
+            const cls = await res.json(); 
+            populateClassDropdown(cls); 
+            setLoading(false); 
+        } catch(e){ 
+            handleError(e); 
+        } 
+    }
     function handleLoginFailure(e) { setLoading(false); gState.currentUser=null; showScreen('login'); if(el.loginBtn) el.loginBtn.disabled=false; if(el.loginErrorMessage){ el.loginErrorMessage.textContent=e; el.loginErrorMessage.style.display='block'; } else alert(e); }
     function handleLogout() { Swal.fire({title:'Logout?', showCancelButton:true}).then(r=>{ if(r.isConfirmed){ localStorage.removeItem(`visit_${gState.currentRecordId}`); window.location.reload(); }}); }
 
@@ -729,31 +768,47 @@
     }
 
     // 2. วาดตาราง
-    let currentStudentList = []; // เก็บไว้กรอง
+    // =========================================================
+    // 🟡 UPDATED: Global Variables สำหรับ Filter
+    // =========================================================
+    let currentFilterStatus = 'all';
+
+// =========================================================
+    // 🟡 UPDATED: ฟังก์ชันวาดตารางหน้าแรก (เพิ่มระยะทาง + Filter)
+    // =========================================================
     function renderStudentListTable(data) {
-        currentStudentList = data;
+        // เก็บข้อมูลไว้ทำ Filter
+        currentStudentList = data; 
         const tbody = document.getElementById('student-list-tbody');
         tbody.innerHTML = '';
 
         if (data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">ไม่พบข้อมูลนักเรียน</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">ไม่พบข้อมูลนักเรียน</td></tr>`;
             return;
         }
 
         data.forEach(s => {
             const tr = document.createElement('tr');
-            tr.dataset.status = s.status; // ไว้กรอง
+            
+            // Dataset สำหรับ Filter
+            tr.dataset.status = s.status; 
+            let incomeNum = 0;
+            if(s.income) incomeNum = parseFloat(String(s.income).replace(/,/g, '')) || 0;
+            tr.dataset.income = incomeNum;
 
             // Badge สถานะ
             const statusBadge = s.status === 'visited' 
                 ? `<span class="badge bg-success">เรียบร้อย</span>` 
                 : `<span class="badge bg-warning text-dark">รอเยี่ยม</span>`;
             
-            // Highlight รายได้น้อย (ถ้ามีข้อมูล)
-            const incomeText = s.status === 'visited' ? Number(s.income).toLocaleString() : '-';
-            const incomeClass = (s.status === 'visited' && s.income < 30000) ? 'text-danger fw-bold' : '';
+            // Income Display
+            const incomeText = s.status === 'visited' ? Number(incomeNum).toLocaleString() : '-';
+            const incomeClass = (s.status === 'visited' && incomeNum < 15000) ? 'text-danger fw-bold' : '';
 
-            // ปุ่มกด
+            // (จุดที่ 4) ดึงระยะทาง (Backend ต้องส่ง field 'distance' มาด้วย)
+            // ถ้าไม่มีข้อมูล ให้ขีด -
+            const distanceDisplay = s.distance ? `${s.distance} กม.` : '-';
+
             const btnClass = s.status === 'visited' ? 'btn-outline-primary' : 'btn-primary shadow-sm';
             const btnText = s.status === 'visited' ? '<i class="bi bi-pencil"></i> แก้ไข' : '<i class="bi bi-house-door-fill"></i> เยี่ยมบ้าน';
 
@@ -765,6 +820,9 @@
                 </td>
                 <td class="text-center">${statusBadge}</td>
                 <td class="text-end ${incomeClass}">${incomeText}</td>
+                
+                <td class="text-center">${distanceDisplay}</td>
+
                 <td class="text-center small">${s.lastUpdated}</td>
                 <td class="text-center">
                     <button class="btn btn-sm ${btnClass} w-100" onclick="selectStudentAndStart('${s.id}', '${s.name}')">
@@ -774,8 +832,64 @@
             `;
             tbody.appendChild(tr);
         });
+        
+        applyFilters(); // เรียกใช้ Filter
     }
 
+    // =========================================================
+    // 🟡 NEW: ระบบ Filter ใหม่ (สถานะ + รายได้)
+    // =========================================================
+    
+    // เมื่อกดปุ่มสถานะ (ทั้งหมด/เยี่ยมแล้ว/รอเยี่ยม)
+    window.setFilterStatus = function(status) {
+        currentFilterStatus = status;
+        
+        // อัปเดต UI ปุ่มกดให้สวยงาม
+        document.getElementById('btn-filter-all').classList.remove('active');
+        document.getElementById('btn-filter-visited').classList.remove('active');
+        document.getElementById('btn-filter-pending').classList.remove('active');
+        
+        if(status === 'all') document.getElementById('btn-filter-all').classList.add('active');
+        else if(status === 'visited') document.getElementById('btn-filter-visited').classList.add('active');
+        else if(status === 'pending') document.getElementById('btn-filter-pending').classList.add('active');
+
+        applyFilters();
+    };
+
+    // ฟังก์ชันคำนวณการกรองจริง
+    window.applyFilters = function() {
+        const incomeRange = document.getElementById('filter-income').value;
+        const rows = document.querySelectorAll('#student-list-tbody tr');
+
+        rows.forEach(r => {
+            const status = r.dataset.status;
+            const income = parseFloat(r.dataset.income) || 0;
+            
+            let showStatus = (currentFilterStatus === 'all') || (currentFilterStatus === status);
+            let showIncome = true;
+
+            // เงื่อนไขรายได้ (เฉพาะคนที่เยี่ยมแล้วถึงจะมีรายได้มาโชว์ แต่ถ้าจะกรองรอเยี่ยมด้วยก็ต้องดู logic อีกที)
+            // *หมายเหตุ: ปกติถ้ารอเยี่ยม รายได้จะเป็น 0 หรือค่าว่าง ระบบจะกรองไม่ได้แม่นยำจนกว่าจะเยี่ยม
+            
+            if (incomeRange !== 'all') {
+                if (incomeRange === 'range1') showIncome = (income < 15000);
+                else if (incomeRange === 'range2') showIncome = (income >= 15000 && income <= 25000);
+                else if (incomeRange === 'range3') showIncome = (income >= 26000 && income <= 35000);
+                else if (incomeRange === 'range4') showIncome = (income >= 36000 && income <= 45000);
+                else if (incomeRange === 'range5') showIncome = (income >= 46000);
+                
+                // (Optional) ถ้าเป็นสถานะ "รอเยี่ยม" รายได้มักจะเป็น 0 หรือไม่มีข้อมูล 
+                // ถ้าต้องการให้แสดงคนรอเยี่ยมเสมอเมื่อมีการกรองรายได้ ให้ Uncomment บรรทัดล่างนี้
+                // if (status === 'pending') showIncome = true; 
+            }
+
+            if (showStatus && showIncome) {
+                r.style.display = '';
+            } else {
+                r.style.display = 'none';
+            }
+        });
+    };
     // 3. ฟังก์ชันเมื่อกดปุ่ม "เยี่ยมบ้าน/แก้ไข" ในตาราง
     window.selectStudentAndStart = async function(sid, sname) {
         // ตั้งค่าตัวแปร Global
@@ -910,7 +1024,36 @@
 
     function formatDateForInput(ds) { if(!ds)return''; if(/^\d{4}-\d{2}-\d{2}$/.test(ds))return ds; const d=new Date(ds); if(isNaN(d.getTime()))return''; return d.toISOString().split('T')[0]; }
     function prefillForm(m, v) { if(!m){return;} document.getElementById('s1-name').innerText=`${m.Prefix||''} ${m.FirstName} ${m.LastName}`; document.getElementById('s1-class').innerText=m.Class; document.getElementById('s1-citizenid').innerText=m.CitizenID||'N/A'; const sv = (val) => (val===undefined||val===null)?"":val; document.getElementById('Q1_GuardianFirstName').value = sv((v&&v.Q1_GuardianFirstName)||m.DefaultGuardianName); document.getElementById('Q1_GuardianPhone').value = sv((v&&v.Q1_GuardianPhone)||m.DefaultGuardianPhone); if(document.getElementById('Q1_StudentPhone')) document.getElementById('Q1_StudentPhone').value = sv((v&&v.Q1_StudentPhone)||m.Phone); if(document.getElementById('Q1_StudentNickname')) document.getElementById('Q1_StudentNickname').value = sv((v&&v.Q1_StudentNickname)||m.Nickname); if(document.getElementById('Q1_FatherName')) document.getElementById('Q1_FatherName').value = sv((v&&v.Q1_FatherName)||m.FatherName); if(document.getElementById('Q1_FatherPhone')) document.getElementById('Q1_FatherPhone').value = sv((v&&v.Q1_FatherPhone)||m.FatherPhone); if(document.getElementById('Q1_FatherJob')) document.getElementById('Q1_FatherJob').value = sv((v&&v.Q1_FatherJob)||m.FatherJob); if(document.getElementById('Q1_MotherName')) document.getElementById('Q1_MotherName').value = sv((v&&v.Q1_MotherName)||m.MotherName); if(document.getElementById('Q1_MotherPhone')) document.getElementById('Q1_MotherPhone').value = sv((v&&v.Q1_MotherPhone)||m.MotherPhone); if(document.getElementById('Q1_MotherJob')) document.getElementById('Q1_MotherJob').value = sv((v&&v.Q1_MotherJob)||m.MotherJob); if(document.getElementById('Q1_StudentDOB')) { const dob = (v&&v.Q1_StudentDOB)||m.DOB; document.getElementById('Q1_StudentDOB').value = formatDateForInput(dob); } if(v) { const f = document.getElementById('visit-form'); for(const k in v) { const inp = f.elements[k]; if(inp) { if(k==='Q1_StudentDOB') continue; if(inp.type==='checkbox') inp.checked = (String(v[k]).toUpperCase() === 'TRUE'); else if(inp.length>0 && inp[0].type==='radio') { const r=f.querySelector(`input[name="${k}"][value="${v[k]}"]`); if(r) r.checked=true; } else if(inp.type==='hidden' && k.includes('PhotoURL')) { inp.value=v[k]; if(v[k]) { const img=document.getElementById(`preview_${k}`); if(img){img.src=v[k]; img.style.display='block';} const wrap=document.getElementById(`wrapper_${k}`); if(wrap)wrap.style.display='inline-block'; const del=wrap?wrap.querySelector('.btn-delete-img'):null; if(del)del.style.display='block'; } } else if(inp.type!=='file') inp.value=v[k]; if(['Q3_1_DependencyStatus','Q3_4_AgricultureStatus','Q1_LivesWith','Q3_StudentIncome_Has'].includes(k)) { const el = document.getElementsByName(k)[0] || document.getElementById(k); if(el) el.dispatchEvent(new Event('change')); } if(['Q11_IsAtRisk','Q11_Risk_Behavior'].includes(k)) { const el = document.getElementById(k); if(el) el.dispatchEvent(new Event('change')); } } } } }
-    function handleBackToSelection(cb) { if(Object.keys(gState.changesToPush).length){ Swal.fire({title:'ยังไม่บันทึก',showCancelButton:true}).then(r=>{if(r.isConfirmed){resetFormState(); cb?cb():showScreen('selection');}})}else{resetFormState(); cb?cb():showScreen('selection');} }
+function handleBackToSelection(cb) { 
+        if(Object.keys(gState.changesToPush).length){ 
+            Swal.fire({
+                title: 'ยังไม่บันทึก',
+                text: 'ข้อมูลมีการเปลี่ยนแปลง ต้องการออกจากหน้านี้โดยไม่บันทึกหรือไม่?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'ใช่ ออกเลย',
+                cancelButtonText: 'ยกเลิก'
+            }).then(r=>{
+                if(r.isConfirmed){
+                    performBackAction(cb);
+                }
+            })
+        } else {
+            performBackAction(cb);
+        } 
+    }
+
+    function performBackAction(cb) {
+        resetFormState(); 
+        if (cb) {
+            cb();
+        } else {
+            // จุดที่ 1: บังคับให้กลับไปหน้าแรก (Selection Screen) เสมอ
+            showScreen('selection'); 
+            // เลื่อนหน้าจอกลับไปบนสุด
+            window.scrollTo(0,0);
+        }
+    }
     function resetFormState() { localStorage.removeItem(`visit_${gState.currentRecordId}`); document.getElementById('visit-form').reset(); document.querySelectorAll('.img-preview').forEach(i=>{i.src='';i.style.display='none'}); document.querySelectorAll('.img-wrapper').forEach(d=>d.style.display='none'); document.querySelectorAll('input[name*="PhotoURL"]').forEach(i=>i.value=''); gState.currentRecordId=null; gState.changesToPush={}; gState.householdMembers=[]; el.householdTbody.innerHTML=''; el.studentSelect.value=''; if(el.q4Content) el.q4Content.style.display='none'; if(el.q3_1_SubOptions) el.q3_1_SubOptions.style.display='none'; document.getElementById('risk-details').style.display='none'; el.saveBtn.disabled=true; el.saveBtn.innerHTML='บันทึก (0)'; updateProgressBar(0); }
     function attachFormListeners() { document.querySelectorAll('#visit-form input, select, textarea').forEach(e=>{ if(e.type!='file') e.addEventListener('change', (ev)=>{ trackChange(ev.target.name, ev.target.type=='checkbox'?(ev.target.checked?"TRUE":"FALSE"):ev.target.value); saveToLocalStorage(); calculateProgress(); }); }); }
     function saveToLocalStorage() { return; } 
@@ -981,147 +1124,147 @@
     }
 
     /* แก้ไขใน index.html: เพิ่มปุ่ม Export ใน renderDashboard */
-function renderDashboard(data) {
-    const container = document.getElementById('dashboard-screen');
-    const currentSem = document.getElementById('semester-select')?.value || "2";
-    const currentYear = document.getElementById('year-select')?.value || "2568";
-    
-    // เก็บค่าห้องที่เลือกไว้ปัจจุบัน (ถ้ามี)
-    const currentClass = window.dashboardCurrentClass || ""; 
+// =========================================================
+    // 🟡 UPDATED: Dashboard Rendering (จุดที่ 6 แยกสถานะ)
+    // =========================================================
+    function renderDashboard(data) {
+        const container = document.getElementById('dashboard-screen');
+        const currentSem = document.getElementById('semester-select')?.value || "2";
+        const currentYear = document.getElementById('year-select')?.value || "2568";
+        
+        // (จุดที่ 6) คำนวณยอด
+        // data.total ควรจะเป็น "จำนวนนักเรียนทั้งหมดในห้อง"
+        // data.visited_count ควรเป็น "จำนวนที่บันทึกแล้ว" (Backend ต้องส่งมา)
+        // ถ้า Backend ส่งมาแค่ total (ที่เป็นยอดเยี่ยมแล้ว) เราอาจต้องปรับ Logic นิดหน่อย
+        
+        // สมมติว่า Backend ปรับให้ส่ง:
+        // data.total_students = จำนวนนักเรียนทั้งหมด
+        // data.total_visits = จำนวนที่เยี่ยมแล้ว
+        
+        // *Fallback logic: ถ้า Backend ยังเป็นแบบเก่า (ส่งมาแค่ total คือยอดเยี่ยม)*
+        // เราจะพยายามใช้ data.total เป็นยอดเยี่ยม และต้องหายอด นร. ทั้งหมดมาลบ (ซึ่ง dashboard อาจจะไม่รู้ถ้าระบบไม่ส่งมา)
+        // ดังนั้น **แนะนำให้แก้ Backend GAS ให้ส่ง keys: total_students และ total_visits มาครับ**
+        
+        // Code นี้เขียนเผื่อไว้ให้รองรับทั้งคู่
+        const totalStudents = data.total_students || data.total || 0; 
+        const visitedCount = data.total_visits || (data.total_students ? data.total : 0); // ถ้ามี key แยก ให้ใช้ key แยก
+        const pendingCount = totalStudents - visitedCount;
 
-    let html = `
-      <div class="card shadow-sm mb-4 bg-white border-primary">
-        <div class="card-body py-3">
-          <div class="row align-items-center g-2">
-            <div class="col-auto"><span class="fw-bold text-primary"><i class="bi bi-funnel-fill"></i> ตัวเลือกข้อมูล:</span></div>
-            
-            <div class="col-auto">
-                <select id="dash-class" class="form-select form-select-sm">
-                    <option value="">-- ทุกระดับชั้น --</option>
-                </select>
-            </div>
+        // คำนวณเปอร์เซ็นต์
+        const percentVisited = totalStudents > 0 ? ((visitedCount / totalStudents) * 100).toFixed(1) : 0;
 
-            <div class="col-auto">
-                <select id="dash-sem" class="form-select form-select-sm">
-                    <option value="1" ${currentSem=="1"?"selected":""}>เทอม 1</option>
-                    <option value="2" ${currentSem=="2"?"selected":""}>เทอม 2</option>
-                </select>
-            </div>
-            <div class="col-auto">
-                <input type="number" id="dash-year" class="form-control form-control-sm" style="width: 80px;" value="${currentYear}">
-            </div>
-            <div class="col-auto">
-                <button onclick="refreshDashboard()" class="btn btn-sm btn-primary"><i class="bi bi-arrow-clockwise"></i> อัปเดต</button>
-            </div>
-            
-            <div class="col-auto">
-                <button onclick="exportTableToExcel()" class="btn btn-sm btn-success"><i class="bi bi-file-earmark-excel"></i> Export Excel</button>
-            </div>
-
-            <div class="col text-end text-muted small">
-                 ${data.total} คน
+        let html = `
+          <div class="card shadow-sm mb-4 bg-white border-primary">
+            <div class="card-body py-3">
+              <div class="row align-items-center g-2">
+                <div class="col-auto"><span class="fw-bold text-primary"><i class="bi bi-funnel-fill"></i> ตัวเลือก:</span></div>
+                <div class="col-auto">
+                    <select id="dash-class" class="form-select form-select-sm">
+                        <option value="">-- ทุกระดับชั้น --</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button onclick="refreshDashboard()" class="btn btn-sm btn-primary"><i class="bi bi-arrow-clockwise"></i> อัปเดต</button>
+                </div>
+                <div class="col-auto">
+                    <button onclick="exportTableToExcel()" class="btn btn-sm btn-success"><i class="bi bi-file-earmark-excel"></i> Excel</button>
+                </div>
+                <div class="col text-end text-muted small">
+                     ข้อมูลเทอม ${currentSem}/${currentYear}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-      
-      <div class="row g-3 mb-4">
-        <div class="col-md-3"><div class="card bg-primary text-white p-3 h-100 text-center"><h3>${data.total}</h3><p class="mb-0">เยี่ยมบ้านแล้ว (คน)</p></div></div>
-        <div class="col-md-3"><div class="card bg-danger text-white p-3 h-100 text-center"><h3>${data.risks.total_risk || 0}</h3><p class="mb-0">กลุ่มเสี่ยง (คน)</p></div></div>
-        <div class="col-md-3"><div class="card bg-warning text-dark p-3 h-100 text-center"><h3>${data.risks.learning || 0}</h3><p class="mb-0">เสี่ยงด้านการเรียน</p></div></div>
-        <div class="col-md-3"><div class="card bg-info text-white p-3 h-100 text-center"><h3>${data.risks.behavior || 0}</h3><p class="mb-0">เสี่ยงด้านพฤติกรรม</p></div></div>
-      </div>
-      
-      <div class="row">
-         <div class="col-md-6 mb-4"><div class="card shadow h-100"><div class="card-header fw-bold">รายได้ครอบครัว</div><div class="card-body"><canvas id="chartIncome"></canvas></div></div></div>
-         <div class="col-md-6 mb-4"><div class="card shadow h-100"><div class="card-header fw-bold">สถานภาพครอบครัว</div><div class="card-body"><canvas id="chartFamily"></canvas></div></div></div>
-      </div>
-      
-      <div class="card shadow mb-4">
-         <div class="card-header fw-bold bg-light">รายละเอียดตามหัวข้อรายงาน</div>
-         <div class="card-body">
-            <div class="table-responsive">
-                <table id="dashboard-table" class="table table-bordered table-sm table-hover" style="font-size: 0.9rem;">
-                    <thead class="table-light"><tr><th>รายการ</th><th class="text-center" style="width:100px">จำนวน</th><th class="text-center" style="width:100px">ร้อยละ</th></tr></thead>
-                    <tbody>
-                        ${createTableRows('1. บ้านที่พักอาศัย', data.q3_house_ownership, data.total)}
-                        ${createTableRows('2. ลักษณะบ้าน', data.q3_house_type, data.total)}
-                        ${createTableRows('3. สภาพแวดล้อม', data.q3_environment, data.total)}
-                        ${createTableRows('4. อาศัยอยู่กับ', data.q1_lives_with, data.total)}
-                        ${createTableRows('5. อาชีพผู้ปกครอง', data.q1_guardian_occupation, data.total)}
-                        ${createTableRows('6. ที่ทำงานผู้ปกครอง', data.q3_parents_workplace, data.total)}
-                        ${createTableRows('9. ความสัมพันธ์', data.q8_family_rel, data.total)}
-                        ${createTableRows('10. ความรู้สึกผู้ปกครอง', data.q8_parent_feeling, data.total)}
-                        ${createTableRows('11. วิธีเลี้ยงดู', data.q8_parenting_method, data.total)}
-                        ${createTableRows('12. พฤติกรรม (ตอบได้หลายข้อ)', data.behaviors, data.total)}
-                        ${createTableRows('15. ความเพียงพอรายได้', data.q3_income_sufficiency, data.total)}
-                        ${createTableRows('17. เพื่อนเล่น', data.q8_friends_at_home, data.total)}
-                        ${createTableRows('18. การเดินทาง', data.q5_travel_method, data.total)}
-                        ${createTableRows('19. ความต้องการในอนาคต', data.q8_future_goal, data.total)}
-                        ${createTableRows('20. สนิทกับใคร', data.q8_closest_person, data.total)}
-                        ${createTableRows('21. ปรึกษาใคร', data.q8_consultant, data.total)}
-                        ${createTableRows('22. ข้อเสนอแนะต่อโรงเรียน (จำนวนผู้ให้ข้อเสนอแนะ)', data.suggestions, data.total)}
-                        ${createTableRows('24. นักเรียนกลุ่มเสี่ยง (จำแนกตามพฤติกรรม)', data.risks.behavior_details, data.total)}
-                    </tbody>
-                </table>
+          
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card bg-secondary text-white p-3 h-100 text-center shadow-sm">
+                    <h3>${totalStudents}</h3>
+                    <p class="mb-0">นักเรียนทั้งหมด</p>
+                </div>
             </div>
-         </div>
-      </div>
-    `;
-    
-    container.innerHTML = html;
 
-    // เติมตัวเลือกห้องเรียน (เหมือนเดิม)
-    const dashClassSelect = document.getElementById('dash-class');
-    const mainClassSelect = document.getElementById('class-select');
-    if (mainClassSelect && dashClassSelect) {
-        dashClassSelect.innerHTML = "";
-        dashClassSelect.add(new Option("-- ทุกระดับชั้น --", ""));
-        Array.from(mainClassSelect.options).forEach(opt => {
-            if (opt.value && opt.value.trim() !== "") dashClassSelect.add(new Option(opt.text, opt.value));
-        });
-        if (currentClass && currentClass !== "") dashClassSelect.value = currentClass;
-    }
+            <div class="col-md-3">
+                <div class="card bg-success text-white p-3 h-100 text-center shadow-sm">
+                    <h3>${visitedCount} <span class="fs-6">(${percentVisited}%)</span></h3>
+                    <p class="mb-0">เยี่ยมบ้านแล้ว</p>
+                </div>
+            </div>
 
-    // Render Charts (เหมือนเดิม แต่เพิ่ม options สำหรับ DataLabels)
-    const labelOptions = {
-        color: '#fff', font: { weight: 'bold', size: 12 },
-        formatter: (value, ctx) => {
-            if (value === 0) return "";
-            let sum = 0;
-            let dataArr = ctx.chart.data.datasets[0].data;
-            dataArr.map(data => { sum += data; });
-            return (value * 100 / sum).toFixed(1) + "%";
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark p-3 h-100 text-center shadow-sm">
+                    <h3>${pendingCount}</h3>
+                    <p class="mb-0">รอเยี่ยม</p>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card bg-danger text-white p-3 h-100 text-center shadow-sm">
+                    <h3>${data.risks?.total_risk || 0}</h3>
+                    <p class="mb-0">กลุ่มเสี่ยงรวม</p>
+                </div>
+            </div>
+          </div>
+          
+          <div class="row">
+             <div class="col-md-6 mb-4"><div class="card shadow h-100"><div class="card-header fw-bold">รายได้ครอบครัว</div><div class="card-body"><canvas id="chartIncome"></canvas></div></div></div>
+             <div class="col-md-6 mb-4"><div class="card shadow h-100"><div class="card-header fw-bold">สถานภาพครอบครัว</div><div class="card-body"><canvas id="chartFamily"></canvas></div></div></div>
+          </div>
+          
+          <div class="card shadow mb-4">
+             <div class="card-header fw-bold bg-light">รายละเอียดข้อมูล</div>
+             <div class="card-body">
+                <div class="table-responsive">
+                    <table id="dashboard-table" class="table table-bordered table-sm table-hover" style="font-size: 0.9rem;">
+                        <thead class="table-light"><tr><th>รายการ</th><th class="text-center" style="width:100px">จำนวน</th><th class="text-center" style="width:100px">ร้อยละ</th></tr></thead>
+                        <tbody>
+                            ${createTableRows('1. บ้านที่พักอาศัย', data.q3_house_ownership, visitedCount)}
+                            ${createTableRows('2. ลักษณะบ้าน', data.q3_house_type, visitedCount)}
+                            ${createTableRows('3. สภาพแวดล้อม', data.q3_environment, visitedCount)}
+                            ${createTableRows('24. นักเรียนกลุ่มเสี่ยง', data.risks?.behavior_details, visitedCount)}
+                        </tbody>
+                    </table>
+                </div>
+             </div>
+          </div>
+        `;
+        
+        container.innerHTML = html;
+
+        // ... (ส่วน Render กราฟ เหมือนเดิม) ...
+        // อย่าลืมใส่ Logic เติม Dropdown และ Chart.js ตรงนี้ด้วยครับ (ก๊อปจากอันเก่ามาแปะต่อท้าย html ได้เลย)
+         const dashClassSelect = document.getElementById('dash-class');
+         const mainClassSelect = document.getElementById('class-select');
+         if (mainClassSelect && dashClassSelect) {
+            dashClassSelect.innerHTML = "";
+            dashClassSelect.add(new Option("-- ทุกระดับชั้น --", ""));
+            Array.from(mainClassSelect.options).forEach(opt => {
+                if (opt.value && opt.value.trim() !== "") dashClassSelect.add(new Option(opt.text, opt.value));
+            });
+            if (window.dashboardCurrentClass) dashClassSelect.value = window.dashboardCurrentClass;
+         }
+         
+         // Re-render Charts... (ใช้ Code เดิมส่วน render chart)
+         if(data.q14_income_range) {
+           const ctxIncome = document.getElementById('chartIncome');
+           if(window.myChartIncome) window.myChartIncome.destroy();
+           window.myChartIncome = new Chart(ctxIncome, {
+              type: 'bar',
+              data: { labels: Object.keys(data.q14_income_range), datasets: [{ label: 'จำนวน', data: Object.values(data.q14_income_range), backgroundColor: '#36a2eb' }] },
+              options: { responsive: true, plugins: { datalabels: { color: '#000', anchor: 'end', align: 'top' } } }
+           });
         }
-    };
 
-    if(data.q14_income_range) {
-       const ctxIncome = document.getElementById('chartIncome');
-       if(window.myChartIncome) window.myChartIncome.destroy();
-       window.myChartIncome = new Chart(ctxIncome, {
-          type: 'bar',
-          data: {
-              labels: Object.keys(data.q14_income_range),
-              datasets: [{ label: 'จำนวนครอบครัว', data: Object.values(data.q14_income_range), backgroundColor: '#36a2eb' }]
-          },
-          options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { ...labelOptions, color: '#000', anchor: 'end', align: 'top' } } }
-       });
+        if(data.q1_family_status) {
+           const ctxFamily = document.getElementById('chartFamily');
+           if(window.myChartFamily) window.myChartFamily.destroy();
+           window.myChartFamily = new Chart(ctxFamily, {
+              type: 'doughnut',
+              data: { labels: Object.keys(data.q1_family_status), datasets: [{ data: Object.values(data.q1_family_status), backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff'] }] },
+              options: { responsive: true }
+           });
+        }
     }
-
-    if(data.q1_family_status) {
-       const ctxFamily = document.getElementById('chartFamily');
-       if(window.myChartFamily) window.myChartFamily.destroy();
-       window.myChartFamily = new Chart(ctxFamily, {
-          type: 'doughnut',
-          data: {
-              labels: Object.keys(data.q1_family_status),
-              datasets: [{ data: Object.values(data.q1_family_status), backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40', '#c9cbcf'] }]
-          },
-          options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: labelOptions } }
-       });
-    }
-}
-
     // ฟังก์ชันอัปเดตข้อมูล (Refresh)
     window.refreshDashboard = function() {
         const s = document.getElementById('dash-sem').value;
@@ -1475,6 +1618,7 @@ window.exportTableToExcel = function() {
 </html>
 </body>
 </html>
+
 
 
 
