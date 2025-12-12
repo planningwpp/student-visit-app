@@ -863,23 +863,26 @@
                     <table class="table table-bordered table-sm table-hover" style="font-size: 0.9rem;">
                         <thead class="table-light"><tr><th>รายการ</th><th class="text-center" style="width:100px">จำนวน</th><th class="text-center" style="width:100px">ร้อยละ</th></tr></thead>
                         <tbody>
-                            ${createTableRows('1. บ้านที่พักอาศัย', data.q3_house_ownership, data.total)}
-                            ${createTableRows('2. ลักษณะบ้าน', data.q3_house_type, data.total)}
-                            ${createTableRows('3. สภาพแวดล้อม', data.q3_environment, data.total)}
-                            ${createTableRows('4. อาศัยอยู่กับ', data.q1_lives_with, data.total)}
-                            ${createTableRows('5. อาชีพผู้ปกครอง', data.q1_guardian_occupation, data.total)}
-                            ${createTableRows('6. ที่ทำงานผู้ปกครอง', data.q3_parents_workplace, data.total)}
-                            ${createTableRows('9. ความสัมพันธ์', data.q8_family_rel, data.total)}
-                            ${createTableRows('10. ความรู้สึกผู้ปกครอง', data.q8_parent_feeling, data.total)}
-                            ${createTableRows('11. วิธีเลี้ยงดู', data.q8_parenting_method, data.total)}
-                            ${createTableRows('12. พฤติกรรม (ตอบได้หลายข้อ)', data.behaviors, data.total)}
-                            ${createTableRows('15. ความเพียงพอรายได้', data.q3_income_sufficiency, data.total)}
-                            ${createTableRows('17. เพื่อนเล่น', data.q8_friends_at_home, data.total)}
-                            ${createTableRows('18. การเดินทาง', data.q5_travel_method, data.total)}
-                            ${createTableRows('19. ความต้องการในอนาคต', data.q8_future_goal, data.total)}
-                            ${createTableRows('20. สนิทกับใคร', data.q8_closest_person, data.total)}
-                            ${createTableRows('21. ปรึกษาใคร', data.q8_consultant, data.total)}
-                        </tbody>
+                        ${createTableRows('1. บ้านที่พักอาศัย', data.q3_house_ownership, data.total)}
+                        ${createTableRows('2. ลักษณะบ้าน', data.q3_house_type, data.total)}
+                        ${createTableRows('3. สภาพแวดล้อม', data.q3_environment, data.total)}
+                        ${createTableRows('4. อาศัยอยู่กับ', data.q1_lives_with, data.total)}
+                        ${createTableRows('5. อาชีพผู้ปกครอง', data.q1_guardian_occupation, data.total)}
+                        ${createTableRows('6. ที่ทำงานผู้ปกครอง', data.q3_parents_workplace, data.total)}
+                        ${createTableRows('9. ความสัมพันธ์', data.q8_family_rel, data.total)}
+                        ${createTableRows('10. ความรู้สึกผู้ปกครอง', data.q8_parent_feeling, data.total)}
+                        ${createTableRows('11. วิธีเลี้ยงดู', data.q8_parenting_method, data.total)}
+                        ${createTableRows('12. พฤติกรรม (ตอบได้หลายข้อ)', data.behaviors, data.total)}
+                        ${createTableRows('15. ความเพียงพอรายได้', data.q3_income_sufficiency, data.total)}
+                        ${createTableRows('17. เพื่อนเล่น', data.q8_friends_at_home, data.total)}
+                        ${createTableRows('18. การเดินทาง', data.q5_travel_method, data.total)}
+                        ${createTableRows('19. ความต้องการในอนาคต', data.q8_future_goal, data.total)}
+                        ${createTableRows('20. สนิทกับใคร', data.q8_closest_person, data.total)}
+                        ${createTableRows('21. ปรึกษาใคร', data.q8_consultant, data.total)}
+                        
+                        ${createTableRows('22. ข้อเสนอแนะต่อโรงเรียน (จำนวนผู้ให้ข้อเสนอแนะ)', data.suggestions, data.total)}
+                        ${createTableRows('24. นักเรียนกลุ่มเสี่ยง (จำแนกตามพฤติกรรม)', data.risks.behavior_details, data.total)}
+                    </tbody>
                     </table>
                 </div>
              </div>
@@ -989,17 +992,61 @@
         else if (title.includes("18. การเดินทาง")) mapping = { "เดิน": "1. เดินเท้า", "จักรยาน": "2. จักรยาน", "รถจักรยานยนต์": "3. จักรยานยนต์", "รถโรงเรียน": "4. รถรับส่ง", "รถโดยสาร": "5. รถโดยสาร", "ผู้ปกครองมาส่ง": "6. ผู้ปกครองมาส่ง", "รถยนต์": "7. รถยนต์ส่วนตัว" };
         else if (title.includes("19. ความต้องการ")) mapping = { "ศึกษาต่อ": "1. ศึกษาต่อ", "ทำงาน": "2. ประกอบอาชีพ", "ประกอบอาชีพ": "2. ประกอบอาชีพ" };
         else if (title.includes("20.") || title.includes("21.")) mapping = { "พ่อ": "1. พ่อ", "แม่": "2. แม่", "พี่": "3. พี่", "น้อง": "4. น้อง", "ครูที่ปรึกษา": "5. ครูที่ปรึกษา", "เพื่อน": "6. เพื่อน", "ญาติ": "7. ญาติ" };
-        else { for (let k in obj) mapping[k] = k; }
-
-        let rows = `<tr class="table-secondary"><td colspan="3"><strong>${title}</strong></td></tr>`;
-        for (const [key, label] of Object.entries(mapping)) {
-            const val = obj[key] || 0;
-            if (val === 0) continue;
-            const pct = total > 0 ? ((val / total) * 100).toFixed(2) : 0;
-            rows += `<tr><td class="ps-4">${label}</td><td class="text-center">${val}</td><td class="text-center">${pct}%</td></tr>`;
-        }
-        return rows;
+        else if (title.includes("22. ข้อเสนอแนะ")) {
+        mapping = {
+            "Q9_Suggest_Behavior": "1. ด้านพฤติกรรมนักเรียน",
+            "Q9_Suggest_Learning": "2. ด้านการจัดการเรียนการสอน",
+            "Q9_Suggest_Env": "3. ด้านสถานที่และสิ่งแวดล้อม",
+            "Q9_Suggest_Teacher": "4. ด้านความเอาใจใส่ของครูที่ปรึกษา"
+        };
     }
+        // 🟢 เพิ่ม Mapping ใหม่สำหรับข้อ 24 (พฤติกรรมเสี่ยง)
+        else if (title.includes("24. นักเรียนกลุ่มเสี่ยง")) {
+        mapping = {
+            "Aggressive": "ก้าวร้าว",
+            "ADHD": "สมาธิสั้น",
+            "Smoking": "บุหรี่/บุหรี่ไฟฟ้า",
+            "Drugs": "สารเสพติด",
+            "Depression": "ภาวะซึมเศร้า",
+            "WrongDress": "แต่งกายผิดระเบียบ",
+            "Late": "มาสายเป็นประจำ",
+            "Alcohol": "แอลกอฮอล์",
+            "Stealing": "ลักขโมย",
+            "NoSocial": "ขาดทักษะสังคม",
+            "Absent": "ขาดเรียนเป็นประจำ",
+            "Sexual": "เพศสัมพันธ์",
+            "Fighting": "ทะเลาะวิวาท",
+            "GameAddict": "ติดเกม/ติดเพื่อน",
+            "FamilyProb": "ปัญหาครอบครัว",
+            "Other_Check": "อื่นๆ"
+        };
+    } 
+    // ...
+    else { for (let k in obj) mapping[k] = k; } // Fallback
+
+    let rows = `<tr class="table-secondary"><td colspan="3"><strong>${title}</strong></td></tr>`;
+    
+    // 1. วนลูปสร้างแถวตาม Mapping (แสดงหมด แม้เป็น 0)
+    for (const [key, label] of Object.entries(mapping)) {
+        const val = obj[key] || 0;
+        
+        // 🟢 จุดสำคัญ: ไม่มีการเช็ค continue ที่นี่ ทำให้โชว์เลข 0 ได้
+        
+        const pct = total > 0 ? ((val / total) * 100).toFixed(2) : 0;
+        rows += `<tr><td class="ps-4">${label}</td><td class="text-center">${val}</td><td class="text-center">${pct}%</td></tr>`;
+    }
+    
+    // 2. เก็บตก: เช็คว่ามีข้อมูล "อื่นๆ" ที่อยู่นอกเหนือ Mapping หรือไม่ 
+    // (เช่น คนกรอกข้อมูลแปลกๆ มา) ให้แสดงเฉพาะที่มีค่า > 0
+    for (const [k, v] of Object.entries(obj)) {
+        if (!mapping[k] && v > 0) {
+             const pct = total > 0 ? ((v / total) * 100).toFixed(2) : 0;
+             rows += `<tr><td class="ps-4 text-muted"><em>อื่นๆ: ${k}</em></td><td class="text-center">${v}</td><td class="text-center">${pct}%</td></tr>`;
+        }
+    }
+
+    return rows;
+}
 // ============================================================================
 // 🔴 ส่วนจัดการสมาชิกครัวเรือน (วางไว้ล่างสุดของไฟล์ ก่อนแท็กปิด script)
 // ============================================================================
@@ -1233,6 +1280,7 @@ window.removeHouseholdMember = function(index) {
 </html>
 </body>
 </html>
+
 
 
 
