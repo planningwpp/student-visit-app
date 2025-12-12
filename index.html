@@ -522,7 +522,7 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
     // --- ตั้งค่าระบบ ---
@@ -553,7 +553,7 @@
           showScreen('login'); 
           bindEventListeners(); 
           
-          // บังคับตั้งค่าเริ่มต้นเป็น 2/2568 อีกครั้งทาง JS
+          // [จุดแก้สำคัญ] ตั้งค่าเริ่มต้นเป็น เทอม 2 / 2568 ให้ตรงกับไฟล์ CSV
           if(el.semesterSelect) el.semesterSelect.value = "2"; 
           if(el.yearSelect) el.yearSelect.value = "2568";
           
@@ -561,7 +561,7 @@
       } catch (err) { alert("Init Error: " + err.message); if(SCREENS.loading) SCREENS.loading.style.display = 'none'; }
     });
 
-    // --- 1. โหลดข้อมูล (บังคับดึงใหม่ + แจ้งเตือนถ้าไม่เจอ) ---
+    // --- 1. โหลดข้อมูล (บังคับดึงใหม่เสมอ) ---
     async function handleStartForm() { 
        try { 
           gState.selectedStudentId = el.studentSelect.value; 
@@ -573,7 +573,7 @@
           
           if(el.studentNameHeader) el.studentNameHeader.textContent = `${gState.selectedStudentName} (${sem}/${yr})`; 
           
-          setLoading(true, 'กำลังดึงข้อมูลล่าสุด...'); 
+          setLoading(true, 'กำลังดึงข้อมูล...'); 
           
           const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentVisitData', recordId: gState.currentRecordId }) }); 
           const data = await res.json(); 
@@ -581,14 +581,18 @@
           if(data.studentMaster) { 
              loadStudentDataSuccess(data); 
           } else { 
-             // แจ้งเตือนชัดๆ ว่าไม่เจอข้อมูล
              Swal.fire({
                  icon: 'info', title: 'ไม่พบข้อมูลเก่า', 
-                 text: `ไม่พบข้อมูลของเทอม ${sem}/${yr} ระบบจะสร้างแบบฟอร์มเปล่าให้ครับ`,
+                 text: `ระบบกำลังสร้างแบบฟอร์มใหม่สำหรับเทอม ${sem}/${yr} ครับ`,
                  timer: 3000
              });
-             // สร้างข้อมูลเปล่า
-             loadStudentDataSuccess({ studentMaster: data.studentMaster || {}, visitData: {}, householdData: [] }); 
+             // สร้างโครงข้อมูลเปล่าๆ
+             const emptyData = { 
+                 studentMaster: data.studentMaster || {}, 
+                 visitData: {}, 
+                 householdData: [] 
+             };
+             loadStudentDataSuccess(emptyData); 
           } 
        } catch(e) { 
           console.error(e); 
@@ -608,41 +612,35 @@
       showScreen('form'); calculateProgress(); setLoading(false); 
     }
 
-    // --- 2. แสดงตาราง (กรองข้อมูลซ้ำ + เติมแถวที่ขาด) ---
+    // --- 2. แสดงตาราง (กรองข้อมูลซ้ำ + แยกอิสระ) ---
     function renderHouseholdTable(m) { 
       let rawData = Array.isArray(m) ? m : [];
       
-      // [จุดสำคัญ] กรองเอาเฉพาะข้อมูลบรรทัดล่าสุด (ถ้ามีซ้ำ)
+      // กรองเอาเฉพาะข้อมูลบรรทัดล่าสุด (Last Write Wins)
       const uniqueMap = new Map();
       rawData.forEach(item => {
-          // ใช้ MemberNo เป็นเกณฑ์ (ถ้ามีเลข 1 ซ้ำกัน 3 รอบ จะเอาอันสุดท้ายมาแสดง)
           const key = item.MemberNo ? String(item.MemberNo) : (item.MemberName || Math.random());
           uniqueMap.set(key, item);
       });
       gState.householdMembers = Array.from(uniqueMap.values());
       
-      // เรียงลำดับ 1, 2, 3
+      // เรียงลำดับ
       gState.householdMembers.sort((a, b) => (parseInt(a.MemberNo) || 99) - (parseInt(b.MemberNo) || 99));
 
       el.householdTbody.innerHTML = ''; 
       
-      // ถ้าไม่มีข้อมูลเลย ให้สร้างแถวรอ (1=นร, 2=พ่อ, 3=แม่)
+      // ถ้าไม่มีข้อมูลเลย ให้สร้างแถวรอ (1=นร, 2=พ่อ, 3=แม่) แต่เป็นค่าว่าง
       if (gState.householdMembers.length === 0) {
          const sm = gState.originalData.studentMaster || {};
          gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName || ''} ${sm.LastName || ''}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 });
          gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 2, MemberName: '', Relation: 'บิดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
          gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: '', Relation: 'มารดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
-      } else {
-         // ถ้ามีข้อมูลแต่ขาดพ่อ/แม่ ก็เติมให้ครบ
-         const hasStudent = gState.householdMembers.find(x => x.Relation === 'นักเรียน' || x.MemberNo == 1);
-         if (!hasStudent) gState.householdMembers.unshift({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: 'นักเรียน', Relation: 'นักเรียน', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
       }
 
       // วาดตาราง
       gState.householdMembers.forEach((x, i) => { 
-        x.MemberNo = i + 1; // รันเลขใหม่ให้สวยงาม
+        x.MemberNo = i + 1; 
         
-        // ดักจับชื่อตัวแปร (กันพลาดจาก CSV)
         const job = x.MemberOccupation || x.Occupation || '-';
         const edu = x.MemberEducation || x.Education || '-';
         const income = x.Income_Total || x.Income || 0;
@@ -670,7 +668,7 @@
       calculateHouseholdIncome(); 
     }
 
-    // --- 3. แก้ไขสมาชิก (บันทึกทันที) ---
+    // --- 3. แก้ไขสมาชิก (บันทึกเฉพาะตาราง ไม่ยุ่งกับ Section 1) ---
     window.editHouseholdMember = (index) => {
         const isNew = index === -1;
         const member = isNew ? { RecordID: gState.currentRecordId, IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE" } : { ...gState.householdMembers[index] };
@@ -678,10 +676,11 @@
         const jobOpts = ["ไม่ได้ทำงาน", "ข้าราชการ/รัฐวิสาหกิจ", "พนักงานบริษัท", "รับจ้าง", "รับจ้างทั่วไป", "เกษตรกร", "ค้าขาย", "ธุรกิจส่วนตัว", "อื่นๆ"];
         const eduOpts = ["ไม่ได้เรียน", "ประถมศึกษา", "มัธยมศึกษา", "ปวช./ปวส.", "ปริญญาตรี", "ปริญญาโท/เอก", "อื่นๆ"];
 
-        const checkOpt = (opts, val) => opts.includes(val) ? val : (val && val.trim() !== "" ? 'อื่นๆ' : '');
+        // ดึงค่าเก่า
         const mJob = member.MemberOccupation || member.Occupation || '';
         const mEdu = member.MemberEducation || member.Education || '';
 
+        const checkOpt = (opts, val) => opts.includes(val) ? val : (val && val.trim() !== "" ? 'อื่นๆ' : '');
         const currentJobSelect = checkOpt(jobOpts, mJob);
         const currentJobOther = currentJobSelect === 'อื่นๆ' || !jobOpts.includes(mJob) ? mJob : '';
         const currentEduSelect = checkOpt(eduOpts, mEdu);
@@ -711,7 +710,7 @@
                 if (isNew) gState.householdMembers.push(updatedMember); else gState.householdMembers[index] = updatedMember;
                 
                 trackChange('household_changed', true); 
-                renderHouseholdTable(gState.householdMembers); 
+                renderHouseholdTable(gState.householdMembers); // วาดใหม่
                 saveToLocalStorage(); 
             }
         });
@@ -721,7 +720,7 @@
        Swal.fire({ title: 'ลบรายการนี้?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', confirmButtonColor: '#d33' }).then((r) => { if (r.isConfirmed) { gState.householdMembers.splice(index, 1); trackChange('household_changed', true); renderHouseholdTable(gState.householdMembers); } });
     };
 
-    // --- 4. บันทึกข้อมูล (ส่งข้อมูลครบถ้วน) ---
+    // --- 4. บันทึกข้อมูล (แยกส่วน 1 กับ 2 ชัดเจน) ---
     async function handleSaveToSheets() {
         el.saveBtn.disabled = true; el.saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
         try {
@@ -743,7 +742,7 @@
                 await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'overwriteHouseholdData', recordId: gState.currentRecordId, members: membersToSend }) });
             }
             onSaveSuccess();
-            handleStartForm(); // บังคับโหลดข้อมูลใหม่ทันทีหลังบันทึก (เพื่อความชัวร์)
+            handleStartForm(); // บังคับโหลดข้อมูลใหม่ทันทีหลังบันทึก
         } catch (e) { handleError(e); } finally { if (el.saveBtn) { el.saveBtn.disabled = false; el.saveBtn.innerHTML = 'บันทึก (0)'; } }
     }
 
@@ -763,13 +762,18 @@
     function handleGPSButton() { navigator.geolocation.getCurrentPosition(p=>{ const [lat,lon]=[p.coords.latitude.toFixed(6),p.coords.longitude.toFixed(6)]; document.getElementById('Q6_Addr_Latitude').value=lat; document.getElementById('Q6_Addr_Longitude').value=lon; trackChange('Q6_Addr_Latitude',lat); trackChange('Q6_Addr_Longitude',lon); saveToLocalStorage(); }, e=>Swal.fire('Error',e.message,'error')); }
     function deleteImage(n) { document.getElementById(n).value=""; document.getElementById(`wrapper_${n}`).style.display='none'; trackChange(n,""); saveToLocalStorage(); }
     async function handleFileUpload(e) { const f=e.target.files[0]; if(!f)return; const id=e.target.dataset.targetHidden; const prev=document.getElementById(`preview_${id}`), wrap=document.getElementById(`wrapper_${id}`), del=wrap.querySelector('.btn-delete-img'); wrap.style.display='inline-block'; prev.style.display='block'; prev.src='https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif'; del.style.display='none'; try { const fd=new FormData(); fd.append('file',f); fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET); const res=await fetch(CLOUDINARY_URL,{method:'POST',body:fd}); const d=await res.json(); prev.src=d.secure_url; del.style.display='block'; document.getElementById(id).value=d.secure_url; trackChange(id,d.secure_url); saveToLocalStorage(); } catch(e){ handleError(e); } }
-    function onSaveSuccess() { Swal.fire('สำเร็จ','บันทึกข้อมูลเรียบร้อยแล้ว','success'); gState.changesToPush={}; }
-    function loadFromLocalStorage() { return null; } // ปิด LocalStorage
+    function calculateHouseholdIncome() { const t=gState.householdMembers.length; const s=gState.householdMembers.reduce((a,b)=>a+(parseFloat(b.Income_Total)||0),0); el.totalMembersInput.value=t; el.totalIncomeInput.value=s; el.perCapitaIncomeInput.value=t>0?(s/t).toFixed(2):0; }
+    function attachFormListeners() { document.querySelectorAll('#visit-form input, select, textarea').forEach(e=>{ if(e.type!='file') e.addEventListener('change', (ev)=>{ trackChange(ev.target.name, ev.target.type=='checkbox'?(ev.target.checked?"TRUE":"FALSE"):ev.target.value); saveToLocalStorage(); calculateProgress(); }); }); }
+    function trackChange(n,v) { if(!n)return; if(n=='household_changed')gState.changesToPush['householdData']=true; else gState.changesToPush[n]=v; el.saveBtn.disabled=false; el.saveBtn.innerHTML=`บันทึก (${Object.keys(gState.changesToPush).length})`; }
+    function saveToLocalStorage() { const d={studentMaster:gState.originalData.studentMaster, visitData:{}, householdData:gState.householdMembers}; const fd=new FormData(document.getElementById('visit-form')); fd.forEach((v,k)=>d.visitData[k]=v); document.querySelectorAll('input[type=checkbox]').forEach(c=>d.visitData[c.name]=c.checked?"TRUE":"FALSE"); localStorage.setItem(`visit_${gState.currentRecordId}`, JSON.stringify(d)); }
+    function loadFromLocalStorage() { const d=localStorage.getItem(`visit_${gState.currentRecordId}`); return d?JSON.parse(d):null; }
+    function onSaveSuccess() { setLoading(false); Swal.fire('สำเร็จ','','success'); gState.changesToPush={}; gState.originalData=JSON.parse(JSON.stringify(loadFromLocalStorage())); }
   </script>
 </body>
 </html>
 </body>
 </html>
+
 
 
 
