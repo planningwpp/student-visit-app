@@ -825,56 +825,62 @@
         // 1. เมนู "เลือกนักเรียน" (Home)
         if (el.navHomeLink) el.navHomeLink.onclick = (e) => {
             e.preventDefault();
-            // ถ้าอยู่ในหน้าฟอร์ม ให้เคลียร์ก่อนกลับ
             if (SCREENS.form.style.display === 'block') handleBackToSelection();
             else showScreen('selection');
         };
 
-        // 2. เมนู "Dashboard" (จุดที่แก้ไข)
+        // 2. เมนู "Dashboard"
         if (el.navDashboardLink) el.navDashboardLink.onclick = (e) => {
             e.preventDefault();
-            
-            // สร้างคำสั่งเตรียมไว้: ไปหน้า Dashboard และโหลดข้อมูล
             const goToDashboard = () => {
                 showScreen('dashboard');
-                // เรียกฟังก์ชันโหลดข้อมูล (ถ้ามี)
-                if (typeof loadDashboardData === 'function') {
-                    loadDashboardData(); 
-                }
+                if (typeof loadDashboardData === 'function') loadDashboardData();
             };
-
-            // เช็คว่าค้างหน้าฟอร์มอยู่ไหม
-            if (SCREENS.form.style.display === 'block') {
-                handleBackToSelection(goToDashboard); // เคลียร์ฟอร์ม -> แล้วไป Dashboard
-            } else {
-                goToDashboard(); // ไป Dashboard เลย
-            }
+            if (SCREENS.form.style.display === 'block') handleBackToSelection(goToDashboard);
+            else goToDashboard();
         };
 
         // 3. เมนู "พิมพ์รายงาน" (Print)
         if (el.navPrintLink) el.navPrintLink.onclick = (e) => {
             e.preventDefault();
-            
             const goToPrint = () => {
                 showScreen('print');
-                // ก๊อปปี้ตัวเลือกห้องมาใส่หน้าพิมพ์
                 if (el.classSelect.value) {
                     el.printClassSelect.innerHTML = el.classSelect.innerHTML;
                     el.printClassSelect.value = el.classSelect.value;
                 }
             };
-
-            if (SCREENS.form.style.display === 'block') {
-                handleBackToSelection(goToPrint);
-            } else {
-                goToPrint();
-            }
+            if (SCREENS.form.style.display === 'block') handleBackToSelection(goToPrint);
+            else goToPrint();
         };
 
-        // 4. ปุ่ม Logout
-        if (el.navLogoutBtn) el.navLogoutBtn.onclick = handleLogout;
+        // 🟢 4. เมนู "สถานะรายห้อง" (Status) - เพิ่มใหม่ตรงนี้ครับ
+        const navStatus = document.getElementById('nav-status-link');
+        if (navStatus) navStatus.onclick = (e) => {
+            e.preventDefault();
+            const goToStatus = () => {
+                showScreen('status');
+                // ก๊อปปี้ตัวเลือกห้องมาใส่ Dropdown หน้านี้
+                const src = document.getElementById('class-select');
+                const dest = document.getElementById('status-class-select');
+                if(src && dest && dest.options.length <= 1) {
+                    dest.innerHTML = src.innerHTML;
+                }
+            };
+            if (SCREENS.form.style.display === 'block') handleBackToSelection(goToStatus);
+            else goToStatus();
+        };
 
-        // 5. ปุ่ม Login
+        // ปุ่มค้นหาในหน้า Status
+        const btnLoadStatus = document.getElementById('btn-load-status');
+        if (btnLoadStatus && typeof loadClassStatus === 'function') {
+            btnLoadStatus.onclick = loadClassStatus;
+        }
+
+        // -----------------------------------------------------------
+
+        // 5. ปุ่ม Logout / Login
+        if (el.navLogoutBtn) el.navLogoutBtn.onclick = handleLogout;
         if (el.loginForm) el.loginForm.onsubmit = handleManualLogin;
 
         // 6. Dropdown เลือกห้อง/นักเรียน
@@ -889,13 +895,9 @@
         };
         if (el.saveBtn) el.saveBtn.onclick = handleSaveToSheets;
 
-        // 8. ปุ่มอื่นๆ (GPS, เพิ่มสมาชิก, ฯลฯ)
+        // 8. ปุ่มอื่นๆ (GPS, เพิ่มสมาชิก)
         if (el.gpsBtn) el.gpsBtn.onclick = handleGPSButton;
-        
-        // ปุ่มเพิ่มสมาชิก (ผูกกับฟังก์ชัน Global)
-        if (el.addMemberBtn) {
-            el.addMemberBtn.onclick = () => window.editHouseholdMember(-1);
-        }
+        if (el.addMemberBtn) el.addMemberBtn.onclick = () => window.editHouseholdMember(-1);
 
         // 9. ปุ่มหน้าพิมพ์รายงาน
         if (el.loadPrintListBtn) el.loadPrintListBtn.onclick = handleLoadPrintList;
@@ -903,7 +905,7 @@
         if (el.printTableBody) el.printTableBody.onclick = handlePrintTableClick;
         if (el.backFromPrintBtn) el.backFromPrintBtn.onclick = () => showScreen('selection');
 
-        // 10. เมนู Sidebar ด้านซ้าย
+        // 10. Sidebar
         el.sidebarLinks.forEach(link => {
             link.onclick = (e) => {
                 e.preventDefault();
@@ -911,7 +913,7 @@
             };
         });
 
-        // 11. Event Change สำหรับ Input ต่างๆ (Logic ซ่อน/แสดง)
+        // 11. Event Change สำหรับ Input (Logic ซ่อน/แสดง)
         if (el.livesWithSelect) el.livesWithSelect.onchange = (e) => el.q4Content.style.display = (e.target.value === 'ครัวเรือนสถาบัน') ? 'block' : 'none';
         
         el.q3_1_Status.forEach(r => r.onchange = (e) => el.q3_1_SubOptions.style.display = (e.target.value === 'มี') ? 'block' : 'none');
@@ -989,9 +991,6 @@
             });
         }
     }
-    
-   
-    
     async function handleLoadPrintList() { const cls = el.printClassSelect.value; if(!cls) return Swal.fire('เตือน','เลือกชั้น','warning'); setLoading(true); el.printListContainer.style.display='none'; el.printTableBody.innerHTML=''; try { const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentsByClass', className: cls }) }); const d = await res.json(); if(d && Array.isArray(d)) { d.forEach(s=>{ const rid = `${s.id}_${el.printSemester.value}_${el.printYear.value}`; el.printTableBody.innerHTML += `<tr><td class="text-center">${s.studentNumber}</td><td>${s.name}</td><td class="text-center"><button class="btn btn-sm btn-danger print-single-btn" data-rid="${rid}" data-name="${s.name}">PDF</button></td></tr>`; }); el.printListContainer.style.display='block'; } } catch(e){handleError(e);} finally{setLoading(false);} }
     function handlePrintTableClick(e) { const btn=e.target.closest('.print-single-btn'); if(btn) generateSinglePDF(btn.dataset.rid, btn.dataset.name); }
     async function handleBatchPrint() { const btns = document.querySelectorAll('.print-single-btn'); if(btns.length==0)return; if((await Swal.fire({title:`พิมพ์ ${btns.length} คน?`, showCancelButton:true})).isConfirmed) { for(const btn of btns) { btn.scrollIntoView({behavior:'smooth',block:'center'}); btn.disabled=true; btn.innerHTML='...'; try { await generateSinglePDF(btn.dataset.rid, btn.dataset.name, true); btn.className='btn btn-sm btn-success'; btn.innerHTML='OK'; } catch { btn.className='btn btn-sm btn-secondary'; btn.innerHTML='X'; } await new Promise(r=>setTimeout(r,1000)); } Swal.fire('เสร็จสิ้น','','success'); } }
@@ -1650,6 +1649,7 @@ window.exportTableToExcel = function() {
 </html>
 </body>
 </html>
+
 
 
 
