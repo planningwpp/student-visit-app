@@ -176,7 +176,7 @@
             <h4 class="mb-4 text-primary"><i class="bi bi-list-task"></i> ติดตามสถานะการเยี่ยมบ้าน</h4>
             
             <div class="row g-2 mb-3 bg-light p-3 rounded align-items-end">
-               <div class="col-md-4">
+               <div class="col-md-3">
                   <label class="fw-bold small">ระดับชั้น</label>
                   <select id="status-class-select" class="form-select form-select-sm"></select>
                </div>
@@ -188,39 +188,45 @@
                   </div>
                </div>
                <div class="col-md-3">
+                  <label class="fw-bold small text-success">กรองรายได้ครอบครัว</label>
+                  <select id="status-filter-income" class="form-select form-select-sm" onchange="filterStatusTable()">
+                      <option value="all">-- ทั้งหมด --</option>
+                      <option value="low">น้อยกว่า 30,000 (ยากจน)</option>
+                      <option value="mid">30,000 - 100,000</option>
+                      <option value="high">มากกว่า 100,000</option>
+                  </select>
+               </div>
+               <div class="col-md-3">
                   <button id="btn-load-status" class="btn btn-primary btn-sm w-100"><i class="bi bi-search"></i> ค้นหา</button>
                </div>
             </div>
 
             <div id="status-summary-panel" style="display:none;">
-                <div class="d-flex gap-2 mb-3 overflow-auto pb-2">
-                    <button class="btn btn-outline-secondary btn-sm active" onclick="filterStatusTable('all')">ทั้งหมด (<span id="cnt-all">0</span>)</button>
-                    <button class="btn btn-outline-success btn-sm" onclick="filterStatusTable('visited')"><i class="bi bi-check-circle"></i> เยี่ยมแล้ว (<span id="cnt-done">0</span>)</button>
-                    <button class="btn btn-outline-secondary btn-sm" onclick="filterStatusTable('pending')"><i class="bi bi-hourglass"></i> ยังไม่เยี่ยม (<span id="cnt-pending">0</span>)</button>
-                    <button class="btn btn-outline-danger btn-sm" onclick="filterStatusTable('risk')"><i class="bi bi-exclamation-triangle"></i> กลุ่มเสี่ยง (<span id="cnt-risk">0</span>)</button>
+                <div class="d-flex gap-2 mb-3 overflow-auto pb-2 border-bottom">
+                    <button id="btn-filter-all" class="btn btn-outline-secondary btn-sm active" onclick="setFilterType('all')">ทั้งหมด (<span id="cnt-all">0</span>)</button>
+                    <button id="btn-filter-visited" class="btn btn-outline-success btn-sm" onclick="setFilterType('visited')"><i class="bi bi-check-circle"></i> เยี่ยมแล้ว (<span id="cnt-done">0</span>)</button>
+                    <button id="btn-filter-pending" class="btn btn-outline-secondary btn-sm" onclick="setFilterType('pending')"><i class="bi bi-hourglass"></i> ยังไม่เยี่ยม (<span id="cnt-pending">0</span>)</button>
+                    <button id="btn-filter-risk" class="btn btn-outline-danger btn-sm" onclick="setFilterType('risk')"><i class="bi bi-exclamation-triangle"></i> กลุ่มเสี่ยง (<span id="cnt-risk">0</span>)</button>
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover align-middle" id="status-table">
-                        <thead class="table-light text-center">
+                    <table class="table table-bordered table-hover align-middle table-sm" id="status-table" style="font-size: 0.9rem;">
+                        <thead class="table-light text-center align-middle">
                             <tr>
-                                <th width="50">เลขที่</th>
+                                <th width="40">#</th>
                                 <th>ชื่อ-สกุล</th>
                                 <th width="100">สถานะ</th>
-                                <th width="120">กลุ่มเสี่ยง</th>
-                                <th width="100">วันที่</th>
-                                <th width="80">จัดการ</th>
+                                <th width="100" class="text-primary">รายได้รวม<br>(บาท/เดือน)</th>
+                                <th width="100" class="text-primary">เฉลี่ย/คน<br>(บาท/เดือน)</th>
+                                <th width="80">บัตร<br>สวัสดิการ</th>
+                                <th width="90">วันที่</th>
+                                <th width="70">Action</th>
                             </tr>
                         </thead>
                         <tbody id="status-tbody"></tbody>
                     </table>
                 </div>
             </div>
-
-          </div>
-        </div>
-      </div>
-    </div>
 
     <div id="main-form-screen" class="container-fluid">
       <header class="d-flex flex-wrap justify-content-between align-items-center p-3 bg-white shadow-sm mb-3">
@@ -990,6 +996,48 @@
                 if (!e.target.checked) othRiskText.value = '';
             });
         }
+    // -------------------------------------------------------------
+    // 🔴 แก้ไขฟังก์ชันเปิดฟอร์มจากหน้าสถานะ (วางใน bindEventListeners)
+    // -------------------------------------------------------------
+    window.openStudentForm = async function(sid, sname) {
+        console.log("Opening form for:", sid, sname); // เช็คว่ากดติดไหม
+
+        // 1. ตั้งค่าตัวแปรระบบ (บังคับค่าเลย ไม่ต้องอ่านจาก Dropdown)
+        gState.selectedStudentId = sid;
+        gState.selectedStudentName = sname;
+        
+        // อ่านปี/เทอม จากหน้าสถานะ
+        const sem = document.getElementById('status-sem')?.value || "2";
+        const yr = document.getElementById('status-year')?.value || "2568";
+        
+        gState.currentRecordId = `${sid}_${sem}_${yr}`;
+
+        // อัปเดตหัวกระดาษหน้าฟอร์ม
+        if(el.studentNameHeader) el.studentNameHeader.textContent = `${sname} (${sem}/${yr})`;
+
+        // 2. ดึงข้อมูลจาก Server โดยตรง (Bypass handleStartForm)
+        setLoading(true, 'กำลังดึงข้อมูล...');
+        try {
+            const res = await fetch(GAS_API_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({ action: 'getStudentVisitData', recordId: gState.currentRecordId }) 
+            });
+            const data = await res.json();
+
+            // 3. ส่งข้อมูลไปแสดงผล
+            if (data.studentMaster) {
+                loadStudentDataSuccess(data); // เรียกฟังก์ชันแสดงผลหลัก
+            } else {
+                // กรณีเริ่มทำใหม่
+                const emptyData = { studentMaster: data.studentMaster || {}, visitData: {}, householdData: [] };
+                loadStudentDataSuccess(emptyData);
+            }
+        } catch (e) {
+            handleError(e);
+        }
+    };
+    
+    
     }
     async function handleLoadPrintList() { const cls = el.printClassSelect.value; if(!cls) return Swal.fire('เตือน','เลือกชั้น','warning'); setLoading(true); el.printListContainer.style.display='none'; el.printTableBody.innerHTML=''; try { const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentsByClass', className: cls }) }); const d = await res.json(); if(d && Array.isArray(d)) { d.forEach(s=>{ const rid = `${s.id}_${el.printSemester.value}_${el.printYear.value}`; el.printTableBody.innerHTML += `<tr><td class="text-center">${s.studentNumber}</td><td>${s.name}</td><td class="text-center"><button class="btn btn-sm btn-danger print-single-btn" data-rid="${rid}" data-name="${s.name}">PDF</button></td></tr>`; }); el.printListContainer.style.display='block'; } } catch(e){handleError(e);} finally{setLoading(false);} }
     function handlePrintTableClick(e) { const btn=e.target.closest('.print-single-btn'); if(btn) generateSinglePDF(btn.dataset.rid, btn.dataset.name); }
@@ -1560,9 +1608,25 @@ window.exportTableToExcel = function() {
     }
 
     // 2. แสดงตาราง
-    let currentStatusData = []; // เก็บข้อมูลไว้กรอง
+    // =========================================================
+    // 🔴 ส่วน Logic หน้าสถานะรายห้อง (Status Monitor) - อัปเดตใหม่
+    // =========================================================
+
+    // ตัวแปรเก็บประเภทการกรองปัจจุบัน (all, visited, pending, risk)
+    let currentFilterType = 'all';
+
+    function setFilterType(type) {
+        currentFilterType = type;
+        // จัดการ class active ปุ่ม
+        document.querySelectorAll('#status-summary-panel button').forEach(b => b.classList.remove('active', 'btn-primary', 'btn-success', 'btn-danger'));
+        const btn = document.getElementById(`btn-filter-${type}`);
+        if(btn) btn.classList.add('active', type==='visited'?'btn-success':(type==='risk'?'btn-danger':'btn-primary'));
+        
+        filterStatusTable(); // เรียกกรองข้อมูล
+    }
+
     function renderStatusTable(data) {
-        currentStatusData = data;
+        currentStatusData = data; // เก็บข้อมูลดิบไว้กรอง
         const tbody = document.getElementById('status-tbody');
         tbody.innerHTML = '';
 
@@ -1574,27 +1638,42 @@ window.exportTableToExcel = function() {
             if(s.isRisk) cRisk++;
 
             const tr = document.createElement('tr');
-            tr.dataset.status = s.status; // ไว้กรอง
-            tr.dataset.risk = s.isRisk ? 'true' : 'false';
-
-            const statusBadge = s.status === 'visited' 
-                ? `<span class="badge bg-success"><i class="bi bi-check-lg"></i> เรียบร้อย</span>` 
-                : `<span class="badge bg-secondary">รอเยี่ยม</span>`;
             
-            const riskBadge = s.isRisk 
-                ? `<span class="badge bg-danger text-wrap">${s.riskText || 'เสี่ยง'}</span>` 
-                : (s.status === 'visited' ? `<span class="text-muted small">-</span>` : ``);
+            // ใส่ Dataset ไว้สำหรับ Filter
+            tr.dataset.status = s.status;
+            tr.dataset.risk = s.isRisk ? 'true' : 'false';
+            tr.dataset.income = s.incomeTotal || 0; // รายได้รวม
 
-            // ปุ่มจัดการ: ถ้าเยี่ยมแล้วให้กดดู/แก้ ถ้ายังให้กดเยี่ยม
+            // Badge สถานะ (ดูจากวันที่)
+            const statusBadge = s.status === 'visited' 
+                ? `<span class="badge bg-success"><i class="bi bi-check-lg"></i> เยี่ยมแล้ว</span>` 
+                : `<span class="badge bg-secondary">รอ</span>`;
+            
+            // Badge บัตรสวัสดิการ
+            const welfareBadge = s.hasWelfare 
+                ? `<span class="badge bg-info text-dark" title="มีบัตรสวัสดิการ">มี</span>` 
+                : `<span class="text-muted text-center d-block">-</span>`;
+
+            // ไฮไลท์รายได้น้อย (สีแดงถ้าเฉลี่ยน้อยกว่า 3000)
+            const perCapitaStyle = (s.incomePerCapita > 0 && s.incomePerCapita < 3000) ? 'text-danger fw-bold' : '';
+
+            // ปุ่ม Action
             const btnAction = s.status === 'visited'
-                ? `<button class="btn btn-sm btn-outline-primary" onclick="openStudentForm('${s.id}', '${s.name}')"><i class="bi bi-pencil-square"></i> แก้ไข</button>`
-                : `<button class="btn btn-sm btn-primary" onclick="openStudentForm('${s.id}', '${s.name}')"><i class="bi bi-house-door"></i> เยี่ยม</button>`;
+                ? `<button class="btn btn-sm btn-outline-primary py-0" onclick="openStudentForm('${s.id}', '${s.name}')">แก้</button>`
+                : `<button class="btn btn-sm btn-primary py-0" onclick="openStudentForm('${s.id}', '${s.name}')">เยี่ยม</button>`;
 
             tr.innerHTML = `
                 <td class="text-center">${s.number}</td>
-                <td>${s.name}</td>
+                <td>
+                    ${s.name} 
+                    ${s.isRisk ? '<i class="bi bi-exclamation-circle-fill text-danger ms-1" title="กลุ่มเสี่ยง"></i>' : ''}
+                </td>
                 <td class="text-center">${statusBadge}</td>
-                <td class="text-center">${riskBadge}</td>
+                
+                <td class="text-end">${s.incomeTotal > 0 ? Number(s.incomeTotal).toLocaleString() : '-'}</td>
+                <td class="text-end ${perCapitaStyle}">${s.incomePerCapita > 0 ? Number(s.incomePerCapita).toLocaleString() : '-'}</td>
+                <td class="text-center">${welfareBadge}</td>
+                
                 <td class="text-center small">${s.lastUpdated}</td>
                 <td class="text-center">${btnAction}</td>
             `;
@@ -1606,49 +1685,44 @@ window.exportTableToExcel = function() {
         document.getElementById('cnt-done').innerText = cDone;
         document.getElementById('cnt-pending').innerText = cPending;
         document.getElementById('cnt-risk').innerText = cRisk;
+        
+        // เรียกกรองทันทีเผื่อมีค่าค้างไว้
+        filterStatusTable();
     }
 
-    // 3. ฟังก์ชันกรอง (Filter)
-    window.filterStatusTable = (type) => {
+    // ฟังก์ชันกรองข้อมูล (รวมทั้งสถานะ และ รายได้)
+    window.filterStatusTable = () => {
+        const incomeFilter = document.getElementById('status-filter-income').value; // all, low, mid, high
         const rows = document.querySelectorAll('#status-tbody tr');
+
         rows.forEach(r => {
-            let show = false;
-            if(type === 'all') show = true;
-            else if(type === 'visited' && r.dataset.status === 'visited') show = true;
-            else if(type === 'pending' && r.dataset.status === 'pending') show = true;
-            else if(type === 'risk' && r.dataset.risk === 'true') show = true;
-            
+            let show = true;
+            const income = parseFloat(r.dataset.income);
+
+            // 1. กรองตามสถานะ (Tab)
+            if(currentFilterType === 'visited' && r.dataset.status !== 'visited') show = false;
+            if(currentFilterType === 'pending' && r.dataset.status !== 'pending') show = false;
+            if(currentFilterType === 'risk' && r.dataset.risk !== 'true') show = false;
+
+            // 2. กรองตามรายได้ (Dropdown)
+            if (show) {
+                if (incomeFilter === 'low' && income >= 30000) show = false; // น้อยกว่า 30k
+                if (incomeFilter === 'mid' && (income < 30000 || income > 100000)) show = false;
+                if (incomeFilter === 'high' && income <= 100000) show = false;
+            }
+
             r.style.display = show ? '' : 'none';
         });
-        
-        // จัดการ class active ที่ปุ่ม
-        document.querySelectorAll('#status-summary-panel button').forEach(b => b.classList.remove('active', 'btn-primary', 'btn-success', 'btn-danger'));
-        // (ส่วนตกแต่งปุ่มให้สวยงามตามสถานะที่เลือก อาจจะละไว้ก่อนได้)
     };
+    // =========================================================
 
-    // 4. ฟังก์ชันเปิดฟอร์มจากหน้านี้
-    window.openStudentForm = (sid, sname) => {
-        // ตั้งค่าตัวแปรระบบให้เหมือนเลือกจากหน้าแรก
-        el.classSelect.value = document.getElementById('status-class-select').value;
-        
-        // ต้องรอโหลดรายชื่อนักเรียนเข้า Dropdown หลักก่อน (ถ้ายังไม่มี) 
-        // แต่วิธีลัดคือ ยัดค่าลงไปเลยถ้าเรารู้ ID
-        
-        // อัปเดต State
-        gState.selectedStudentId = sid;
-        gState.selectedStudentName = sname;
-        el.semesterSelect.value = document.getElementById('status-sem').value;
-        el.yearSelect.value = document.getElementById('status-year').value;
-        
-        // เรียกฟังก์ชันเริ่มทำแบบฟอร์ม
-        handleStartForm();
-    };
     
   </script>
 </body>
 </html>
 </body>
 </html>
+
 
 
 
