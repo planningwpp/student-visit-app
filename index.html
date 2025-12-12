@@ -530,7 +530,7 @@
     const CLOUDINARY_UPLOAD_PRESET = "ml_default"; 
     const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
     
-    // 🔴🔴 ตรวจสอบ URL ของคุณอีกครั้ง 🔴🔴
+    // 🔴 ตรวจสอบ URL ของคุณอีกครั้ง 🔴
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyZBFYUglarDmKqt_uvubHyjbd7cByHviNcfwOhMWCVT7eDwQyfEwEoMR2ISoMGgE-h/exec"; 
 
     // ตัวแปรระบบ
@@ -553,66 +553,119 @@
           showScreen('login'); 
           bindEventListeners(); 
           
-          // --- [แก้บัค] ตั้งค่าเริ่มต้นเป็น เทอม 2 / 2568 ---
-          if(el.semesterSelect) el.semesterSelect.value = "2"; 
+          // ตั้งค่าเริ่มต้น ภาคเรียนที่ 2 ปี 2568
+          if(el.semesterSelect) el.semesterSelect.value = "2";
           if(el.yearSelect) el.yearSelect.value = "2568";
           
           try { attachFormListeners(); } catch(e) { console.warn("Attach warning", e); }
       } catch (err) { alert("Init Error: " + err.message); if(SCREENS.loading) SCREENS.loading.style.display = 'none'; }
     });
 
-    // --- 1. แสดงตาราง (ฉบับแก้บัคการดึงข้อมูล) ---
-    function renderHouseholdTable(m) {
-      // 1. รับข้อมูลดิบมาก่อน
-      let rawData = (Array.isArray(m) && m.length > 0) ? m : [];
-
-      // -------------------------------------------------------------
-      // 🌟 จุดแก้บัค: กรองเอาเฉพาะ "ข้อมูลล่าสุด" ของสมาชิกแต่ละคน
-      // -------------------------------------------------------------
-      const uniqueMap = new Map();
-      
-      // วนลูปข้อมูลทั้งหมด
-      rawData.forEach(item => {
-          // สร้างคีย์สำหรับระบุตัวตน (ใช้ MemberNo เป็นหลัก)
-          // ถ้าไม่มี MemberNo ให้ใช้ ชื่อ หรือ ความสัมพันธ์ แทน
-          let key = item.MemberNo;
-          if (!key || key === 'undefined') key = item.Relation + '_' + item.MemberName;
+    // --- 1. โหลดข้อมูล (บังคับโหลดใหม่จาก Server เสมอ) ---
+    async function handleStartForm() { 
+       try { 
+          gState.selectedStudentId = el.studentSelect.value; 
+          gState.selectedStudentName = el.studentSelect.options[el.studentSelect.selectedIndex].text; 
           
-          // เทคนิค: ใส่ลงใน Map (ถ้าคีย์ซ้ำ ข้อมูลใหม่จะทับข้อมูลเก่าเสมอ)
-          // ทำให้เราได้ข้อมูลชุดล่าสุดท้ายสุดครับ
-          uniqueMap.set(String(key), item);
-      });
+          const sem = el.semesterSelect.value || "2";
+          const yr = el.yearSelect.value || "2568";
+          gState.currentRecordId = `${gState.selectedStudentId}_${sem}_${yr}`; 
+          
+          if(el.studentNameHeader) el.studentNameHeader.textContent = `${gState.selectedStudentName} (${sem}/${yr})`; 
+          
+          // [แก้บัค] ไม่ใช้ LocalStorage แล้ว เพื่อให้ได้ข้อมูลล่าสุดจาก Sheets เสมอ
+          setLoading(true, 'กำลังดึงข้อมูลล่าสุด...'); 
+          
+          const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentVisitData', recordId: gState.currentRecordId }) }); 
+          const data = await res.json(); 
+          
+          if(data.studentMaster) { 
+             loadStudentDataSuccess(data); 
+          } else { 
+             // ถ้าไม่เจอ ให้ลองดึงแค่ข้อมูลตั้งต้นนักเรียนมาสร้างฟอร์มเปล่า
+             Swal.fire({
+                 icon: 'info', title: 'เริ่มบันทึกใหม่', 
+                 text: 'ไม่พบข้อมูลเดิมในเทอมนี้ ระบบจะสร้างแบบฟอร์มใหม่ให้ครับ',
+                 timer: 2000, showConfirmButton: false
+             });
+             // สร้างโครงข้อมูลเปล่าๆ แต่มีข้อมูลนักเรียน
+             const emptyData = { 
+                 studentMaster: data.studentMaster || {}, // กรณี GAS ส่ง master มาแต่ไม่มี visit
+                 visitData: {}, 
+                 householdData: [] 
+             };
+             // ถ้า GAS ไม่ส่งอะไรมาเลยจริงๆ ให้ดึงจาก cache master เก่า (ถ้ามี) หรือ error
+             loadStudentDataSuccess(data.studentMaster ? data : emptyData); 
+          } 
+       } catch(e) { 
+          console.error(e); 
+          Swal.fire('ข้อผิดพลาด', 'ไม่สามารถดึงข้อมูลได้: ' + e.message, 'error');
+          setLoading(false);
+       } 
+    }
+
+    function loadStudentDataSuccess(d) { 
+      gState.originalData = JSON.parse(JSON.stringify(d)); 
+      prefillForm(d.studentMaster, d.visitData); 
       
-      // แปลงกลับมาเป็น Array เพื่อเตรียมแสดงผล
+      // แปลงข้อมูล Household
+      let hData = d.householdData;
+      if (typeof hData === 'string') { try { hData = JSON.parse(hData); } catch(e) { hData = []; } }
+      
+      renderHouseholdTable(hData || []); 
+      showScreen('form'); calculateProgress(); setLoading(false); 
+    }
+
+    // --- 2. แสดงตาราง (กรองข้อมูลซ้ำ + เติมพ่อแม่ถ้าหาย) ---
+    function renderHouseholdTable(m) { 
+      let rawData = Array.isArray(m) ? m : [];
+      
+      // [แก้บัค] กรองเอาข้อมูลล่าสุด (ถ้ามีซ้ำ) โดยใช้ MemberNo เป็นหลัก
+      const uniqueMap = new Map();
+      rawData.forEach(item => {
+          // ใช้ MemberNo หรือ ชื่อ เป็นคีย์ (ถ้า MemberNo เป็น 1, 2, 3 ซ้ำกัน จะเอาอันหลังสุดมาทับ)
+          const key = item.MemberNo ? String(item.MemberNo) : (item.MemberName || Math.random());
+          uniqueMap.set(key, item);
+      });
       gState.householdMembers = Array.from(uniqueMap.values());
       
-      // เรียงลำดับตามเลขที่สมาชิก (MemberNo) 1, 2, 3...
+      // เรียงลำดับ 1, 2, 3...
       gState.householdMembers.sort((a, b) => (parseInt(a.MemberNo) || 99) - (parseInt(b.MemberNo) || 99));
-      // -------------------------------------------------------------
 
-      el.householdTbody.innerHTML = '';
+      el.householdTbody.innerHTML = ''; 
       
-      // กรณีไม่มีข้อมูลเลยจริงๆ (เพิ่งเริ่มเยี่ยม) -> สร้างแถวรอ
-      if (gState.householdMembers.length === 0 && gState.originalData.studentMaster) {
-         const sm = gState.originalData.studentMaster;
-         // 1. นักเรียน
-         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName} ${sm.LastName}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 }); 
-         // 2. บิดา (ว่าง)
-         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 2, MemberName: '', Relation: 'บิดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 }); 
-         // 3. มารดา (ว่าง)
-         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: '', Relation: 'มารดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 }); 
+      // ถ้าไม่มีข้อมูล หรือ ขาดพ่อ/แม่ -> ให้เติมแถวว่างรอไว้เลย
+      const hasStudent = gState.householdMembers.find(x => x.Relation === 'นักเรียน' || x.MemberNo == 1);
+      const hasDad = gState.householdMembers.find(x => x.Relation === 'บิดา' || x.MemberNo == 2);
+      const hasMom = gState.householdMembers.find(x => x.Relation === 'มารดา' || x.MemberNo == 3);
+      
+      const sm = gState.originalData.studentMaster || {};
+
+      if (!hasStudent) {
+         gState.householdMembers.unshift({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName || ''} ${sm.LastName || ''}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 });
       }
-      
-      // วาดตาราง
-      gState.householdMembers.forEach((x, i) => {
-        // Map ตัวแปร (กันพลาดจาก CSV)
-        const job = x.MemberOccupation || x.Occupation || x.Job || '-';
+      if (!hasDad) {
+         // แทรกต่อจากนักเรียน (index 1)
+         gState.householdMembers.splice(1, 0, { RecordID: gState.currentRecordId, MemberNo: 2, MemberName: '', Relation: 'บิดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
+      }
+      if (!hasMom) {
+         // แทรกต่อจากพ่อ (index 2)
+         gState.householdMembers.splice(2, 0, { RecordID: gState.currentRecordId, MemberNo: 3, MemberName: '', Relation: 'มารดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
+      }
+
+      // วาดตารางใหม่
+      gState.householdMembers.forEach((x, i) => { 
+        // อัปเดต MemberNo ให้เรียงสวยงาม (เผื่อของเก่ามามั่ว)
+        x.MemberNo = i + 1; 
+
+        // ดึงค่า (รองรับชื่อตัวแปรจาก CSV)
+        const job = x.MemberOccupation || x.Occupation || '-';
         const edu = x.MemberEducation || x.Education || '-';
         const income = x.Income_Total || x.Income || 0;
 
-        const tr = document.createElement('tr');
+        const tr = document.createElement('tr'); 
         tr.innerHTML = `
-            <td>${x.MemberNo || i + 1}</td>
+            <td>${x.MemberNo}</td>
             <td class="text-start">${x.MemberName || ''}</td>
             <td>${x.Relation || ''}</td>
             <td>${x.Phone || '-'}</td>
@@ -625,19 +678,15 @@
             <td><button type="button" class="btn btn-sm btn-primary edit-btn">แก้</button></td>
             <td>${x.Relation != 'นักเรียน' ? `<button type="button" class="btn btn-sm btn-danger del-btn">ลบ</button>` : ''}</td>
         `;
-        
-        // *สำคัญ* ต้องส่ง index ที่แท้จริงใน array ไปแก้ไข
-        tr.querySelector('.edit-btn').onclick = () => editHouseholdMember(i);
-        if (tr.querySelector('.del-btn')) {
-            tr.querySelector('.del-btn').onclick = () => removeHouseholdMember(i);
-        }
-        el.householdTbody.appendChild(tr);
-      });
+        tr.querySelector('.edit-btn').onclick = () => editHouseholdMember(i); 
+        if (tr.querySelector('.del-btn')) tr.querySelector('.del-btn').onclick = () => removeHouseholdMember(i); 
+        el.householdTbody.appendChild(tr); 
+      }); 
       
-      calculateHouseholdIncome();
+      calculateHouseholdIncome(); 
     }
-    
-    // --- 2. แก้ไขสมาชิก (บันทึกลงตารางทันที) ---
+
+    // --- 3. แก้ไขสมาชิก (บันทึกทันที) ---
     window.editHouseholdMember = (index) => {
         const isNew = index === -1;
         const member = isNew ? { RecordID: gState.currentRecordId, IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE" } : { ...gState.householdMembers[index] };
@@ -645,7 +694,7 @@
         const jobOpts = ["ไม่ได้ทำงาน", "ข้าราชการ/รัฐวิสาหกิจ", "พนักงานบริษัท", "รับจ้าง", "รับจ้างทั่วไป", "เกษตรกร", "ค้าขาย", "ธุรกิจส่วนตัว", "อื่นๆ"];
         const eduOpts = ["ไม่ได้เรียน", "ประถมศึกษา", "มัธยมศึกษา", "ปวช./ปวส.", "ปริญญาตรี", "ปริญญาโท/เอก", "อื่นๆ"];
 
-        // ดึงค่าเก่ามาแสดง (รองรับชื่อตัวแปรหลายแบบ)
+        // ดึงค่าเก่า
         const mJob = member.MemberOccupation || member.Occupation || '';
         const mEdu = member.MemberEducation || member.Education || '';
 
@@ -677,107 +726,52 @@
             if (result.isConfirmed) {
                 const updatedMember = { ...member, ...result.value };
                 if (isNew) gState.householdMembers.push(updatedMember); else gState.householdMembers[index] = updatedMember;
+                
                 trackChange('household_changed', true); 
-                renderHouseholdTable(gState.householdMembers); 
-                saveToLocalStorage(); 
+                renderHouseholdTable(gState.householdMembers); // วาดใหม่ + เรียงลำดับ + เติมแถวที่ขาด
+                // ไม่ต้อง saveToLocalStorage() ตรงนี้ก็ได้ เพราะเราเน้น Server เป็นหลัก แต่ใส่ไว้กันเหนียว
             }
         });
     };
 
     window.removeHouseholdMember = (index) => {
-       Swal.fire({ title: 'ลบรายการนี้?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', confirmButtonColor: '#d33' }).then((r) => { if (r.isConfirmed) { gState.householdMembers.splice(index, 1); trackChange('household_changed', true); renderHouseholdTable(gState.householdMembers); saveToLocalStorage(); } });
+       Swal.fire({ title: 'ลบรายการนี้?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', confirmButtonColor: '#d33' }).then((r) => { if (r.isConfirmed) { gState.householdMembers.splice(index, 1); trackChange('household_changed', true); renderHouseholdTable(gState.householdMembers); } });
     };
 
-    // --- 3. บันทึกข้อมูล (แยกอิสระ) ---
-async function handleSaveToSheets() {
+    // --- 4. บันทึกข้อมูล (ส่งข้อมูลครบถ้วน) ---
+    async function handleSaveToSheets() {
         el.saveBtn.disabled = true; el.saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
         try {
             const d = {}; const fd = new FormData(document.getElementById('visit-form'));
             fd.forEach((v, k) => d[k] = v);
             document.querySelectorAll('input[type=checkbox]').forEach(c => d[c.name] = c.checked ? "TRUE" : "FALSE");
 
-            // 1. ส่งข้อมูลหลัก
             await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveDeltaChanges', recordId: gState.currentRecordId, userEmail: gState.currentUser.email, changes: d }) });
 
-            // 2. ส่งข้อมูลตาราง
             if (gState.changesToPush.householdData) {
+                // Map ข้อมูลให้ครบถ้วนก่อนส่ง
                 const membersToSend = gState.householdMembers.map((x, i) => ({ 
                     ...x, 
                     RecordID: gState.currentRecordId,
-                    MemberNo: i + 1, // 👈 สำคัญมาก: ระบุลำดับที่ให้ชัดเจน เพื่อใช้กรอง
+                    MemberNo: i + 1,
+                    // ส่งชื่อตัวแปรไปทั้ง 2 แบบ (กันพลาด)
                     Occupation: x.MemberOccupation, 
                     Education: x.MemberEducation,
                     Income: x.Income_Total
                 }));
                 await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'overwriteHouseholdData', recordId: gState.currentRecordId, members: membersToSend }) });
             }
+            
+            // สำเร็จ -> โหลดข้อมูลซ้ำจาก Server ทันทีเพื่อความชัวร์ว่าข้อมูลเข้าแล้ว
             onSaveSuccess();
+            handleStartForm(); // เรียกโหลดใหม่ทันที
+            
         } catch (e) { handleError(e); } finally { if (el.saveBtn) { el.saveBtn.disabled = false; el.saveBtn.innerHTML = 'บันทึก (0)'; } }
     }
 
     // --- Helper Functions ---
-    function loadStudentDataSuccess(d) { 
-      gState.originalData = JSON.parse(JSON.stringify(d)); 
-      prefillForm(d.studentMaster, d.visitData); 
-      
-      // แปลงข้อมูล Household ให้เป็น Array
-      let hData = d.householdData;
-      if (typeof hData === 'string') { try { hData = JSON.parse(hData); } catch(e) { hData = []; } }
-      
-      renderHouseholdTable(hData || []); 
-      showScreen('form'); calculateProgress(); setLoading(false); 
-    }
-
-    async function handleManualLogin(e) { e.preventDefault(); setLoading(true); if(el.loginBtn) el.loginBtn.disabled=true; if(el.loginErrorMessage) el.loginErrorMessage.style.display='none'; 
-      try { const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'checkLogin', email: el.loginEmailInput.value, password: el.loginPasswordInput.value }) }); const data = await res.json(); if(data && data.email) handleLoginSuccess(data); else throw new Error("Login Failed"); } catch(err) { handleLoginFailure(err.message); } 
-    }
-    async function handleLoginSuccess(u) { gState.currentUser=u; if(el.navUserEmail) el.navUserEmail.textContent=u.email; showScreen('selection'); try { setLoading(true); const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getInitialData', assignedClasses: u.assignedClasses }) }); const cls = await res.json(); populateClassDropdown(cls); setLoading(false); } catch(e){ handleError(e); } }
-    function handleLoginFailure(e) { setLoading(false); gState.currentUser=null; showScreen('login'); if(el.loginBtn) el.loginBtn.disabled=false; if(el.loginErrorMessage){ el.loginErrorMessage.textContent=e; el.loginErrorMessage.style.display='block'; } else alert(e); }
-    function handleLogout() { Swal.fire({title:'Logout?', showCancelButton:true}).then(r=>{ if(r.isConfirmed){ localStorage.removeItem(`visit_${gState.currentRecordId}`); window.location.reload(); }}); }
-    function showScreen(id) { if(!SCREENS.loading)return; if(el.mainNavbar) el.mainNavbar.style.display=(id==='login'||id==='loading')?'none':'block'; Object.values(SCREENS).forEach(s=>s.style.display='none'); if(SCREENS[id]) SCREENS[id].style.display='block'; if(el.navHomeLink){ el.navHomeLink.classList.toggle('active',id==='selection'||id==='form'); el.navDashboardLink.classList.toggle('active',id==='dashboard'); el.navPrintLink.classList.toggle('active',id==='print'); } }
-    function setLoading(l,m='Loading...') { gState.isLoading=l; if(SCREENS.loading){ SCREENS.loading.querySelector('p').textContent=m; SCREENS.loading.style.display=l?'flex':'none'; } }
-    function handleError(e) { setLoading(false); Swal.fire('Error',e.message||e,'error'); if(el.loginBtn)el.loginBtn.disabled=false; if(el.saveBtn){el.saveBtn.disabled=false; el.saveBtn.innerHTML=`บันทึก (${Object.keys(gState.changesToPush).length})`;} }
-    function populateClassDropdown(c) { el.classSelect.innerHTML='<option value="">-- เลือก --</option>'; c.forEach(x=>el.classSelect.add(new Option(x,x))); }
-    async function handleClassChange() { const c=el.classSelect.value; if(!c){el.studentSelect.disabled=true;return;} el.studentSelect.disabled=true; setLoading(true); try{ const res=await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentsByClass', className: c }) }); const d=await res.json(); d.sort((a,b)=>parseInt(a.studentNumber||0)-parseInt(b.studentNumber||0)); el.studentSelect.innerHTML='<option value="">-- เลือก --</option>'; d.forEach(s=>el.studentSelect.add(new Option(`${s.name}`,s.id))); el.studentSelect.disabled=false; validateStartButton(); setLoading(false); }catch(e){handleError(e);} }
-    function validateStartButton() { el.startFormBtn.disabled=!(el.classSelect.value&&el.studentSelect.value); }
-    
-    async function handleStartForm() { 
-       try { 
-          gState.selectedStudentId = el.studentSelect.value; 
-          gState.selectedStudentName = el.studentSelect.options[el.studentSelect.selectedIndex].text; 
-          
-          // ตรวจสอบค่าภาคเรียนและปีการศึกษา (ถ้าว่างให้ใช้ค่า Default)
-          const sem = el.semesterSelect.value || "2";
-          const yr = el.yearSelect.value || "2568";
-          
-          gState.currentRecordId = `${gState.selectedStudentId}_${sem}_${yr}`; 
-          
-          if(el.studentNameHeader) el.studentNameHeader.textContent = `${gState.selectedStudentName} (${sem}/${yr})`; 
-          
-          let local = null; try{ local=loadFromLocalStorage(); }catch(e){} 
-          
-          if(local && local.studentMaster) { 
-             setLoading(true,'โหลดแคช...'); 
-             loadStudentDataSuccess(local);
-          } else { 
-             setLoading(true,'โหลดข้อมูล...'); 
-             const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentVisitData', recordId: gState.currentRecordId }) }); 
-             const data = await res.json(); 
-             if(data.studentMaster) { 
-               loadStudentDataSuccess(data); 
-             } else { 
-               // แจ้งเตือนถ้าไม่เจอข้อมูล (สำคัญมาก!)
-               Swal.fire('ไม่พบข้อมูลเก่า', 'ระบบกำลังสร้างแบบฟอร์มใหม่สำหรับเทอมนี้', 'info');
-               // สร้างข้อมูลเปล่าขึ้นมาทำงานต่อ
-               loadStudentDataSuccess({ studentMaster: {}, visitData: {}, householdData: [] }); // ส่งค่าว่างไปก่อน (แต่จริงๆ ควรดึง Master จาก Cache ถ้ามี)
-               // หรือจะ throw error เพื่อให้หยุดก็ได้ แต่กรณีนี้ให้ไปต่อแบบว่างๆ ดีกว่า
-             } 
-          } 
-       } catch(e) { console.error(e); localStorage.removeItem(`visit_${gState.currentRecordId}`); handleError(e); } 
-    }
-
     function formatDateForInput(ds) { if(!ds)return''; if(/^\d{4}-\d{2}-\d{2}$/.test(ds))return ds; const d=new Date(ds); if(isNaN(d.getTime()))return''; return d.toISOString().split('T')[0]; }
-    function prefillForm(m, v) { if(!m){ return;} document.getElementById('s1-name').innerText=`${m.Prefix||''} ${m.FirstName} ${m.LastName}`; document.getElementById('s1-class').innerText=m.Class; document.getElementById('s1-citizenid').innerText=m.CitizenID||'N/A'; const sv = (val) => (val===undefined||val===null)?"":val; document.getElementById('Q1_GuardianFirstName').value = sv((v&&v.Q1_GuardianFirstName)||m.DefaultGuardianName); document.getElementById('Q1_GuardianPhone').value = sv((v&&v.Q1_GuardianPhone)||m.DefaultGuardianPhone); if(document.getElementById('Q1_StudentPhone')) document.getElementById('Q1_StudentPhone').value = sv((v&&v.Q1_StudentPhone)||m.Phone); if(document.getElementById('Q1_StudentNickname')) document.getElementById('Q1_StudentNickname').value = sv((v&&v.Q1_StudentNickname)||m.Nickname); if(document.getElementById('Q1_FatherName')) document.getElementById('Q1_FatherName').value = sv((v&&v.Q1_FatherName)||m.FatherName); if(document.getElementById('Q1_FatherPhone')) document.getElementById('Q1_FatherPhone').value = sv((v&&v.Q1_FatherPhone)||m.FatherPhone); if(document.getElementById('Q1_FatherJob')) document.getElementById('Q1_FatherJob').value = sv((v&&v.Q1_FatherJob)||m.FatherJob); if(document.getElementById('Q1_MotherName')) document.getElementById('Q1_MotherName').value = sv((v&&v.Q1_MotherName)||m.MotherName); if(document.getElementById('Q1_MotherPhone')) document.getElementById('Q1_MotherPhone').value = sv((v&&v.Q1_MotherPhone)||m.MotherPhone); if(document.getElementById('Q1_MotherJob')) document.getElementById('Q1_MotherJob').value = sv((v&&v.Q1_MotherJob)||m.MotherJob); if(document.getElementById('Q1_StudentDOB')) { const dob = (v&&v.Q1_StudentDOB)||m.DOB; document.getElementById('Q1_StudentDOB').value = formatDateForInput(dob); } if(v) { const f = document.getElementById('visit-form'); for(const k in v) { const inp = f.elements[k]; if(inp) { if(k==='Q1_StudentDOB') continue; if(inp.type==='checkbox') inp.checked=(v[k]==='TRUE'); else if(inp.length>0 && inp[0].type==='radio') { const r=f.querySelector(`input[name="${k}"][value="${v[k]}"]`); if(r) r.checked=true; } else if(inp.type==='hidden' && k.includes('PhotoURL')) { inp.value=v[k]; if(v[k]) { const img=document.getElementById(`preview_${k}`); if(img){img.src=v[k]; img.style.display='block';} const wrap=document.getElementById(`wrapper_${k}`); if(wrap)wrap.style.display='inline-block'; const del=wrap?wrap.querySelector('.btn-delete-img'):null; if(del)del.style.display='block'; } } else if(inp.type!=='file') inp.value=v[k]; if(['Q3_1_DependencyStatus','Q3_4_AgricultureStatus','Q1_LivesWith','Q3_StudentIncome_Has'].includes(k)) { const el = document.getElementsByName(k)[0] || document.getElementById(k); if(el) el.dispatchEvent(new Event('change')); } if(['Q11_IsAtRisk','Q11_Risk_Behavior'].includes(k)) { const el = document.getElementById(k); if(el) el.dispatchEvent(new Event('change')); } } } } }
+    function prefillForm(m, v) { if(!m){return;} document.getElementById('s1-name').innerText=`${m.Prefix||''} ${m.FirstName} ${m.LastName}`; document.getElementById('s1-class').innerText=m.Class; document.getElementById('s1-citizenid').innerText=m.CitizenID||'N/A'; const sv = (val) => (val===undefined||val===null)?"":val; document.getElementById('Q1_GuardianFirstName').value = sv((v&&v.Q1_GuardianFirstName)||m.DefaultGuardianName); document.getElementById('Q1_GuardianPhone').value = sv((v&&v.Q1_GuardianPhone)||m.DefaultGuardianPhone); if(document.getElementById('Q1_StudentPhone')) document.getElementById('Q1_StudentPhone').value = sv((v&&v.Q1_StudentPhone)||m.Phone); if(document.getElementById('Q1_StudentNickname')) document.getElementById('Q1_StudentNickname').value = sv((v&&v.Q1_StudentNickname)||m.Nickname); if(document.getElementById('Q1_FatherName')) document.getElementById('Q1_FatherName').value = sv((v&&v.Q1_FatherName)||m.FatherName); if(document.getElementById('Q1_FatherPhone')) document.getElementById('Q1_FatherPhone').value = sv((v&&v.Q1_FatherPhone)||m.FatherPhone); if(document.getElementById('Q1_FatherJob')) document.getElementById('Q1_FatherJob').value = sv((v&&v.Q1_FatherJob)||m.FatherJob); if(document.getElementById('Q1_MotherName')) document.getElementById('Q1_MotherName').value = sv((v&&v.Q1_MotherName)||m.MotherName); if(document.getElementById('Q1_MotherPhone')) document.getElementById('Q1_MotherPhone').value = sv((v&&v.Q1_MotherPhone)||m.MotherPhone); if(document.getElementById('Q1_MotherJob')) document.getElementById('Q1_MotherJob').value = sv((v&&v.Q1_MotherJob)||m.MotherJob); if(document.getElementById('Q1_StudentDOB')) { const dob = (v&&v.Q1_StudentDOB)||m.DOB; document.getElementById('Q1_StudentDOB').value = formatDateForInput(dob); } if(v) { const f = document.getElementById('visit-form'); for(const k in v) { const inp = f.elements[k]; if(inp) { if(k==='Q1_StudentDOB') continue; if(inp.type==='checkbox') inp.checked=(v[k]==='TRUE'); else if(inp.length>0 && inp[0].type==='radio') { const r=f.querySelector(`input[name="${k}"][value="${v[k]}"]`); if(r) r.checked=true; } else if(inp.type==='hidden' && k.includes('PhotoURL')) { inp.value=v[k]; if(v[k]) { const img=document.getElementById(`preview_${k}`); if(img){img.src=v[k]; img.style.display='block';} const wrap=document.getElementById(`wrapper_${k}`); if(wrap)wrap.style.display='inline-block'; const del=wrap?wrap.querySelector('.btn-delete-img'):null; if(del)del.style.display='block'; } } else if(inp.type!=='file') inp.value=v[k]; if(['Q3_1_DependencyStatus','Q3_4_AgricultureStatus','Q1_LivesWith','Q3_StudentIncome_Has'].includes(k)) { const el = document.getElementsByName(k)[0] || document.getElementById(k); if(el) el.dispatchEvent(new Event('change')); } if(['Q11_IsAtRisk','Q11_Risk_Behavior'].includes(k)) { const el = document.getElementById(k); if(el) el.dispatchEvent(new Event('change')); } } } } }
     function handleBackToSelection(cb) { if(Object.keys(gState.changesToPush).length){ Swal.fire({title:'ยังไม่บันทึก',showCancelButton:true}).then(r=>{if(r.isConfirmed){resetFormState(); cb?cb():showScreen('selection');}})}else{resetFormState(); cb?cb():showScreen('selection');} }
     function resetFormState() { localStorage.removeItem(`visit_${gState.currentRecordId}`); document.getElementById('visit-form').reset(); document.querySelectorAll('.img-preview').forEach(i=>{i.src='';i.style.display='none'}); document.querySelectorAll('.img-wrapper').forEach(d=>d.style.display='none'); document.querySelectorAll('input[name*="PhotoURL"]').forEach(i=>i.value=''); gState.currentRecordId=null; gState.changesToPush={}; gState.householdMembers=[]; el.householdTbody.innerHTML=''; el.studentSelect.value=''; if(el.q4Content) el.q4Content.style.display='none'; if(el.q3_1_SubOptions) el.q3_1_SubOptions.style.display='none'; document.getElementById('risk-details').style.display='none'; el.saveBtn.disabled=true; el.saveBtn.innerHTML='บันทึก (0)'; updateProgressBar(0); }
     function calculateProgress() { let t=0,f=0; document.querySelectorAll('#visit-form input:not([type=hidden]):not([type=file]), select, textarea').forEach(i=>{ if(i.type=='radio'||i.type=='checkbox') return; const p = i.closest('.conditional-subsection'); if(p && getComputedStyle(p).display==='none') return; t++; if(i.value.trim()!=='') f++; }); ['Q3_1_DependencyStatus','Q3_4_AgricultureStatus'].forEach(n=>{ t++; if(document.querySelector(`input[name="${n}"]:checked`)) f++; }); ['Q8_StudentParent_Confirm','Q10_Teacher_Confirm'].forEach(id=>{ t++; if(document.getElementById(id)&&document.getElementById(id).checked) f++; }); updateProgressBar(t===0?0:Math.round((f/t)*100)); }
@@ -791,17 +785,14 @@ async function handleSaveToSheets() {
     function handleGPSButton() { navigator.geolocation.getCurrentPosition(p=>{ const [lat,lon]=[p.coords.latitude.toFixed(6),p.coords.longitude.toFixed(6)]; document.getElementById('Q6_Addr_Latitude').value=lat; document.getElementById('Q6_Addr_Longitude').value=lon; trackChange('Q6_Addr_Latitude',lat); trackChange('Q6_Addr_Longitude',lon); saveToLocalStorage(); }, e=>Swal.fire('Error',e.message,'error')); }
     function deleteImage(n) { document.getElementById(n).value=""; document.getElementById(`wrapper_${n}`).style.display='none'; trackChange(n,""); saveToLocalStorage(); }
     async function handleFileUpload(e) { const f=e.target.files[0]; if(!f)return; const id=e.target.dataset.targetHidden; const prev=document.getElementById(`preview_${id}`), wrap=document.getElementById(`wrapper_${id}`), del=wrap.querySelector('.btn-delete-img'); wrap.style.display='inline-block'; prev.style.display='block'; prev.src='https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif'; del.style.display='none'; try { const fd=new FormData(); fd.append('file',f); fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET); const res=await fetch(CLOUDINARY_URL,{method:'POST',body:fd}); const d=await res.json(); prev.src=d.secure_url; del.style.display='block'; document.getElementById(id).value=d.secure_url; trackChange(id,d.secure_url); saveToLocalStorage(); } catch(e){ handleError(e); } }
-    function calculateHouseholdIncome() { const t=gState.householdMembers.length; const s=gState.householdMembers.reduce((a,b)=>a+(parseFloat(b.Income_Total)||0),0); el.totalMembersInput.value=t; el.totalIncomeInput.value=s; el.perCapitaIncomeInput.value=t>0?(s/t).toFixed(2):0; }
-    function attachFormListeners() { document.querySelectorAll('#visit-form input, select, textarea').forEach(e=>{ if(e.type!='file') e.addEventListener('change', (ev)=>{ trackChange(ev.target.name, ev.target.type=='checkbox'?(ev.target.checked?"TRUE":"FALSE"):ev.target.value); saveToLocalStorage(); calculateProgress(); }); }); }
-    function trackChange(n,v) { if(!n)return; if(n=='household_changed')gState.changesToPush['householdData']=true; else gState.changesToPush[n]=v; el.saveBtn.disabled=false; el.saveBtn.innerHTML=`บันทึก (${Object.keys(gState.changesToPush).length})`; }
-    function saveToLocalStorage() { const d={studentMaster:gState.originalData.studentMaster, visitData:{}, householdData:gState.householdMembers}; const fd=new FormData(document.getElementById('visit-form')); fd.forEach((v,k)=>d.visitData[k]=v); document.querySelectorAll('input[type=checkbox]').forEach(c=>d.visitData[c.name]=c.checked?"TRUE":"FALSE"); localStorage.setItem(`visit_${gState.currentRecordId}`, JSON.stringify(d)); }
-    function loadFromLocalStorage() { const d=localStorage.getItem(`visit_${gState.currentRecordId}`); return d?JSON.parse(d):null; }
-    function onSaveSuccess() { setLoading(false); Swal.fire('สำเร็จ','','success'); gState.changesToPush={}; gState.originalData=JSON.parse(JSON.stringify(loadFromLocalStorage())); }
+    function onSaveSuccess() { Swal.fire('สำเร็จ','บันทึกข้อมูลเรียบร้อยแล้ว','success'); gState.changesToPush={}; }
+    function loadFromLocalStorage() { return null; } // ปิด LocalStorage ไปเลย
   </script>
 </body>
 </html>
 </body>
 </html>
+
 
 
 
