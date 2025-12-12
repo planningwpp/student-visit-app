@@ -1144,47 +1144,80 @@ window.editHouseholdMember = function(index) {
     });
 };
 
-// 3. ฟังก์ชันลบ (Global) - มี Debug Alert
+// 3. ฟังก์ชันลบสมาชิก (แบบ Real-time: ลบใน Sheet ทันที)
 window.removeHouseholdMember = function(index) {
-    // console.log("Delete triggered for index:", index); 
     const mem = gState.householdMembers[index];
     
     if(!mem) {
-        Swal.fire('Error', 'ไม่พบข้อมูลสมาชิก', 'error');
+        Swal.fire('Error', 'ไม่พบข้อมูลในตาราง', 'error');
         return;
     }
 
+    // เช็คก่อนว่ามีข้อมูลจริงไหม (ถ้าเพิ่งกดเพิ่ม แต่ยังไม่ได้บันทึก ก็แค่ลบออกจากหน้าจอ)
+    const isNewEntry = !mem.MemberName || mem.MemberName.trim() === "";
+
     Swal.fire({
-        title: 'ลบรายการ?',
-        text: `ต้องการลบ "${mem.MemberName}" ใช่ไหม?`,
+        title: 'ยืนยันการลบ?',
+        text: `ต้องการลบ "${mem.MemberName || 'รายการนี้'}" ออกจากระบบทันทีหรือไม่?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
-        confirmButtonText: 'ลบเลย',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'ใช่ ลบเลย!',
         cancelButtonText: 'ยกเลิก'
-    }).then((result) => {
+    }).then(async (result) => {
         if (result.isConfirmed) {
-            gState.householdMembers.splice(index, 1);
             
-            if(typeof trackChange === 'function') trackChange('household_changed', true);
-            renderHouseholdTable(gState.householdMembers);
-            
-            Swal.fire('ลบแล้ว', '', 'success');
+            // กรณี 1: ข้อมูลใหม่ที่ยังไม่เคยบันทึกลง Sheet (แค่ลบจากหน้าจอ)
+            if (isNewEntry) {
+                gState.householdMembers.splice(index, 1);
+                renderHouseholdTable(gState.householdMembers);
+                Swal.fire('ลบแล้ว', '', 'success');
+                return;
+            }
+
+            // กรณี 2: ข้อมูลที่มีอยู่ใน Sheet แล้ว -> สั่งลบที่ Server
+            Swal.fire({
+                title: 'กำลังลบ...',
+                text: 'กรุณารอสักครู่ ระบบกำลังลบข้อมูลใน Google Sheets',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                const res = await fetch(GAS_API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        action: 'deleteSpecificMember', 
+                        recordId: gState.currentRecordId,
+                        memberName: mem.MemberName 
+                    })
+                });
+                
+                const data = await res.json();
+
+                if (data.success) {
+                    // ลบสำเร็จ -> ลบออกจากหน้าจอด้วย
+                    gState.householdMembers.splice(index, 1);
+                    renderHouseholdTable(gState.householdMembers);
+                    Swal.fire('ลบสำเร็จ!', 'ข้อมูลถูกลบออกจากฐานข้อมูลแล้ว', 'success');
+                } else {
+                    throw new Error(data.error || 'ลบไม่สำเร็จ');
+                }
+
+            } catch (err) {
+                console.error(err);
+                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้: ' + err.message, 'error');
+            }
         }
     });
 };
-
-// 4. บังคับผูกปุ่ม "เพิ่ม" ให้ทำงานกับฟังก์ชันใหม่
-const addBtnGlobal = document.getElementById('add-member-btn');
-if(addBtnGlobal) {
-    addBtnGlobal.onclick = function() { window.editHouseholdMember(-1); };
-}
-
   </script>
 </body>
 </html>
 </body>
 </html>
+
 
 
 
