@@ -549,6 +549,19 @@
     // 2. ฟังก์ชันคำนวณและตัวช่วย (Helper Functions)
     // ==========================================
     
+    // ฟังก์ชันนี้หายไปครับ ให้เพิ่มกลับเข้ามา
+    function showScreen(id) { 
+        if(!SCREENS.loading) return; 
+        if(el.mainNavbar) el.mainNavbar.style.display=(id==='login'||id==='loading')?'none':'block'; 
+        Object.values(SCREENS).forEach(s=>s.style.display='none'); 
+        if(SCREENS[id]) SCREENS[id].style.display='block'; 
+        if(el.navHomeLink){ 
+            el.navHomeLink.classList.toggle('active',id==='selection'||id==='form'); 
+            el.navDashboardLink.classList.toggle('active',id==='dashboard'); 
+            el.navPrintLink.classList.toggle('active',id==='print'); 
+        } 
+    }
+  
     // ฟังก์ชันช่วยดึงค่าจาก Object แบบไม่สนตัวพิมพ์เล็ก/ใหญ่ (Case Insensitive Getter)
     function getValue(obj, key) {
         if (!obj) return '';
@@ -870,3 +883,4 @@
   </script>
 </body>
 </html>
+
