@@ -1033,11 +1033,23 @@ function renderHouseholdTable(m) {
     tbody.innerHTML = '';
 
     // สร้างข้อมูล Default ถ้าว่างเปล่า
-    if (gState.householdMembers.length === 0 && gState.originalData?.studentMaster) {
+   if (gState.householdMembers.length === 0 && gState.originalData?.studentMaster) {
          const sm = gState.originalData.studentMaster;
-         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName || ''} ${sm.LastName || ''}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 });
-         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 2, MemberName: '', Relation: 'บิดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
-         gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: '', Relation: 'มารดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
+         
+         // 1. เพิ่มแค่นักเรียนคนเดียว (เป็นสมาชิกคนแรกเสมอ)
+         gState.householdMembers.push({ 
+             RecordID: gState.currentRecordId, 
+             MemberNo: 1, 
+             MemberName: `${sm.Prefix || ''} ${sm.FirstName || ''} ${sm.LastName || ''}`, 
+             Relation: 'นักเรียน', 
+             Phone: sm.Phone || '', 
+             Education: 'กำลังศึกษา', 
+             CitizenID: sm.CitizenID, 
+             Age: sm.Age || '', 
+             IsDisabledOrChronic: "FALSE", 
+             Got10kDigitalWallet: "FALSE", 
+             Income_Total: 0 
+         });
     }
 
     // วาดแถวตาราง
@@ -1217,6 +1229,7 @@ window.removeHouseholdMember = function(index) {
 </html>
 </body>
 </html>
+
 
 
 
