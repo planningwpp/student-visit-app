@@ -10,6 +10,8 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+  
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap');
@@ -808,6 +810,9 @@
     }
 }
 
+// ลงทะเบียน Plugin (เพื่อให้ใช้ได้กับกราฟทุกตัว)
+Chart.register(ChartDataLabels);    
+
 /* แก้ไขใน index.html */
 
 function renderDashboard(data) {
@@ -918,29 +923,85 @@ function renderDashboard(data) {
         }
     }
 
-    // Render Charts
+    // -------------------------------------------------------------
+    // 🟢 ส่วนสร้างกราฟ (ปรับปรุงให้โชว์ %)
+    // -------------------------------------------------------------
+    
+    // ตั้งค่า Default ของ Label ให้สวยงาม
+    const labelOptions = {
+        color: '#fff', // สีตัวหนังสือ (ขาว)
+        font: { weight: 'bold', size: 12 },
+        formatter: (value, ctx) => {
+            if (value === 0) return ""; // ถ้าเป็น 0 ไม่ต้องโชว์
+            let sum = 0;
+            let dataArr = ctx.chart.data.datasets[0].data;
+            dataArr.map(data => { sum += data; });
+            let percentage = (value * 100 / sum).toFixed(1) + "%";
+            return percentage; // คืนค่าเป็น %
+        }
+    };
+
+    // 1. กราฟแท่ง (รายได้)
     if(data.q14_income_range) {
-       new Chart(document.getElementById('chartIncome'), {
+       const ctxIncome = document.getElementById('chartIncome');
+       // ทำลายกราฟเก่าก่อนสร้างใหม่ (ป้องกันกราฟซ้อนกันเวลาอัปเดต)
+       if(window.myChartIncome) window.myChartIncome.destroy();
+
+       window.myChartIncome = new Chart(ctxIncome, {
           type: 'bar',
           data: {
               labels: Object.keys(data.q14_income_range),
-              datasets: [{ label: 'จำนวนครอบครัว', data: Object.values(data.q14_income_range), backgroundColor: '#36a2eb' }]
+              datasets: [{ 
+                  label: 'จำนวนครอบครัว', 
+                  data: Object.values(data.q14_income_range), 
+                  backgroundColor: '#36a2eb' 
+              }]
           },
-          options: { responsive: true, maintainAspectRatio: false }
+          options: { 
+              responsive: true, 
+              maintainAspectRatio: false,
+              plugins: {
+                  datalabels: { // ใช้การตั้งค่าเดียวกัน แต่เปลี่ยนสีนิดหน่อยเพราะพื้นหลังกราฟแท่งอาจจะจาง
+                      color: '#000', // สีดำ
+                      anchor: 'end',
+                      align: 'top',
+                      formatter: (value, ctx) => {
+                          if (value === 0) return "";
+                          let sum = 0;
+                          let dataArr = ctx.chart.data.datasets[0].data;
+                          dataArr.map(data => { sum += data; });
+                          let percentage = (value * 100 / sum).toFixed(1) + "%";
+                          return percentage;
+                      }
+                  }
+              }
+          }
        });
     }
 
+    // 2. กราฟโดนัท (สถานภาพ)
     if(data.q1_family_status) {
-       new Chart(document.getElementById('chartFamily'), {
+       const ctxFamily = document.getElementById('chartFamily');
+       if(window.myChartFamily) window.myChartFamily.destroy();
+
+       window.myChartFamily = new Chart(ctxFamily, {
           type: 'doughnut',
           data: {
               labels: Object.keys(data.q1_family_status),
-              datasets: [{ data: Object.values(data.q1_family_status), backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40'] }]
+              datasets: [{ 
+                  data: Object.values(data.q1_family_status), 
+                  backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40', '#c9cbcf'] 
+              }]
           },
-          options: { responsive: true, maintainAspectRatio: false }
+          options: { 
+              responsive: true, 
+              maintainAspectRatio: false,
+              plugins: {
+                  datalabels: labelOptions // เรียกใช้การตั้งค่าที่เตรียมไว้
+              }
+          }
        });
     }
-}
 
 // 🟢 อัปเดตฟังก์ชัน refreshDashboard ให้ส่งห้องไปด้วย
 window.refreshDashboard = function() {
@@ -966,90 +1027,162 @@ window.refreshDashboard = function() {
 };
 
 // ============================================================================
-// 🔴 ฟังก์ชันสร้างแถวตาราง Dashboard (ฉบับสมบูรณ์ แปลงชื่อไทยครบทุกข้อ)
+// 🔴 ฟังก์ชันสร้างแถวตาราง Dashboard (ฉบับเรียงตามหัวข้อเอกสาร + มีเลขนำหน้า)
 // ============================================================================
 function createTableRows(title, obj, total) {
     if(!obj) return "";
+    
+    // กำหนดการตั้งค่าของแต่ละหัวข้อ (Config)
+    // format: { "ค่าในDatabase": "ข้อความที่จะแสดง" }
+    // ลำดับใน Object นี้จะเป็นลำดับที่แสดงผลในตาราง
+    
+    let mapping = {};
+
+    if (title.includes("1. บ้านที่พักอาศัย")) {
+        mapping = {
+            "บ้านตนเอง": "1.1 บ้านตนเอง",
+            "อาศัยผู้อื่น": "1.2 อาศัยอยู่กับผู้อื่น",
+            "หอพัก": "1.3 หอพัก",
+            "วัด": "1.4 วัด/มูลนิธิ"
+        };
+    } else if (title.includes("2. ลักษณะบ้าน")) {
+        mapping = {
+            "ชั้นเดียว": "2.1 บ้านชั้นเดียว",
+            "สองชั้น": "2.2 บ้านสองชั้น",
+            "ตึกแถว": "2.3 ลักษณะแบบอื่นๆ (ตึกแถว/อาคาร)"
+        };
+    } else if (title.includes("3. สภาพแวดล้อม")) {
+        mapping = {
+            "ปลอดภัยดี": "3.1 ปลอดภัยดี",
+            "พอใช้": "3.2 พอใช้",
+            "เสี่ยง/ไม่ดี": "3.3 ไม่ดี / มีความเสี่ยง"
+        };
+    } else if (title.includes("4. อาศัยอยู่กับ")) {
+        mapping = {
+            "พ่อ/แม่": "4.1 อยู่ร่วมกับ บิดา-มารดา",
+            "แม่": "4.2 อยู่กับมารดา",
+            "พ่อ": "4.3 อยู่กับบิดา",
+            "อยู่ลำพัง": "4.4 อยู่ตามลำพัง",
+            "ญาติ": "4.5 อยู่กับญาติ",
+            "ปู่ย่า": "4.5 อยู่กับปู่ย่า",
+            "ตายาย": "4.5 อยู่กับตายาย",
+            "ผู้อุปการะ/นายจ้าง": "4.5 อยู่กับผู้อื่น (ผู้อุปการะ)",
+            "ครัวเรือนสถาบัน": "4.5 อยู่กับผู้อื่น (สถาบัน)"
+        };
+    } else if (title.includes("5. อาชีพผู้ปกครอง")) {
+        mapping = {
+            "เกษตรกร": "5.1 เกษตรกร",
+            "ค้าขาย": "5.2 ค้าขาย",
+            "รับราชการ/รัฐวิสาหกิจ": "5.3 รับราชการ",
+            "รับจ้างทั่วไป": "5.4 รับจ้าง",
+            "พนักงานบริษัท": "5.4 รับจ้าง (พนักงานบริษัท)",
+            "ธุรกิจส่วนตัว": "5.5 อื่นๆ (ธุรกิจส่วนตัว)",
+            "ว่างงาน": "5.5 อื่นๆ (ว่างงาน)",
+            "อื่นๆ": "5.5 อื่นๆ"
+        };
+    } else if (title.includes("6. ที่ทำงาน")) {
+        mapping = {
+            "ในอำเภอเดียวกัน": "1. อยู่อำเภอเดียวกัน",
+            "ต่างอำเภอในจังหวัด": "2. อยู่ต่างอำเภอจังหวัดเดียวกัน",
+            "ต่างจังหวัด": "3. อยู่ต่างจังหวัด",
+            "ต่างประเทศ": "4. อยู่ต่างประเทศ"
+        };
+    } else if (title.includes("9. ความสัมพันธ์")) {
+        mapping = {
+            "อบอุ่น": "1. อบอุ่นดี",
+            "เฉยๆ": "2. เฉยๆ",
+            "ห่างเหิน": "3. ห่างเหิน"
+        };
+    } else if (title.includes("10. ความรู้สึก")) {
+        mapping = {
+            "พอใจ": "1. พอใจ",
+            "เฉยๆ": "2. เฉยๆ",
+            "ไม่พอใจ": "3. ไม่พอใจ"
+        };
+    } else if (title.includes("11. วิธีเลี้ยงดู")) {
+        mapping = {
+            "เข้มงวดกวดขัน": "1. เข้มงวดกวดขัน",
+            "ใช้เหตุผล": "2. ใช้เหตุผล",
+            "ปล่อยปละละเลย": "3. ปล่อยปละละเลย",
+            "ตามใจ": "4. ตามใจ"
+        };
+    } else if (title.includes("12. พฤติกรรม")) {
+        mapping = {
+            "Q8_Beh_Homework": "1. อ่านหนังสือทำการบ้าน",
+            "Q8_Beh_HelpParent": "2. ช่วยงานผู้ปกครอง",
+            "Q8_Beh_Housework": "3. ทำงานบ้าน",
+            "Q8_Beh_None": "4. ไม่ช่วยงานเลย"
+        };
+    } else if (title.includes("15. ความเพียงพอ")) {
+        mapping = {
+            "เพียงพอ": "1. เพียงพอ",
+            "ไม่พอในบางครั้ง": "2. ไม่เพียงพอในบางครั้ง",
+            "ขัดสน": "3. ขัดสน"
+        };
+    } else if (title.includes("17. เพื่อนเล่น")) {
+        mapping = {
+            "รุ่นเดียวกัน": "1. เพื่อนรุ่นเดียวกัน",
+            "รุ่นน้อง": "2. เพื่อนรุ่นน้อง",
+            "รุ่นพี่": "3. เพื่อนรุ่นพี่",
+            "ทุกรุ่น": "4. เพื่อนทุกรุ่น",
+            "ไม่มี": "5. ไม่มีเพื่อนเล่น"
+        };
+    } else if (title.includes("18. การเดินทาง")) {
+        mapping = {
+            "เดิน": "1. เดินมา",
+            "จักรยาน": "2. รถจักรยาน",
+            "รถจักรยานยนต์": "3. รถจักรยานยนต์",
+            "รถโรงเรียน": "4. รถรับส่ง/รถตู้",
+            "รถโดยสาร": "5. รถโดยสาร",
+            "ผู้ปกครองมาส่ง": "6. ผู้ปกครองมาส่ง",
+            "รถยนต์": "7. อื่นๆ (รถยนต์ส่วนตัว)"
+        };
+    } else if (title.includes("19. ความต้องการ")) {
+        mapping = {
+            "ศึกษาต่อ": "1. ศึกษาต่อ",
+            "ทำงาน": "2. ประกอบอาชีพ",
+            "ประกอบอาชีพ": "2. ประกอบอาชีพ"
+        };
+    } else if (title.includes("20.") || title.includes("21.")) {
+        // สนิทกับใคร / ปรึกษาใคร
+        mapping = {
+            "พ่อ": "1. พ่อ",
+            "แม่": "2. แม่",
+            "พี่": "3. พี่",
+            "น้อง": "4. น้อง",
+            "ครูที่ปรึกษา": "5. ครูที่ปรึกษา",
+            "เพื่อน": "6. เพื่อน", // เพิ่มเติมจาก Word
+            "ญาติ": "7. บุคคลอื่นๆ (ญาติ)"
+        };
+    } else {
+        // กรณีหัวข้ออื่นๆ ที่ไม่อยู่ในเงื่อนไข ให้แสดงตามที่มีจริง
+        for (let k in obj) mapping[k] = k;
+    }
+
+    // เริ่มสร้าง HTML
     let rows = `<tr class="table-secondary"><td colspan="3"><strong>${title}</strong></td></tr>`;
     
-    // แปลง Key ภาษาอังกฤษ -> ภาษาไทย
-    const labelMap = {
-        // 1. บ้านที่พักอาศัย
-        "บ้านตนเอง": "1.1 บ้านตนเอง",
-        "อาศัยผู้อื่น": "1.2 อาศัยอยู่กับผู้อื่น",
-        "หอพัก": "1.3 หอพัก",
-        "วัด": "1.4 วัด/มูลนิธิ",
-
-        // 2. ลักษณะบ้าน
-        "ชั้นเดียว": "2.1 บ้านชั้นเดียว",
-        "สองชั้น": "2.2 บ้านสองชั้น",
-        "ตึกแถว": "2.3 ตึกแถว/อาคารพาณิชย์",
-
-        // 3. สภาพแวดล้อม
-        "ปลอดภัยดี": "3.1 ปลอดภัยดี",
-        "พอใช้": "3.2 พอใช้",
-        "เสี่ยง/ไม่ดี": "3.3 ไม่ดี / มีความเสี่ยง",
-
-        // 4. อาศัยอยู่กับ
-        "พ่อ/แม่": "4.1 อยู่ร่วมกับ บิดา-มารดา", // แก้ไขตาม Word
-        "แม่": "4.2 อยู่กับมารดา",
-        "พ่อ": "4.3 อยู่กับบิดา",
-        "อยู่ลำพัง": "4.4 อยู่ตามลำพัง",
-        "ญาติ": "4.5 อยู่กับญาติ",
-        "ปู่ย่า": "อยู่กับปู่ย่า",
-        "ตายาย": "อยู่กับตายาย",
+    // วนลูปตามลำดับใน mapping (เพื่อให้เรียงตามหัวข้อ ไม่ใช่ตามจำนวน)
+    for (const [key, label] of Object.entries(mapping)) {
+        // ดึงค่าจำนวนจาก object ข้อมูลจริง (ถ้าไม่มีให้เป็น 0)
+        const val = obj[key] || 0;
         
-        // 12. พฤติกรรม (Checkbox)
-        "Q8_Beh_Homework": "1. อ่านหนังสือทำการบ้าน",
-        "Q8_Beh_HelpParent": "2. ช่วยงานผู้ปกครอง",
-        "Q8_Beh_Housework": "3. ทำงานบ้าน",
-        "Q8_Beh_None": "4. ไม่ช่วยงานเลย",
-
-        // 15. ความเพียงพอรายได้
-        "เพียงพอ": "1. เพียงพอ",
-        "ไม่พอในบางครั้ง": "2. ไม่เพียงพอในบางครั้ง",
-        "ขัดสน": "3. ขัดสน",
-
-        // 18. การเดินทาง
-        "เดิน": "1. เดินมา",
-        "จักรยาน": "2. รถจักรยาน",
-        "รถจักรยานยนต์": "3. รถจักรยานยนต์",
-        "รถโรงเรียน": "4. รถรับส่ง/รถตู้",
-        "รถโดยสาร": "5. รถโดยสาร",
-        "ผู้ปกครองมาส่ง": "6. ผู้ปกครองมาส่ง",
-        "รถยนต์": "7. รถยนต์ส่วนตัว",
-
-        // 19. ความต้องการ
-        "ศึกษาต่อ": "1. ศึกษาต่อ",
-        "ทำงาน": "2. ประกอบอาชีพ",
-        "ประกอบอาชีพ": "2. ประกอบอาชีพ",
-
-        // ทั่วไป
-        "ไม่ระบุ": "ไม่ระบุข้อมูล"
-    };
-
-    // เรียงลำดับ Key เพื่อความสวยงาม (ถ้าทำได้)
-    const sortedKeys = Object.keys(obj).sort();
-
-    for (const key of sortedKeys) {
-        const val = obj[key];
-        if (val === 0) continue; // ซ่อนแถวที่เป็น 0
-
-        // ถ้ามีใน Map ให้ใช้ชื่อไทย ถ้าไม่มีให้ใช้ชื่อเดิม
-        let label = labelMap[key] || key; 
-        
-        // กรณีพิเศษ: ถ้าเป็นหัวข้ออาชีพ (ข้อ 5) อาจจะไม่ต้องแปลงมาก
-        if (title.includes("อาชีพ")) {
-             if (key === "เกษตรกร") label = "5.1 เกษตรกร";
-             else if (key === "ค้าขาย") label = "5.2 ค้าขาย";
-             else if (key.includes("ราชการ")) label = "5.3 รับราชการ";
-             else if (key.includes("รับจ้าง")) label = "5.4 รับจ้าง";
-             else label = "5.5 " + key;
-        }
+        // ถ้าเป็น 0 จะซ่อน หรือจะโชว์ก็ได้ (ในที่นี้ขอซ่อนเพื่อความสะอาด แต่ถ้าอยากโชว์ให้ลบบรรทัดนี้)
+        if (val === 0) continue; 
 
         const pct = total > 0 ? ((val / total) * 100).toFixed(2) : 0;
         rows += `<tr><td class="ps-4">${label}</td><td class="text-center">${val}</td><td class="text-center">${pct}%</td></tr>`;
     }
+    
+    // เก็บคก: เช็คว่ามีข้อมูลอื่นๆ ที่อยู่นอกเหนือ mapping หรือไม่ (เช่น พิมพ์มาเอง)
+    // (ส่วนนี้เป็น Optional ถ้าไม่ต้องการให้แสดงข้อมูลขยะ ก็ลบทิ้งได้ครับ)
+    for (const [k, v] of Object.entries(obj)) {
+        if (!mapping[k] && v > 0) {
+             const pct = total > 0 ? ((v / total) * 100).toFixed(2) : 0;
+             rows += `<tr><td class="ps-4 text-muted"><em>อื่นๆ: ${k}</em></td><td class="text-center">${v}</td><td class="text-center">${pct}%</td></tr>`;
+        }
+    }
+
     return rows;
 }
 // ============================================================================
@@ -1285,6 +1418,7 @@ window.removeHouseholdMember = function(index) {
 </html>
 </body>
 </html>
+
 
 
 
