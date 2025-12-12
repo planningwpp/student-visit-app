@@ -716,75 +716,65 @@
 // 🔴 นำโค้ดนี้ไปทับฟังก์ชัน renderHouseholdTable เดิมในไฟล์ HTML
 // -------------------------------------------------------------
 
+// -------------------------------------------------------------
+// 🔴 แทนที่ฟังก์ชัน renderHouseholdTable ตัวเดิมด้วยตัวนี้ครับ
+// -------------------------------------------------------------
 function renderHouseholdTable(m) {
-    console.log("Raw Household Data from Server:", m); // ดูใน Console ว่าข้อมูลมาไหม
-
     let rawData = Array.isArray(m) ? m : [];
-    
-    // ใช้ Map เพื่อดึงข้อมูล "บรรทัดล่างสุด" (ล่าสุด) ของสมาชิกแต่ละคน
+
+    // ใช้ Map กรองข้อมูลซ้ำ (Last Write Wins)
     const uniqueMap = new Map();
 
     rawData.forEach((item, index) => {
-        // --- ส่วนที่แก้ไข: ลบการเช็ค RecordID ออก (เพราะ Server กรองมาให้แล้ว) ---
-        // เพื่อป้องกันปัญหา Type ไม่ตรงกัน (เช่น '5108_...' vs 5108_...)
-        
         let key;
         const memNo = String(item.MemberNo || "").trim();
         const memName = String(item.MemberName || "").trim();
 
-        // สร้าง Key สำหรับระบุตัวตน
         if (memNo !== "" && memNo !== "undefined") {
-            key = "NO_" + memNo; // ใช้เลขที่สมาชิกเป็นหลัก
+            key = "NO_" + memNo;
         } else if (memName !== "") {
-            key = "NAME_" + memName; // ถ้าไม่มีเลข ใช้ชื่อ
+            key = "NAME_" + memName;
         } else {
-            key = "IDX_" + index; // ถ้าไม่มีอะไรเลย ใช้ลำดับ (กันเหนียว)
+            key = "IDX_" + index;
         }
-
-        // ใส่ลง Map (ตัวหลังสุดจะทับตัวหน้าเสมอ = Last Write Wins)
         uniqueMap.set(key, item);
     });
 
-    // แปลงกลับเป็น Array
     gState.householdMembers = Array.from(uniqueMap.values());
 
-    // เรียงลำดับ: เอาที่มีเลข MemberNo ขึ้นก่อน
+    // เรียงลำดับ
     gState.householdMembers.sort((a, b) => {
         const noA = parseInt(a.MemberNo);
         const noB = parseInt(b.MemberNo);
-        if (!isNaN(noA) && !isNaN(noB)) return noA - noB; // ตัวเลข vs ตัวเลข
-        if (!isNaN(noA)) return -1; // ตัวเลขขึ้นก่อน
+        if (!isNaN(noA) && !isNaN(noB)) return noA - noB;
+        if (!isNaN(noA)) return -1;
         if (!isNaN(noB)) return 1;
         return 0;
     });
 
-    // เคลียร์ตาราง
     if(el.householdTbody) el.householdTbody.innerHTML = '';
 
-    // ถ้าไม่มีข้อมูลเลย ให้สร้าง Default 3 แถว
+    // ถ้าไม่มีข้อมูล สร้าง Default
     if (gState.householdMembers.length === 0) {
-         console.log("No data found, creating defaults.");
          const sm = gState.originalData.studentMaster || {};
          gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName || ''} ${sm.LastName || ''}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 });
          gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 2, MemberName: '', Relation: 'บิดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
          gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: '', Relation: 'มารดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
     }
 
-    // สร้าง HTML
+    // วนลูปสร้างแถว
     gState.householdMembers.forEach((x, i) => {
-        // อัปเดตเลขลำดับให้สวยงาม (1, 2, 3...)
-        x.MemberNo = i + 1; 
-
-        // ดึงค่าแบบยืดหยุ่น (เผื่อชื่อคอลัมน์ใน CSV ไม่ตรงเป๊ะ)
+        x.MemberNo = i + 1; // รันเลขใหม่
+        
         const job = x.MemberOccupation || x.Occupation || '-';
         const edu = x.MemberEducation || x.Education || '-';
         const income = x.Income_Total || x.Income || 0;
-        
-        // แปลงค่า Boolean เป็นเครื่องหมาย /
         const isDisabled = String(x.IsDisabledOrChronic).toUpperCase() === 'TRUE';
         const got10k = String(x.Got10kDigitalWallet).toUpperCase() === 'TRUE';
 
         const tr = document.createElement('tr');
+        
+        // 🟢 จุดที่แก้: ใส่ onclick="window.editHouseholdMember(${i})" และ onclick="window.removeHouseholdMember(${i})" ลงไปตรงๆ เลย
         tr.innerHTML = `
             <td>${x.MemberNo}</td>
             <td class="text-start">${x.MemberName || ''}</td>
@@ -796,12 +786,13 @@ function renderHouseholdTable(m) {
             <td class="text-center">${isDisabled ? '/' : ''}</td>
             <td class="text-center">${got10k ? '/' : ''}</td>
             <td class="text-end">${Number(income).toLocaleString()}</td>
-            <td class="text-center"><button type="button" class="btn btn-sm btn-warning edit-btn"><i class="bi bi-pencil"></i> แก้</button></td>
-            <td class="text-center">${x.Relation !== 'นักเรียน' ? `<button type="button" class="btn btn-sm btn-danger del-btn"><i class="bi bi-trash"></i> ลบ</button>` : ''}</td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-warning" onclick="window.editHouseholdMember(${i})"><i class="bi bi-pencil"></i> แก้</button>
+            </td>
+            <td class="text-center">
+                ${x.Relation !== 'นักเรียน' ? `<button type="button" class="btn btn-sm btn-danger" onclick="window.removeHouseholdMember(${i})"><i class="bi bi-trash"></i> ลบ</button>` : ''}
+            </td>
         `;
-        
-        tr.querySelector('.edit-btn').onclick = () => editHouseholdMember(i);
-        if (tr.querySelector('.del-btn')) tr.querySelector('.del-btn').onclick = () => removeHouseholdMember(i);
         
         el.householdTbody.appendChild(tr);
     });
@@ -958,26 +949,25 @@ function renderHouseholdTable(m) {
         if (!member) return;
 
         Swal.fire({
-            title: 'ยืนยันการลบ?',
-            text: `ต้องการลบ "${member.MemberName}" ออกจากรายการใช่หรือไม่?`,
+            title: 'ลบรายการนี้?',
+            text: `ต้องการลบ "${member.MemberName}" หรือไม่?`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'ใช่, ลบเลย',
+            confirmButtonText: 'ลบเลย',
             cancelButtonText: 'ยกเลิก'
         }).then((result) => {
             if (result.isConfirmed) {
                 // ลบออกจาก Array
                 gState.householdMembers.splice(index, 1);
                 
-                // แจ้งระบบว่ามีการแก้ไขแล้ว (เพื่อให้ปุ่มบันทึกทำงาน)
+                // แจ้งระบบว่ามีการแก้ไข
                 trackChange('household_changed', true);
                 
-                // วาดตารางใหม่
+                // วาดตารางใหม่ (เพื่อให้แถวหายไป)
                 renderHouseholdTable(gState.householdMembers);
                 
-                Swal.fire('ลบสำเร็จ!', '', 'success');
+                Swal.fire('ลบแล้ว!', '', 'success');
             }
         });
     };
@@ -1270,6 +1260,7 @@ function createTableRows(title, obj, total) {
 </html>
 </body>
 </html>
+
 
 
 
