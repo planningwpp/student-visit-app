@@ -712,22 +712,17 @@
     // --- 6. ตารางสมาชิกครัวเรือน (Logic: กรองข้อมูลล่าสุด) ---
     // --- แก้ไขฟังก์ชันนี้ในส่วน JavaScript ---
 
- // -------------------------------------------------------------
-// 🔴 นำโค้ดนี้ไปทับฟังก์ชัน renderHouseholdTable เดิมในไฟล์ HTML
-// -------------------------------------------------------------
-
-// =============================================================
-    // 🔴 ชุดคำสั่งจัดการสมาชิกครัวเรือน (ฉบับแก้ไขสมบูรณ์)
+    // =============================================================
+    // 🔴 ชุดคำสั่งจัดการสมาชิกครัวเรือน (แก้ชื่อให้ตรงกับระบบเดิม)
     // =============================================================
 
-    // 1. ฟังก์ชันวาดตาราง
+    // 1. ฟังก์ชันวาดตาราง (Render Table)
     function renderHouseholdTable(m) {
-        console.log("Rendering Table...", m); // เช็คข้อมูลเข้า
-        
+        console.log("Rendering Table...", m);
         let rawData = Array.isArray(m) ? m : [];
         const uniqueMap = new Map();
 
-        // กรองข้อมูลซ้ำ (Last Write Wins)
+        // กรองข้อมูลซ้ำ
         rawData.forEach((item, index) => {
             let key;
             const memNo = String(item.MemberNo || "").trim();
@@ -736,21 +731,17 @@
             if (memNo !== "" && memNo !== "undefined") key = "NO_" + memNo;
             else if (memName !== "") key = "NAME_" + memName;
             else key = "IDX_" + index;
-            
             uniqueMap.set(key, item);
         });
 
         gState.householdMembers = Array.from(uniqueMap.values());
+        
+        // เรียงลำดับ
+        gState.householdMembers.sort((a, b) => (parseInt(a.MemberNo)||999) - (parseInt(b.MemberNo)||999));
 
-        // เรียงลำดับตาม MemberNo
-        gState.householdMembers.sort((a, b) => {
-            return (parseInt(a.MemberNo) || 999) - (parseInt(b.MemberNo) || 999);
-        });
-
-        // เคลียร์ตาราง
         if(el.householdTbody) el.householdTbody.innerHTML = '';
 
-        // ถ้าไม่มีข้อมูล ให้สร้าง Default 3 แถว
+        // ข้อมูล Default
         if (gState.householdMembers.length === 0) {
              const sm = gState.originalData.studentMaster || {};
              gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName || ''} ${sm.LastName || ''}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 });
@@ -758,11 +749,8 @@
              gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: '', Relation: 'มารดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
         }
 
-        // วนลูปสร้างแถว HTML
         gState.householdMembers.forEach((x, i) => {
-            // อัปเดตเลขลำดับให้เรียงสวยงาม
             x.MemberNo = i + 1; 
-            
             const job = x.MemberOccupation || x.Occupation || '-';
             const edu = x.MemberEducation || x.Education || '-';
             const income = x.Income_Total || x.Income || 0;
@@ -770,6 +758,7 @@
             const got10k = String(x.Got10kDigitalWallet).toUpperCase() === 'TRUE';
 
             const tr = document.createElement('tr');
+            // 🟢 ใช้ชื่อฟังก์ชัน editHouseholdMember และ removeHouseholdMember ให้ตรงกับที่ประกาศไว้
             tr.innerHTML = `
                 <td>${x.MemberNo}</td>
                 <td class="text-start">${x.MemberName || ''}</td>
@@ -782,21 +771,19 @@
                 <td class="text-center">${got10k ? '/' : ''}</td>
                 <td class="text-end">${Number(income).toLocaleString()}</td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-warning" onclick="openEditMemberModal(${i})"><i class="bi bi-pencil"></i> แก้</button>
+                    <button type="button" class="btn btn-sm btn-warning" onclick="editHouseholdMember(${i})"><i class="bi bi-pencil"></i> แก้</button>
                 </td>
                 <td class="text-center">
-                    ${x.Relation !== 'นักเรียน' ? `<button type="button" class="btn btn-sm btn-danger" onclick="executeDeleteMember(${i})"><i class="bi bi-trash"></i> ลบ</button>` : ''}
+                    ${x.Relation !== 'นักเรียน' ? `<button type="button" class="btn btn-sm btn-danger" onclick="removeHouseholdMember(${i})"><i class="bi bi-trash"></i> ลบ</button>` : ''}
                 </td>
             `;
             el.householdTbody.appendChild(tr);
         });
-
         calculateHouseholdIncome();
     }
 
-    // 2. ฟังก์ชันเปิดหน้าต่างแก้ไข (เปลี่ยนชื่อเพื่อป้องกันการชน)
-    window.openEditMemberModal = (index) => {
-        console.log("Edit member index:", index);
+    // 2. ฟังก์ชันเพิ่ม/แก้ไข (ใช้ชื่อเดิม editHouseholdMember เพื่อให้ปุ่มเพิ่มใช้งานได้)
+    window.editHouseholdMember = (index) => {
         const isNew = index === -1;
         const m = isNew ? {} : gState.householdMembers[index];
         const val = (v) => v || '';
@@ -887,11 +874,10 @@
         });
     };
 
-    // 3. ฟังก์ชันลบสมาชิก (เปลี่ยนชื่อเพื่อป้องกันการชน)
-    window.executeDeleteMember = (index) => {
-        console.log("Try delete index:", index);
+    // 3. ฟังก์ชันลบสมาชิก (ใช้ชื่อ removeHouseholdMember ให้ตรงกับที่เรียกในตาราง)
+    window.removeHouseholdMember = (index) => {
         const mem = gState.householdMembers[index];
-        if(!mem) return console.error("Member not found");
+        if(!mem) return;
 
         Swal.fire({
             title: 'ลบรายการ?',
@@ -902,14 +888,23 @@
             confirmButtonText: 'ลบเลย'
         }).then((result) => {
             if (result.isConfirmed) {
-                gState.householdMembers.splice(index, 1); // ลบออกจาก Array
-                trackChange('household_changed', true);   // แจ้งว่ามีการแก้
-                renderHouseholdTable(gState.householdMembers); // วาดตารางใหม่
+                gState.householdMembers.splice(index, 1); 
+                trackChange('household_changed', true);
+                renderHouseholdTable(gState.householdMembers);
                 Swal.fire('ลบเรียบร้อย', '', 'success');
             }
         });
     };
-    // =============================================================
+    
+    // 🔴 4. บังคับผูกปุ่ม "เพิ่ม" ใหม่อีกครั้ง (เพื่อความชัวร์ 100%)
+    // วางโค้ดนี้ไว้ท้ายสุดของ script block นี้เลย
+    const addBtn = document.getElementById('add-member-btn');
+    if(addBtn) {
+        addBtn.onclick = function() {
+            // เรียกฟังก์ชัน editHouseholdMember(-1)
+            window.editHouseholdMember(-1); 
+        };
+    }
     // --- 8. บันทึกข้อมูล ---
     async function handleSaveToSheets() {
         el.saveBtn.disabled = true; el.saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังบันทึก...';
@@ -1198,6 +1193,7 @@ function createTableRows(title, obj, total) {
 </html>
 </body>
 </html>
+
 
 
 
