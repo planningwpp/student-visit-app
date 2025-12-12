@@ -105,26 +105,63 @@
 
     <div id="student-selection-screen" class="container">
       <div class="row justify-content-center">
-        <div class="col-md-10 col-lg-8">
+        <div class="col-md-12 col-lg-10">
           <div class="card shadow border-0 p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3"><h4 class="mb-0">ยินดีต้อนรับ, <span id="user-name-display" class="text-primary"></span></h4></div>
-            <div class="row g-3">
-              <div class="col-md-6"><label class="form-label fw-bold">1. เลือกระดับชั้น</label><select id="class-select" class="form-select form-select-lg"><option value="">-- กรุณาเลือก --</option></select></div>
-              <div class="col-md-6"><label class="form-label fw-bold">2. เลือกนักเรียน</label><select id="student-select" class="form-select form-select-lg" disabled><option value="">-- กรุณาเลือกระดับชั้นก่อน --</option></select></div>
-            </div>
             
-            <div class="row g-3 mt-3">
-              <div class="col-md-6">
-                <label class="form-label fw-bold">3. ภาคเรียน</label>
-                <input type="number" id="semester-select" class="form-control form-control-lg" value="2">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0 text-primary fw-bold"><i class="bi bi-person-lines-fill"></i> รายชื่อนักเรียนในที่ปรึกษา</h4>
+                <div class="text-muted small">ยินดีต้อนรับ, <span id="user-name-display" class="fw-bold"></span></div>
+            </div>
+
+            <div class="row g-2 mb-4 bg-light p-3 rounded align-items-end">
+              <div class="col-md-4">
+                 <label class="form-label fw-bold small">1. ระดับชั้น</label>
+                 <select id="class-select" class="form-select"></select>
               </div>
-              <div class="col-md-6">
-                <label class="form-label fw-bold">4. ปีการศึกษา</label>
-                <input type="number" id="year-select" class="form-control form-control-lg" value="2568">
+              <div class="col-md-2">
+                 <label class="form-label fw-bold small">2. ภาคเรียน</label>
+                 <select id="semester-select" class="form-select">
+                     <option value="1">1</option>
+                     <option value="2" selected>2</option>
+                 </select>
+              </div>
+              <div class="col-md-2">
+                 <label class="form-label fw-bold small">3. ปีการศึกษา</label>
+                 <input type="number" id="year-select" class="form-control" value="2568">
+              </div>
+              <div class="col-md-4">
+                 <button id="btn-load-class" class="btn btn-primary w-100" onclick="loadStudentList()">
+                     <i class="bi bi-search"></i> ค้นหารายชื่อ
+                 </button>
               </div>
             </div>
 
-            <button id="start-form-btn" class="btn btn-success btn-lg w-100 mt-4" disabled><i class="bi bi-pencil-square me-2"></i> เริ่มกรอกข้อมูล</button>
+            <div id="student-list-area" style="display:none;">
+                
+                <div class="d-flex gap-2 mb-2">
+                    <button class="btn btn-sm btn-outline-secondary active" onclick="filterList('all')">ทั้งหมด</button>
+                    <button class="btn btn-sm btn-outline-success" onclick="filterList('visited')">เยี่ยมแล้ว</button>
+                    <button class="btn btn-sm btn-outline-warning" onclick="filterList('pending')">รอเยี่ยม</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered align-middle">
+                        <thead class="table-primary text-center">
+                            <tr>
+                                <th width="50">เลขที่</th>
+                                <th>ชื่อ - นามสกุล</th>
+                                <th width="100">สถานะ</th>
+                                <th width="120">รายได้ครัวเรือน</th>
+                                <th width="100">วันที่เยี่ยม</th>
+                                <th width="100">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-list-tbody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -659,9 +696,128 @@
     function handleLogout() { Swal.fire({title:'Logout?', showCancelButton:true}).then(r=>{ if(r.isConfirmed){ localStorage.removeItem(`visit_${gState.currentRecordId}`); window.location.reload(); }}); }
 
     function populateClassDropdown(c) { el.classSelect.innerHTML='<option value="">-- เลือก --</option>'; c.forEach(x=>el.classSelect.add(new Option(x,x))); }
-    async function handleClassChange() { const c=el.classSelect.value; if(!c){el.studentSelect.disabled=true;return;} el.studentSelect.disabled=true; setLoading(true); try{ const res=await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentsByClass', className: c }) }); const d=await res.json(); d.sort((a,b)=>parseInt(a.studentNumber||0)-parseInt(b.studentNumber||0)); el.studentSelect.innerHTML='<option value="">-- เลือก --</option>'; d.forEach(s=>el.studentSelect.add(new Option(`${s.name}`,s.id))); el.studentSelect.disabled=false; validateStartButton(); setLoading(false); }catch(e){handleError(e);} }
-    function validateStartButton() { el.startFormBtn.disabled=!(el.classSelect.value&&el.studentSelect.value); }
+   // =========================================================
+    // 🟢 ฟังก์ชันสำหรับหน้าเลือกนักเรียนแบบใหม่ (List View)
+    // =========================================================
+    
+    // 1. โหลดรายชื่อนักเรียนเมื่อกดค้นหา (หรือเลือกห้อง)
+    async function loadStudentList() {
+        const cls = document.getElementById('class-select').value;
+        const sem = document.getElementById('semester-select').value;
+        const yr = document.getElementById('year-select').value;
 
+        if (!cls) return Swal.fire('เตือน', 'กรุณาเลือกระดับชั้นก่อนครับ', 'warning');
+
+        setLoading(true, "กำลังโหลดรายชื่อ...");
+        
+        try {
+            const res = await fetch(GAS_API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'getClassStatusList', className: cls, semester: sem, year: yr })
+            });
+            const data = await res.json();
+            
+            if (data.error) throw new Error(data.error);
+
+            renderStudentListTable(data);
+            document.getElementById('student-list-area').style.display = 'block';
+            setLoading(false);
+
+        } catch (e) {
+            handleError(e);
+        }
+    }
+
+    // 2. วาดตาราง
+    let currentStudentList = []; // เก็บไว้กรอง
+    function renderStudentListTable(data) {
+        currentStudentList = data;
+        const tbody = document.getElementById('student-list-tbody');
+        tbody.innerHTML = '';
+
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">ไม่พบข้อมูลนักเรียน</td></tr>`;
+            return;
+        }
+
+        data.forEach(s => {
+            const tr = document.createElement('tr');
+            tr.dataset.status = s.status; // ไว้กรอง
+
+            // Badge สถานะ
+            const statusBadge = s.status === 'visited' 
+                ? `<span class="badge bg-success">เรียบร้อย</span>` 
+                : `<span class="badge bg-warning text-dark">รอเยี่ยม</span>`;
+            
+            // Highlight รายได้น้อย (ถ้ามีข้อมูล)
+            const incomeText = s.status === 'visited' ? Number(s.income).toLocaleString() : '-';
+            const incomeClass = (s.status === 'visited' && s.income < 30000) ? 'text-danger fw-bold' : '';
+
+            // ปุ่มกด
+            const btnClass = s.status === 'visited' ? 'btn-outline-primary' : 'btn-primary shadow-sm';
+            const btnText = s.status === 'visited' ? '<i class="bi bi-pencil"></i> แก้ไข' : '<i class="bi bi-house-door-fill"></i> เยี่ยมบ้าน';
+
+            tr.innerHTML = `
+                <td class="text-center">${s.number}</td>
+                <td>
+                    ${s.name}
+                    ${s.isRisk ? '<i class="bi bi-exclamation-triangle-fill text-danger ms-1" title="กลุ่มเสี่ยง"></i>' : ''}
+                </td>
+                <td class="text-center">${statusBadge}</td>
+                <td class="text-end ${incomeClass}">${incomeText}</td>
+                <td class="text-center small">${s.lastUpdated}</td>
+                <td class="text-center">
+                    <button class="btn btn-sm ${btnClass} w-100" onclick="selectStudentAndStart('${s.id}', '${s.name}')">
+                        ${btnText}
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // 3. ฟังก์ชันเมื่อกดปุ่ม "เยี่ยมบ้าน/แก้ไข" ในตาราง
+    window.selectStudentAndStart = async function(sid, sname) {
+        // ตั้งค่าตัวแปร Global
+        gState.selectedStudentId = sid;
+        gState.selectedStudentName = sname;
+        
+        const sem = document.getElementById('semester-select').value;
+        const yr = document.getElementById('year-select').value;
+        gState.currentRecordId = `${sid}_${sem}_${yr}`;
+
+        // เปลี่ยนหัวข้อหน้าฟอร์ม
+        if(el.studentNameHeader) el.studentNameHeader.textContent = `${sname} (${sem}/${yr})`;
+
+        // เรียกฟังก์ชันโหลดข้อมูลเข้าฟอร์ม (handleStartForm เดิม แต่ปรับนิดหน่อย)
+        // เราจะ Bypass handleStartForm ไปเรียก Fetch โดยตรงเลยเพื่อความชัวร์
+        setLoading(true, "กำลังเปิดแบบฟอร์ม...");
+        try {
+            const res = await fetch(GAS_API_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({ action: 'getStudentVisitData', recordId: gState.currentRecordId }) 
+            });
+            const data = await res.json();
+            
+            if (data.studentMaster) {
+                 loadStudentDataSuccess(data);
+            } else {
+                 // กรณีเริ่มใหม่
+                 loadStudentDataSuccess({ studentMaster: {}, visitData: {}, householdData: [] });
+            }
+        } catch(e) {
+            handleError(e);
+        }
+    };
+
+    // 4. ฟังก์ชันกรองตาราง (Filter)
+    window.filterList = function(status) {
+        const rows = document.querySelectorAll('#student-list-tbody tr');
+        rows.forEach(r => {
+            if (status === 'all') r.style.display = '';
+            else r.style.display = (r.dataset.status === status) ? '' : 'none';
+        });
+    };
     // --- 5. เริ่มต้นกรอกข้อมูล (Load Data) ---
     async function handleStartForm() { 
        try { 
@@ -776,7 +932,7 @@
         showScreen('dashboard');
         loadDashboardData(); // <--- เพิ่มบรรทัดนี้
     }
-}; if (el.navPrintLink) el.navPrintLink.onclick = (e) => { e.preventDefault(); if (SCREENS.form.style.display === 'block') handleBackToSelection(() => showScreen('print')); else showScreen('print'); if (el.classSelect.value) { el.printClassSelect.innerHTML = el.classSelect.innerHTML; el.printClassSelect.value = el.classSelect.value; } }; if (el.navLogoutBtn) el.navLogoutBtn.onclick = handleLogout; if (el.loginForm) el.loginForm.onsubmit = handleManualLogin; if (el.classSelect) el.classSelect.onchange = handleClassChange; if (el.studentSelect) el.studentSelect.onchange = validateStartButton; if (el.startFormBtn) el.startFormBtn.onclick = handleStartForm; if (el.backBtn) el.backBtn.onclick = (e) => { e.preventDefault(); handleBackToSelection(); }; if (el.saveBtn) el.saveBtn.onclick = handleSaveToSheets; if (el.gpsBtn) el.gpsBtn.onclick = handleGPSButton; if (el.addMemberBtn) el.addMemberBtn.onclick = () => editHouseholdMember(-1); if (el.loadPrintListBtn) el.loadPrintListBtn.onclick = handleLoadPrintList; if (el.printAllBtn) el.printAllBtn.onclick = handleBatchPrint; if (el.printTableBody) el.printTableBody.onclick = handlePrintTableClick; if (el.backFromPrintBtn) el.backFromPrintBtn.onclick = () => showScreen('selection'); el.sidebarLinks.forEach(link => { link.onclick = (e) => { e.preventDefault(); showSection(link.getAttribute('data-section')); }; }); if (el.livesWithSelect) el.livesWithSelect.onchange = (e) => el.q4Content.style.display = (e.target.value === 'ครัวเรือนสถาบัน') ? 'block' : 'none'; el.q3_1_Status.forEach(r => r.onchange = (e) => el.q3_1_SubOptions.style.display = (e.target.value === 'มี') ? 'block' : 'none'); el.q3_4_Status.forEach(r => r.onchange = (e) => el.q3_4_SubOptions.style.display = (e.target.value === 'ทำ') ? 'block' : 'none'); const incChk = document.getElementById('Q3_StudentIncome_Has'); if (incChk) incChk.onchange = (e) => { const inps = [document.getElementsByName('Q3_StudentIncome_Detail')[0], document.getElementsByName('Q3_StudentIncome_Amount')[0]]; inps.forEach(i => { if (i) { i.disabled = !e.target.checked; if (!e.target.checked) i.value = ''; } }); trackChange('Q3_StudentIncome_Has', e.target.checked ? "TRUE" : "FALSE"); }; document.querySelectorAll('.file-upload-input').forEach(i => i.onchange = handleFileUpload); const cpBtn = document.getElementById('open-change-pwd-btn'); if (cpBtn) cpBtn.onclick = (e) => { e.preventDefault(); new bootstrap.Modal(document.getElementById('changePasswordModal')).show(); }; const savePassBtn = document.getElementById('save-new-pass-btn'); if(savePassBtn) savePassBtn.onclick = async () => { const [em,o,n] = [document.getElementById('cp-email').value, document.getElementById('cp-old-pass').value, document.getElementById('cp-new-pass').value]; if (!em || !o || !n) return Swal.fire('เตือน', 'กรอกให้ครบ', 'warning'); try { setLoading(true, 'เปลี่ยนรหัส...'); const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'changePassword', email: em, oldPass: o, newPass: n }) }); const json = await res.json(); if (json.success) { Swal.fire('สำเร็จ', 'เรียบร้อย', 'success'); bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide(); } else throw new Error(json.error); } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { setLoading(false); } }; const riskToggle = document.getElementById('Q11_IsAtRisk'); const riskDetails = document.getElementById('risk-details'); if (riskToggle) { riskToggle.addEventListener('change', (e) => { riskDetails.style.display = e.target.checked ? 'block' : 'none'; trackChange('Q11_IsAtRisk', e.target.checked ? "TRUE" : "FALSE"); }); } const behToggle = document.getElementById('Q11_Risk_Behavior'); const behOptions = document.getElementById('risk-behavior-options'); if (behToggle) { behToggle.addEventListener('change', (e) => { behOptions.style.display = e.target.checked ? 'block' : 'none'; }); } const othRiskCheck = document.getElementById('Q11_B_Other_Check'); const othRiskText = document.getElementById('Q11_B_Other_Text'); if (othRiskCheck) { othRiskCheck.addEventListener('change', (e) => { othRiskText.style.display = e.target.checked ? 'block' : 'none'; if (!e.target.checked) othRiskText.value = ''; }); } }
+}; if (el.navPrintLink) el.navPrintLink.onclick = (e) => { e.preventDefault(); if (SCREENS.form.style.display === 'block') handleBackToSelection(() => showScreen('print')); else showScreen('print'); if (el.classSelect.value) { el.printClassSelect.innerHTML = el.classSelect.innerHTML; el.printClassSelect.value = el.classSelect.value; } }; if (el.navLogoutBtn) el.navLogoutBtn.onclick = handleLogout; if (el.loginForm) el.loginForm.onsubmit = handleManualLogin; if (el.classSelect) el.classSelect.onchange = loadStudentList; if (el.studentSelect) el.studentSelect.onchange = validateStartButton; if (el.startFormBtn) el.startFormBtn.onclick = handleStartForm; if (el.backBtn) el.backBtn.onclick = (e) => { e.preventDefault(); handleBackToSelection(); }; if (el.saveBtn) el.saveBtn.onclick = handleSaveToSheets; if (el.gpsBtn) el.gpsBtn.onclick = handleGPSButton; if (el.addMemberBtn) el.addMemberBtn.onclick = () => editHouseholdMember(-1); if (el.loadPrintListBtn) el.loadPrintListBtn.onclick = handleLoadPrintList; if (el.printAllBtn) el.printAllBtn.onclick = handleBatchPrint; if (el.printTableBody) el.printTableBody.onclick = handlePrintTableClick; if (el.backFromPrintBtn) el.backFromPrintBtn.onclick = () => showScreen('selection'); el.sidebarLinks.forEach(link => { link.onclick = (e) => { e.preventDefault(); showSection(link.getAttribute('data-section')); }; }); if (el.livesWithSelect) el.livesWithSelect.onchange = (e) => el.q4Content.style.display = (e.target.value === 'ครัวเรือนสถาบัน') ? 'block' : 'none'; el.q3_1_Status.forEach(r => r.onchange = (e) => el.q3_1_SubOptions.style.display = (e.target.value === 'มี') ? 'block' : 'none'); el.q3_4_Status.forEach(r => r.onchange = (e) => el.q3_4_SubOptions.style.display = (e.target.value === 'ทำ') ? 'block' : 'none'); const incChk = document.getElementById('Q3_StudentIncome_Has'); if (incChk) incChk.onchange = (e) => { const inps = [document.getElementsByName('Q3_StudentIncome_Detail')[0], document.getElementsByName('Q3_StudentIncome_Amount')[0]]; inps.forEach(i => { if (i) { i.disabled = !e.target.checked; if (!e.target.checked) i.value = ''; } }); trackChange('Q3_StudentIncome_Has', e.target.checked ? "TRUE" : "FALSE"); }; document.querySelectorAll('.file-upload-input').forEach(i => i.onchange = handleFileUpload); const cpBtn = document.getElementById('open-change-pwd-btn'); if (cpBtn) cpBtn.onclick = (e) => { e.preventDefault(); new bootstrap.Modal(document.getElementById('changePasswordModal')).show(); }; const savePassBtn = document.getElementById('save-new-pass-btn'); if(savePassBtn) savePassBtn.onclick = async () => { const [em,o,n] = [document.getElementById('cp-email').value, document.getElementById('cp-old-pass').value, document.getElementById('cp-new-pass').value]; if (!em || !o || !n) return Swal.fire('เตือน', 'กรอกให้ครบ', 'warning'); try { setLoading(true, 'เปลี่ยนรหัส...'); const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'changePassword', email: em, oldPass: o, newPass: n }) }); const json = await res.json(); if (json.success) { Swal.fire('สำเร็จ', 'เรียบร้อย', 'success'); bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide(); } else throw new Error(json.error); } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { setLoading(false); } }; const riskToggle = document.getElementById('Q11_IsAtRisk'); const riskDetails = document.getElementById('risk-details'); if (riskToggle) { riskToggle.addEventListener('change', (e) => { riskDetails.style.display = e.target.checked ? 'block' : 'none'; trackChange('Q11_IsAtRisk', e.target.checked ? "TRUE" : "FALSE"); }); } const behToggle = document.getElementById('Q11_Risk_Behavior'); const behOptions = document.getElementById('risk-behavior-options'); if (behToggle) { behToggle.addEventListener('change', (e) => { behOptions.style.display = e.target.checked ? 'block' : 'none'; }); } const othRiskCheck = document.getElementById('Q11_B_Other_Check'); const othRiskText = document.getElementById('Q11_B_Other_Text'); if (othRiskCheck) { othRiskCheck.addEventListener('change', (e) => { othRiskText.style.display = e.target.checked ? 'block' : 'none'; if (!e.target.checked) othRiskText.value = ''; }); } }
     async function handleLoadPrintList() { const cls = el.printClassSelect.value; if(!cls) return Swal.fire('เตือน','เลือกชั้น','warning'); setLoading(true); el.printListContainer.style.display='none'; el.printTableBody.innerHTML=''; try { const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentsByClass', className: cls }) }); const d = await res.json(); if(d && Array.isArray(d)) { d.forEach(s=>{ const rid = `${s.id}_${el.printSemester.value}_${el.printYear.value}`; el.printTableBody.innerHTML += `<tr><td class="text-center">${s.studentNumber}</td><td>${s.name}</td><td class="text-center"><button class="btn btn-sm btn-danger print-single-btn" data-rid="${rid}" data-name="${s.name}">PDF</button></td></tr>`; }); el.printListContainer.style.display='block'; } } catch(e){handleError(e);} finally{setLoading(false);} }
     function handlePrintTableClick(e) { const btn=e.target.closest('.print-single-btn'); if(btn) generateSinglePDF(btn.dataset.rid, btn.dataset.name); }
     async function handleBatchPrint() { const btns = document.querySelectorAll('.print-single-btn'); if(btns.length==0)return; if((await Swal.fire({title:`พิมพ์ ${btns.length} คน?`, showCancelButton:true})).isConfirmed) { for(const btn of btns) { btn.scrollIntoView({behavior:'smooth',block:'center'}); btn.disabled=true; btn.innerHTML='...'; try { await generateSinglePDF(btn.dataset.rid, btn.dataset.name, true); btn.className='btn btn-sm btn-success'; btn.innerHTML='OK'; } catch { btn.className='btn btn-sm btn-secondary'; btn.innerHTML='X'; } await new Promise(r=>setTimeout(r,1000)); } Swal.fire('เสร็จสิ้น','','success'); } }
@@ -1319,6 +1475,7 @@ window.exportTableToExcel = function() {
 </html>
 </body>
 </html>
+
 
 
 
