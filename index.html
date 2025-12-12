@@ -1024,23 +1024,52 @@
 
     function formatDateForInput(ds) { if(!ds)return''; if(/^\d{4}-\d{2}-\d{2}$/.test(ds))return ds; const d=new Date(ds); if(isNaN(d.getTime()))return''; return d.toISOString().split('T')[0]; }
     function prefillForm(m, v) { if(!m){return;} document.getElementById('s1-name').innerText=`${m.Prefix||''} ${m.FirstName} ${m.LastName}`; document.getElementById('s1-class').innerText=m.Class; document.getElementById('s1-citizenid').innerText=m.CitizenID||'N/A'; const sv = (val) => (val===undefined||val===null)?"":val; document.getElementById('Q1_GuardianFirstName').value = sv((v&&v.Q1_GuardianFirstName)||m.DefaultGuardianName); document.getElementById('Q1_GuardianPhone').value = sv((v&&v.Q1_GuardianPhone)||m.DefaultGuardianPhone); if(document.getElementById('Q1_StudentPhone')) document.getElementById('Q1_StudentPhone').value = sv((v&&v.Q1_StudentPhone)||m.Phone); if(document.getElementById('Q1_StudentNickname')) document.getElementById('Q1_StudentNickname').value = sv((v&&v.Q1_StudentNickname)||m.Nickname); if(document.getElementById('Q1_FatherName')) document.getElementById('Q1_FatherName').value = sv((v&&v.Q1_FatherName)||m.FatherName); if(document.getElementById('Q1_FatherPhone')) document.getElementById('Q1_FatherPhone').value = sv((v&&v.Q1_FatherPhone)||m.FatherPhone); if(document.getElementById('Q1_FatherJob')) document.getElementById('Q1_FatherJob').value = sv((v&&v.Q1_FatherJob)||m.FatherJob); if(document.getElementById('Q1_MotherName')) document.getElementById('Q1_MotherName').value = sv((v&&v.Q1_MotherName)||m.MotherName); if(document.getElementById('Q1_MotherPhone')) document.getElementById('Q1_MotherPhone').value = sv((v&&v.Q1_MotherPhone)||m.MotherPhone); if(document.getElementById('Q1_MotherJob')) document.getElementById('Q1_MotherJob').value = sv((v&&v.Q1_MotherJob)||m.MotherJob); if(document.getElementById('Q1_StudentDOB')) { const dob = (v&&v.Q1_StudentDOB)||m.DOB; document.getElementById('Q1_StudentDOB').value = formatDateForInput(dob); } if(v) { const f = document.getElementById('visit-form'); for(const k in v) { const inp = f.elements[k]; if(inp) { if(k==='Q1_StudentDOB') continue; if(inp.type==='checkbox') inp.checked = (String(v[k]).toUpperCase() === 'TRUE'); else if(inp.length>0 && inp[0].type==='radio') { const r=f.querySelector(`input[name="${k}"][value="${v[k]}"]`); if(r) r.checked=true; } else if(inp.type==='hidden' && k.includes('PhotoURL')) { inp.value=v[k]; if(v[k]) { const img=document.getElementById(`preview_${k}`); if(img){img.src=v[k]; img.style.display='block';} const wrap=document.getElementById(`wrapper_${k}`); if(wrap)wrap.style.display='inline-block'; const del=wrap?wrap.querySelector('.btn-delete-img'):null; if(del)del.style.display='block'; } } else if(inp.type!=='file') inp.value=v[k]; if(['Q3_1_DependencyStatus','Q3_4_AgricultureStatus','Q1_LivesWith','Q3_StudentIncome_Has'].includes(k)) { const el = document.getElementsByName(k)[0] || document.getElementById(k); if(el) el.dispatchEvent(new Event('change')); } if(['Q11_IsAtRisk','Q11_Risk_Behavior'].includes(k)) { const el = document.getElementById(k); if(el) el.dispatchEvent(new Event('change')); } } } } }
-function handleBackToSelection(cb) { 
-        if(Object.keys(gState.changesToPush).length){ 
+    // =========================================================
+    // 🟡 FIXED: ปุ่มกลับ (ฉบับแก้ไข: บังคับกลับหน้าแรกเสมอ)
+    // =========================================================
+    window.handleBackToSelection = function(cb) {
+        // 1. เช็คว่ามีการแก้ไขค้างไว้หรือไม่
+        const hasChanges = gState.changesToPush && Object.keys(gState.changesToPush).length > 0;
+
+        if (hasChanges) {
+            // กรณีมีข้อมูลค้าง: ถามยืนยันก่อน
             Swal.fire({
-                title: 'ยังไม่บันทึก',
-                text: 'ข้อมูลมีการเปลี่ยนแปลง ต้องการออกจากหน้านี้โดยไม่บันทึกหรือไม่?',
+                title: 'มีข้อมูลที่ยังไม่ได้บันทึก',
+                text: "ต้องการออกจากหน้านี้โดยไม่บันทึกหรือไม่?",
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: 'ใช่ ออกเลย',
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'ใช่ ออกเลย (ทิ้งข้อมูล)',
                 cancelButtonText: 'ยกเลิก'
-            }).then(r=>{
-                if(r.isConfirmed){
-                    performBackAction(cb);
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    forceGoBack(cb);
                 }
-            })
+            });
         } else {
-            performBackAction(cb);
-        } 
+            // กรณีไม่มีข้อมูลค้าง: กลับเลย
+            forceGoBack(cb);
+        }
+    };
+
+    // ฟังก์ชันย่อยสำหรับสั่งย้อนกลับ (ใส่ try-catch ป้องกัน Error)
+    function forceGoBack(cb) {
+        try {
+            // พยายามเคลียร์ค่าในฟอร์ม
+            resetFormState();
+        } catch (e) {
+            console.warn("Reset form error (ignored):", e);
+        }
+
+        // ตรวจสอบว่ามีคำสั่งพิเศษต่อไหม (เช่น กดจาก Navbar)
+        if (typeof cb === 'function') {
+            cb();
+        } else {
+            // ค่าเริ่มต้น: กลับไปหน้าเลือกนักเรียน
+            showScreen('selection');
+            window.scrollTo(0, 0); // เลื่อนขึ้นบนสุด
+        }
     }
 
     function performBackAction(cb) {
@@ -1127,50 +1156,63 @@ function handleBackToSelection(cb) {
 // =========================================================
     // 🟡 UPDATED: Dashboard Rendering (จุดที่ 6 แยกสถานะ)
     // =========================================================
+  // =========================================================
+    // 🟡 FIXED: Dashboard Rendering (แก้ปัญหาค่าเป็น 0 และ Dropdown)
+    // =========================================================
+    
+    // ตัวแปรเก็บค่าห้องที่เลือกไว้ชั่วคราว (Global)
+    window.dashboardCurrentClass = ""; 
+
     function renderDashboard(data) {
         const container = document.getElementById('dashboard-screen');
         const currentSem = document.getElementById('semester-select')?.value || "2";
         const currentYear = document.getElementById('year-select')?.value || "2568";
         
-        // (จุดที่ 6) คำนวณยอด
-        // data.total ควรจะเป็น "จำนวนนักเรียนทั้งหมดในห้อง"
-        // data.visited_count ควรเป็น "จำนวนที่บันทึกแล้ว" (Backend ต้องส่งมา)
-        // ถ้า Backend ส่งมาแค่ total (ที่เป็นยอดเยี่ยมแล้ว) เราอาจต้องปรับ Logic นิดหน่อย
+        // 1. 🟢 แก้ปัญหา: คำนวณยอด "เยี่ยมแล้ว" เองจากข้อมูลกราฟ (ไม่ต้องรอ Backend)
+        // ถ้า Backend ส่ง visited_count มาให้ใช้ ถ้าไม่มี ให้ลองนับรวมจากกราฟสถานภาพครอบครัว
+        let calculatedVisited = data.visited_count || 0;
         
-        // สมมติว่า Backend ปรับให้ส่ง:
-        // data.total_students = จำนวนนักเรียนทั้งหมด
-        // data.total_visits = จำนวนที่เยี่ยมแล้ว
-        
-        // *Fallback logic: ถ้า Backend ยังเป็นแบบเก่า (ส่งมาแค่ total คือยอดเยี่ยม)*
-        // เราจะพยายามใช้ data.total เป็นยอดเยี่ยม และต้องหายอด นร. ทั้งหมดมาลบ (ซึ่ง dashboard อาจจะไม่รู้ถ้าระบบไม่ส่งมา)
-        // ดังนั้น **แนะนำให้แก้ Backend GAS ให้ส่ง keys: total_students และ total_visits มาครับ**
-        
-        // Code นี้เขียนเผื่อไว้ให้รองรับทั้งคู่
-        const totalStudents = data.total_students || data.total || 0; 
-        const visitedCount = data.total_visits || (data.total_students ? data.total : 0); // ถ้ามี key แยก ให้ใช้ key แยก
-        const pendingCount = totalStudents - visitedCount;
+        if (!calculatedVisited && data.q1_family_status) {
+            // รวมตัวเลขจากกราฟวงกลม เพื่อหาจำนวนคนที่กรอกข้อมูลแล้วจริงๆ
+            calculatedVisited = Object.values(data.q1_family_status).reduce((a, b) => a + b, 0);
+        }
 
-        // คำนวณเปอร์เซ็นต์
-        const percentVisited = totalStudents > 0 ? ((visitedCount / totalStudents) * 100).toFixed(1) : 0;
+        // data.total ปกติคือจำนวนนักเรียนทั้งหมดในห้อง
+        // ถ้า data.total น้อยกว่ายอดเยี่ยม (กรณี Backend ส่งผิด) ให้ปรับให้เท่ากัน
+        let totalStudents = data.total_students || data.total || 0;
+        if (totalStudents < calculatedVisited) totalStudents = calculatedVisited;
 
+        const pendingCount = totalStudents - calculatedVisited;
+        const percentVisited = totalStudents > 0 ? ((calculatedVisited / totalStudents) * 100).toFixed(1) : 0;
+
+        // สร้าง HTML
         let html = `
           <div class="card shadow-sm mb-4 bg-white border-primary">
             <div class="card-body py-3">
               <div class="row align-items-center g-2">
                 <div class="col-auto"><span class="fw-bold text-primary"><i class="bi bi-funnel-fill"></i> ตัวเลือก:</span></div>
+                
                 <div class="col-auto">
-                    <select id="dash-class" class="form-select form-select-sm">
+                    <select id="dash-class" class="form-select form-select-sm" onchange="refreshDashboard()">
                         <option value="">-- ทุกระดับชั้น --</option>
                     </select>
                 </div>
+
+                <div class="col-auto">
+                    <select id="dash-sem" class="form-select form-select-sm">
+                        <option value="1" ${currentSem=="1"?"selected":""}>เทอม 1</option>
+                        <option value="2" ${currentSem=="2"?"selected":""}>เทอม 2</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <input type="number" id="dash-year" class="form-control form-control-sm" style="width: 80px;" value="${currentYear}">
+                </div>
+
                 <div class="col-auto">
                     <button onclick="refreshDashboard()" class="btn btn-sm btn-primary"><i class="bi bi-arrow-clockwise"></i> อัปเดต</button>
                 </div>
                 <div class="col-auto">
-                    <button onclick="exportTableToExcel()" class="btn btn-sm btn-success"><i class="bi bi-file-earmark-excel"></i> Excel</button>
-                </div>
-                <div class="col text-end text-muted small">
-                     ข้อมูลเทอม ${currentSem}/${currentYear}
+                    <button onclick="exportTableToExcel()" class="btn btn-sm btn-success"><i class="bi bi-file-earmark-excel"></i>Export Excel</button>
                 </div>
               </div>
             </div>
@@ -1183,21 +1225,18 @@ function handleBackToSelection(cb) {
                     <p class="mb-0">นักเรียนทั้งหมด</p>
                 </div>
             </div>
-
             <div class="col-md-3">
                 <div class="card bg-success text-white p-3 h-100 text-center shadow-sm">
-                    <h3>${visitedCount} <span class="fs-6">(${percentVisited}%)</span></h3>
+                    <h3>${calculatedVisited} <span class="fs-6">(${percentVisited}%)</span></h3>
                     <p class="mb-0">เยี่ยมบ้านแล้ว</p>
                 </div>
             </div>
-
             <div class="col-md-3">
                 <div class="card bg-warning text-dark p-3 h-100 text-center shadow-sm">
                     <h3>${pendingCount}</h3>
                     <p class="mb-0">รอเยี่ยม</p>
                 </div>
             </div>
-
             <div class="col-md-3">
                 <div class="card bg-danger text-white p-3 h-100 text-center shadow-sm">
                     <h3>${data.risks?.total_risk || 0}</h3>
@@ -1218,10 +1257,24 @@ function handleBackToSelection(cb) {
                     <table id="dashboard-table" class="table table-bordered table-sm table-hover" style="font-size: 0.9rem;">
                         <thead class="table-light"><tr><th>รายการ</th><th class="text-center" style="width:100px">จำนวน</th><th class="text-center" style="width:100px">ร้อยละ</th></tr></thead>
                         <tbody>
-                            ${createTableRows('1. บ้านที่พักอาศัย', data.q3_house_ownership, visitedCount)}
-                            ${createTableRows('2. ลักษณะบ้าน', data.q3_house_type, visitedCount)}
-                            ${createTableRows('3. สภาพแวดล้อม', data.q3_environment, visitedCount)}
-                            ${createTableRows('24. นักเรียนกลุ่มเสี่ยง', data.risks?.behavior_details, visitedCount)}
+                            ${createTableRows('1. บ้านที่พักอาศัย', data.q3_house_ownership, calculatedVisited)}
+                            ${createTableRows('2. ลักษณะบ้าน', data.q3_house_type, calculatedVisited)}
+                            ${createTableRows('3. สภาพแวดล้อม', data.q3_environment, calculatedVisited)}
+                            ${createTableRows('4. อาศัยอยู่กับ', data.q1_lives_with, calculatedVisited)}
+                            ${createTableRows('5. อาชีพผู้ปกครอง', data.q1_guardian_occupation, calculatedVisited)}
+                            ${createTableRows('6. ที่ทำงานผู้ปกครอง', data.q3_parents_workplace, calculatedVisited)}
+                            ${createTableRows('9. ความสัมพันธ์', data.q8_family_rel, calculatedVisited)}
+                            ${createTableRows('10. ความรู้สึกผู้ปกครอง', data.q8_parent_feeling, calculatedVisited)}
+                            ${createTableRows('11. วิธีเลี้ยงดู', data.q8_parenting_method, calculatedVisited)}
+                            ${createTableRows('12. พฤติกรรม (ตอบได้หลายข้อ)', data.behaviors, calculatedVisited)}
+                            ${createTableRows('15. ความเพียงพอรายได้', data.q3_income_sufficiency, calculatedVisited)}
+                            ${createTableRows('17. เพื่อนเล่น', data.q8_friends_at_home, calculatedVisited)}
+                            ${createTableRows('18. การเดินทาง', data.q5_travel_method, calculatedVisited)}
+                            ${createTableRows('19. ความต้องการในอนาคต', data.q8_future_goal, calculatedVisited)}
+                            ${createTableRows('20. สนิทกับใคร', data.q8_closest_person, calculatedVisited)}
+                            ${createTableRows('21. ปรึกษาใคร', data.q8_consultant, calculatedVisited)}
+                            ${createTableRows('22. ข้อเสนอแนะต่อโรงเรียน', data.suggestions, calculatedVisited)}
+                            ${createTableRows('24. นักเรียนกลุ่มเสี่ยง', data.risks?.behavior_details, calculatedVisited)}
                         </tbody>
                     </table>
                 </div>
@@ -1231,27 +1284,45 @@ function handleBackToSelection(cb) {
         
         container.innerHTML = html;
 
-        // ... (ส่วน Render กราฟ เหมือนเดิม) ...
-        // อย่าลืมใส่ Logic เติม Dropdown และ Chart.js ตรงนี้ด้วยครับ (ก๊อปจากอันเก่ามาแปะต่อท้าย html ได้เลย)
-         const dashClassSelect = document.getElementById('dash-class');
-         const mainClassSelect = document.getElementById('class-select');
-         if (mainClassSelect && dashClassSelect) {
+        // 2. 🟢 แก้ปัญหา: เติมตัวเลือกห้องลง Dropdown และ "จำค่าเดิมที่เลือกไว้"
+        const dashClassSelect = document.getElementById('dash-class');
+        const mainClassSelect = document.getElementById('class-select'); // ตัวเลือกจากหน้าแรก
+        
+        if (mainClassSelect && dashClassSelect) {
             dashClassSelect.innerHTML = "";
             dashClassSelect.add(new Option("-- ทุกระดับชั้น --", ""));
+            
             Array.from(mainClassSelect.options).forEach(opt => {
-                if (opt.value && opt.value.trim() !== "") dashClassSelect.add(new Option(opt.text, opt.value));
+                if (opt.value && opt.value.trim() !== "") {
+                    dashClassSelect.add(new Option(opt.text, opt.value));
+                }
             });
-            if (window.dashboardCurrentClass) dashClassSelect.value = window.dashboardCurrentClass;
-         }
+            
+            // คืนค่าที่เลือกไว้ล่าสุด
+            if (window.dashboardCurrentClass) {
+                dashClassSelect.value = window.dashboardCurrentClass;
+            }
+        }
          
-         // Re-render Charts... (ใช้ Code เดิมส่วน render chart)
-         if(data.q14_income_range) {
+         // Render Charts (เหมือนเดิม)
+         const labelOptions = {
+            color: '#fff', font: { weight: 'bold', size: 12 },
+            formatter: (value, ctx) => {
+                if (value === 0) return "";
+                let sum = 0;
+                let dataArr = ctx.chart.data.datasets[0].data;
+                dataArr.map(data => { sum += data; });
+                return (value * 100 / sum).toFixed(1) + "%";
+            }
+        };
+
+        if(data.q14_income_range) {
            const ctxIncome = document.getElementById('chartIncome');
            if(window.myChartIncome) window.myChartIncome.destroy();
            window.myChartIncome = new Chart(ctxIncome, {
               type: 'bar',
               data: { labels: Object.keys(data.q14_income_range), datasets: [{ label: 'จำนวน', data: Object.values(data.q14_income_range), backgroundColor: '#36a2eb' }] },
-              options: { responsive: true, plugins: { datalabels: { color: '#000', anchor: 'end', align: 'top' } } }
+              options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { ...labelOptions, color: '#000', anchor: 'end', align: 'top' } } }
            });
         }
 
@@ -1260,22 +1331,35 @@ function handleBackToSelection(cb) {
            if(window.myChartFamily) window.myChartFamily.destroy();
            window.myChartFamily = new Chart(ctxFamily, {
               type: 'doughnut',
-              data: { labels: Object.keys(data.q1_family_status), datasets: [{ data: Object.values(data.q1_family_status), backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff'] }] },
-              options: { responsive: true }
+              data: { labels: Object.keys(data.q1_family_status), datasets: [{ data: Object.values(data.q1_family_status), backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40', '#c9cbcf'] }] },
+              options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: labelOptions } }
            });
         }
     }
-    // ฟังก์ชันอัปเดตข้อมูล (Refresh)
+
+    // =========================================================
+    // 🟡 FIXED: Refresh Dashboard (แก้ปัญหาไม่รับค่าห้อง)
+    // =========================================================
     window.refreshDashboard = function() {
-        const s = document.getElementById('dash-sem').value;
-        const y = document.getElementById('dash-year').value;
-        const c = document.getElementById('dash-class').value;
-        window.dashboardCurrentClass = c;
+        // ดึงค่าจาก Dropdown ในหน้า Dashboard เอง (ถ้ามี)
+        const sem = document.getElementById('dash-sem')?.value || document.getElementById('semester-select')?.value || "2";
+        const year = document.getElementById('dash-year')?.value || document.getElementById('year-select')?.value || "2568";
+        
+        // 🟢 สำคัญ: ดึงค่าห้องจาก Dropdown dashboard และบันทึกลง Global Variable
+        const clsElement = document.getElementById('dash-class');
+        const cls = clsElement ? clsElement.value : "";
+        window.dashboardCurrentClass = cls; // จำค่าไว้
 
         setLoading(true, "กำลังโหลดข้อมูลใหม่...");
+        
         fetch(GAS_API_URL, {
             method: 'POST',
-            body: JSON.stringify({ action: 'getDashboardStats', semester: s, year: y, className: c })
+            body: JSON.stringify({ 
+                action: 'getDashboardStats', 
+                semester: sem, 
+                year: year, 
+                className: cls // ส่งค่าห้องไปด้วย
+            })
         })
         .then(r => r.json())
         .then(d => {
@@ -1285,7 +1369,6 @@ function handleBackToSelection(cb) {
         })
         .catch(e => handleError(e));
     };
-
     // ฟังก์ชันสร้างแถวตาราง (Mapping ครบถ้วน + เรียงตามหัวข้อ)
     function createTableRows(title, obj, total) {
         if(!obj) return "";
@@ -1618,6 +1701,7 @@ window.exportTableToExcel = function() {
 </html>
 </body>
 </html>
+
 
 
 
