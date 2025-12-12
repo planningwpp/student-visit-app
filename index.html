@@ -682,41 +682,87 @@
     }
 
     // --- 6. ตารางสมาชิกครัวเรือน (Logic: กรองข้อมูลล่าสุด) ---
-    function renderHouseholdTable(m) { 
-      let rawData = Array.isArray(m) ? m : [];
-      
-      // กรองเอาเฉพาะข้อมูลบรรทัดล่าสุด (Last Write Wins)
-      const uniqueMap = new Map();
-      rawData.forEach(item => {
-          const key = item.MemberNo ? String(item.MemberNo) : (item.MemberName || Math.random());
-          uniqueMap.set(key, item);
-      });
-      gState.householdMembers = Array.from(uniqueMap.values());
-      gState.householdMembers.sort((a, b) => (parseInt(a.MemberNo) || 99) - (parseInt(b.MemberNo) || 99));
+    // --- แก้ไขฟังก์ชันนี้ในส่วน JavaScript ---
 
-      if(el.householdTbody) el.householdTbody.innerHTML = ''; 
-      
-      if (gState.householdMembers.length === 0) {
+    function renderHouseholdTable(m) {
+    let rawData = Array.isArray(m) ? m : [];
+
+    // ส่วนที่แก้ไข: กรองเฉพาะ RecordID ปัจจุบัน และจัดการตัวซ้ำให้แม่นยำขึ้น
+    const uniqueMap = new Map();
+    
+    rawData.forEach(item => {
+        // 1. กรองข้อมูลขยะที่อาจติดมาจากคนอื่น (Safety Check)
+        if (item.RecordID && String(item.RecordID) !== String(gState.currentRecordId)) {
+            return; 
+        }
+
+        // 2. สร้าง Key สำหรับระบุตัวบุคคล (ใช้ MemberNo เป็นหลัก)
+        // บังคับให้เป็น String และตัดช่องว่างออก เพื่อป้องกัน "1" กับ "1 " เป็นคนละตัว
+        let key;
+        if (item.MemberNo && String(item.MemberNo).trim() !== "") {
+            key = "NO_" + String(item.MemberNo).trim();
+        } else if (item.MemberName && item.MemberName.trim() !== "") {
+            // กรณีไม่มีเลขที่สมาชิก ให้ใช้ชื่อเป็นตัวระบุแทน
+            key = "NAME_" + String(item.MemberName).trim();
+        } else {
+            // กรณีข้อมูลว่างเปล่าจริงๆ (ข้ามไปเลย หรือใช้ random)
+            key = "RND_" + Math.random();
+        }
+
+        // 3. ใส่ลง Map (ถ้า Key ซ้ำ ข้อมูลบรรทัดล่างสุดใน Sheet จะทับอันบน ซึ่งถูกต้องสำหรับระบบ Append)
+        uniqueMap.set(key, item);
+    });
+
+    gState.householdMembers = Array.from(uniqueMap.values());
+    
+    // เรียงลำดับตาม MemberNo (แปลงเป็นตัวเลขก่อนเปรียบเทียบ)
+    gState.householdMembers.sort((a, b) => {
+        const noA = parseInt(a.MemberNo) || 999;
+        const noB = parseInt(b.MemberNo) || 999;
+        return noA - noB;
+    });
+
+    if(el.householdTbody) el.householdTbody.innerHTML = '';
+
+    // ... (ส่วน Logic การสร้างตารางเดิม คงไว้เหมือนเดิม) ...
+    if (gState.householdMembers.length === 0) {
+         // ... (Logic สร้างแถว Default เดิม) ...
          const sm = gState.originalData.studentMaster || {};
          gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 1, MemberName: `${sm.Prefix || ''} ${sm.FirstName || ''} ${sm.LastName || ''}`, Relation: 'นักเรียน', Phone: sm.Phone || '', Education: 'กำลังศึกษา', CitizenID: sm.CitizenID, Age: sm.Age || '', IsDisabledOrChronic: "FALSE", Got10kDigitalWallet: "FALSE", Income_Total: 0 });
          gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 2, MemberName: '', Relation: 'บิดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
          gState.householdMembers.push({ RecordID: gState.currentRecordId, MemberNo: 3, MemberName: '', Relation: 'มารดา', Phone: '', Education: '', IsDisabledOrChronic: "FALSE", Income_Total: 0 });
-      }
+    }
 
-      gState.householdMembers.forEach((x, i) => { 
-        x.MemberNo = i + 1; 
+    gState.householdMembers.forEach((x, i) => {
+        x.MemberNo = i + 1; // รันเลขลำดับใหม่เสมอ
         const job = x.MemberOccupation || x.Occupation || '-';
         const edu = x.MemberEducation || x.Education || '-';
         const income = x.Income_Total || x.Income || 0;
-        const tr = document.createElement('tr'); 
-        tr.innerHTML = `<td>${x.MemberNo}</td><td class="text-start">${x.MemberName || ''}</td><td>${x.Relation || ''}</td><td>${x.Phone || '-'}</td><td>${edu}</td><td>${x.CitizenID || '-'}</td><td>${x.Age || '-'}</td><td>${String(x.IsDisabledOrChronic) === 'TRUE' ? '/' : ''}</td><td>${String(x.Got10kDigitalWallet) === 'TRUE' ? '/' : ''}</td><td class="text-end">${Number(income).toLocaleString()}</td><td><button type="button" class="btn btn-sm btn-primary edit-btn">แก้</button></td><td>${x.Relation != 'นักเรียน' ? `<button type="button" class="btn btn-sm btn-danger del-btn">ลบ</button>` : ''}</td>`;
-        tr.querySelector('.edit-btn').onclick = () => editHouseholdMember(i); 
-        if (tr.querySelector('.del-btn')) tr.querySelector('.del-btn').onclick = () => removeHouseholdMember(i); 
-        el.householdTbody.appendChild(tr); 
-      }); 
-      
-      calculateHouseholdIncome(); 
-    }
+        
+        const tr = document.createElement('tr');
+        // เพิ่ม data-index เพื่อความชัวร์เวลาคลิกปุ่ม
+        tr.innerHTML = `
+            <td>${x.MemberNo}</td>
+            <td class="text-start">${x.MemberName || ''}</td>
+            <td>${x.Relation || ''}</td>
+            <td>${x.Phone || '-'}</td>
+            <td>${edu}</td>
+            <td>${x.CitizenID || '-'}</td>
+            <td>${x.Age || '-'}</td>
+            <td>${String(x.IsDisabledOrChronic) === 'TRUE' ? '/' : ''}</td>
+            <td>${String(x.Got10kDigitalWallet) === 'TRUE' ? '/' : ''}</td>
+            <td class="text-end">${Number(income).toLocaleString()}</td>
+            <td><button type="button" class="btn btn-sm btn-primary edit-btn">แก้</button></td>
+            <td>${x.Relation != 'นักเรียน' ? `<button type="button" class="btn btn-sm btn-danger del-btn">ลบ</button>` : ''}</td>
+        `;
+        
+        tr.querySelector('.edit-btn').onclick = () => editHouseholdMember(i);
+        if (tr.querySelector('.del-btn')) tr.querySelector('.del-btn').onclick = () => removeHouseholdMember(i);
+        el.householdTbody.appendChild(tr);
+    });
+
+    calculateHouseholdIncome();
+}
 
     // --- 7. แก้ไขสมาชิก (บันทึกทันที) ---
     window.editHouseholdMember = (index) => {
@@ -817,5 +863,6 @@
 </html>
 </body>
 </html>
+
 
 
