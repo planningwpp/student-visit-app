@@ -623,7 +623,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // =============================================================
+// =============================================================
     // 1. ตั้งค่าระบบและตัวแปร Global
     // =============================================================
     const CLOUDINARY_CLOUD_NAME = "dzzdmlei5"; 
@@ -634,7 +634,6 @@
     const gState = { currentUser: null, selectedStudentId: null, selectedStudentName: null, currentRecordId: null, originalData: {}, changesToPush: {}, householdMembers: [], isLoading: false };
     let SCREENS = {}; let el = {};
 
-    // ลงทะเบียน Plugin กราฟ
     try {
         if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
             Chart.register(ChartDataLabels);
@@ -642,7 +641,7 @@
     } catch (e) { console.error("Chart Register Error:", e); }
 
     // =============================================================
-    // 2. เริ่มต้นทำงาน (Main Execution)
+    // 2. เริ่มต้นทำงาน (DOMContentLoaded)
     // =============================================================
     document.addEventListener("DOMContentLoaded", () => {
       try {
@@ -658,7 +657,7 @@
           };
           
           showScreen('login'); 
-          bindEventListeners(); 
+          bindEventListeners(); // เรียกฟังก์ชันผูกปุ่ม
           
           if(el.semesterSelect) el.semesterSelect.value = "2"; 
           if(el.yearSelect) el.yearSelect.value = "2568";
@@ -668,19 +667,17 @@
     });
 
     // =============================================================
-    // 3. ฟังก์ชันผูกปุ่ม (Bind Event Listeners)
+    // 3. ฟังก์ชันผูกปุ่ม (Bind Event Listeners) - แยกออกมาให้ชัดเจน
     // =============================================================
     function bindEventListeners() {
         if (el.navHomeLink) el.navHomeLink.onclick = (e) => { e.preventDefault(); if (SCREENS.form.style.display === 'block') handleBackToSelection(); else showScreen('selection'); };
         
-        // Dashboard Link
         if (el.navDashboardLink) el.navDashboardLink.onclick = (e) => {
             e.preventDefault();
-            const goToDashboard = () => { showScreen('dashboard'); loadDashboardData(); };
+            const goToDashboard = () => { showScreen('dashboard'); if(typeof loadDashboardData === 'function') loadDashboardData(); };
             if (SCREENS.form.style.display === 'block') handleBackToSelection(goToDashboard); else goToDashboard();
         };
 
-        // Status Link
         if (el.navStatusLink) el.navStatusLink.onclick = (e) => {
             e.preventDefault();
             const goToStatus = () => {
@@ -692,7 +689,6 @@
             if (SCREENS.form.style.display === 'block') handleBackToSelection(goToStatus); else goToStatus();
         };
 
-        // Print Link
         if (el.navPrintLink) el.navPrintLink.onclick = (e) => {
             e.preventDefault();
             const goToPrint = () => {
@@ -706,12 +702,14 @@
         if (el.loginForm) el.loginForm.onsubmit = handleManualLogin;
         if (el.classSelect) el.classSelect.onchange = handleClassChange;
         if (el.studentSelect) el.studentSelect.onchange = validateStartButton;
+        
+        // ปุ่มเริ่มกรอกข้อมูล
         if (el.startFormBtn) el.startFormBtn.onclick = handleStartForm;
+        
         if (el.backBtn) el.backBtn.onclick = (e) => { e.preventDefault(); handleBackToSelection(); };
         if (el.saveBtn) el.saveBtn.onclick = handleSaveToSheets;
         if (el.gpsBtn) el.gpsBtn.onclick = handleGPSButton;
         
-        // ผูกปุ่มเพิ่มสมาชิกกับฟังก์ชัน Global
         if (el.addMemberBtn) el.addMemberBtn.onclick = () => window.editHouseholdMember(-1);
 
         if (el.loadPrintListBtn) el.loadPrintListBtn.onclick = handleLoadPrintList;
@@ -737,7 +735,11 @@
 
         document.querySelectorAll('.file-upload-input').forEach(i => i.onchange = handleFileUpload);
 
-        // Risk Toggles
+        const cpBtn = document.getElementById('open-change-pwd-btn');
+        if (cpBtn) cpBtn.onclick = (e) => { e.preventDefault(); new bootstrap.Modal(document.getElementById('changePasswordModal')).show(); };
+        const savePassBtn = document.getElementById('save-new-pass-btn');
+        if (savePassBtn) savePassBtn.onclick = async () => { /* ...โค้ดเปลี่ยนรหัสผ่านเดิม... */ };
+
         const riskToggle = document.getElementById('Q11_IsAtRisk');
         const riskDetails = document.getElementById('risk-details');
         if (riskToggle) { riskToggle.addEventListener('change', (e) => { riskDetails.style.display = e.target.checked ? 'block' : 'none'; trackChange('Q11_IsAtRisk', e.target.checked ? "TRUE" : "FALSE"); }); }
@@ -747,16 +749,10 @@
         const othRiskCheck = document.getElementById('Q11_B_Other_Check');
         const othRiskText = document.getElementById('Q11_B_Other_Text');
         if (othRiskCheck) { othRiskCheck.addEventListener('change', (e) => { othRiskText.style.display = e.target.checked ? 'block' : 'none'; if (!e.target.checked) othRiskText.value = ''; }); }
-        
-        // Password Change
-        const cpBtn = document.getElementById('open-change-pwd-btn');
-        if (cpBtn) cpBtn.onclick = (e) => { e.preventDefault(); new bootstrap.Modal(document.getElementById('changePasswordModal')).show(); };
-        const savePassBtn = document.getElementById('save-new-pass-btn');
-        if (savePassBtn) savePassBtn.onclick = async () => { /* ...โค้ดเปลี่ยนรหัสผ่านเดิม... */ };
     }
 
     // =============================================================
-    // 4. Global Helper Functions (ย้ายออกมาอยู่นอก bindEventListeners ทั้งหมด)
+    // 4. Global Functions (ฟังก์ชันระบบทั้งหมด)
     // =============================================================
 
     function showScreen(id) { 
@@ -779,21 +775,29 @@
     async function handleClassChange() { const c=el.classSelect.value; if(!c){el.studentSelect.disabled=true;return;} el.studentSelect.disabled=true; setLoading(true); try{ const res=await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentsByClass', className: c }) }); const d=await res.json(); d.sort((a,b)=>parseInt(a.studentNumber||0)-parseInt(b.studentNumber||0)); el.studentSelect.innerHTML='<option value="">-- เลือก --</option>'; d.forEach(s=>el.studentSelect.add(new Option(`${s.name}`,s.id))); el.studentSelect.disabled=false; validateStartButton(); setLoading(false); }catch(e){handleError(e);} }
     function validateStartButton() { el.startFormBtn.disabled=!(el.classSelect.value&&el.studentSelect.value); }
 
-    // --- Form Handling ---
+    // --- Form Handling (แก้ไขแล้ว) ---
     async function handleStartForm() {
        try {
           gState.selectedStudentId = el.studentSelect.value;
           gState.selectedStudentName = el.studentSelect.options[el.studentSelect.selectedIndex].text;
           const sem = el.semesterSelect.value || "2"; const yr = el.yearSelect.value || "2568";
           gState.currentRecordId = `${gState.selectedStudentId}_${sem}_${yr}`;
+          
           if(el.studentNameHeader) el.studentNameHeader.textContent = `${gState.selectedStudentName} (${sem}/${yr})`;
+          
           setLoading(true, 'กำลังดึงข้อมูล... ' + gState.selectedStudentId);
+          
           const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'getStudentVisitData', recordId: gState.currentRecordId }) });
           const data = await res.json();
+          
           if (data.error) throw new Error(data.error);
-          if (data.studentMaster) loadStudentDataSuccess(data);
-          else { 
-             Swal.fire({icon: 'warning', title: 'ไม่พบข้อมูลนักเรียน', text: 'ไม่พบข้อมูลในฐาน Students.csv แต่ระบบจะเปิดฟอร์มเปล่าให้'});
+          
+          // ตรวจสอบว่ามีข้อมูลนักเรียนหรือไม่
+          if (data.studentMaster) { 
+             loadStudentDataSuccess(data); 
+          } else { 
+             console.warn("No master data for ID:", gState.selectedStudentId);
+             Swal.fire({icon: 'warning', title: 'ไม่พบข้อมูลนักเรียน', text: 'ไม่พบข้อมูลใน Students.csv แต่ระบบจะเปิดแบบฟอร์มให้กรอกใหม่'});
              loadStudentDataSuccess({ studentMaster: {}, visitData: {}, householdData: [] }); 
           }
        } catch(e) { handleError(e); }
@@ -802,9 +806,11 @@
     function loadStudentDataSuccess(d) {
       gState.originalData = JSON.parse(JSON.stringify(d));
       prefillForm(d.studentMaster, d.visitData);
+      
       let hData = d.householdData;
       if (typeof hData === 'string') { try { hData = JSON.parse(hData); } catch(e) { hData = []; } }
       renderHouseholdTable(hData || []);
+      
       showScreen('form');
       setTimeout(() => calculateProgress(), 500);
       setLoading(false);
@@ -831,7 +837,7 @@
     async function handleFileUpload(e) { const f=e.target.files[0]; if(!f)return; const id=e.target.dataset.targetHidden; const prev=document.getElementById(`preview_${id}`), wrap=document.getElementById(`wrapper_${id}`), del=wrap.querySelector('.btn-delete-img'); wrap.style.display='inline-block'; prev.style.display='block'; prev.src='https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif'; del.style.display='none'; try { const fd=new FormData(); fd.append('file',f); fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET); const res=await fetch(CLOUDINARY_URL,{method:'POST',body:fd}); const d=await res.json(); prev.src=d.secure_url; del.style.display='block'; document.getElementById(id).value=d.secure_url; trackChange(id,d.secure_url); saveToLocalStorage(); } catch(e){ handleError(e); } }
 
     // =============================================================
-    // 5. Household Table Functions (Global)
+    // 5. Household Functions
     // =============================================================
     function renderHouseholdTable(m) {
         if (m && Array.isArray(m)) gState.householdMembers = m;
@@ -906,7 +912,7 @@
     };
 
     // =============================================================
-    // 6. Dashboard Functions (Global)
+    // 6. Dashboard & Status Functions
     // =============================================================
     async function loadDashboardData() {
         setLoading(true, "กำลังประมวลผลข้อมูล...");
@@ -970,7 +976,6 @@
             if (currentClass) dashClassSelect.value = currentClass;
         }
 
-        // Render Charts
         const labelOptions = { color: '#fff', font: { weight: 'bold', size: 12 }, formatter: (value, ctx) => { if (value === 0) return ""; let sum = 0; ctx.chart.data.datasets[0].data.map(data => sum += data); return (value * 100 / sum).toFixed(1) + "%"; } };
         if(data.q14_income_range) { const ctxIncome = document.getElementById('chartIncome'); if(window.myChartIncome) window.myChartIncome.destroy(); window.myChartIncome = new Chart(ctxIncome, { type: 'bar', data: { labels: Object.keys(data.q14_income_range), datasets: [{ label: 'จำนวนครอบครัว', data: Object.values(data.q14_income_range), backgroundColor: '#36a2eb' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { ...labelOptions, color: '#000', anchor: 'end', align: 'top' } } } }); }
         if(data.q1_family_status) { const ctxFamily = document.getElementById('chartFamily'); if(window.myChartFamily) window.myChartFamily.destroy(); window.myChartFamily = new Chart(ctxFamily, { type: 'doughnut', data: { labels: Object.keys(data.q1_family_status), datasets: [{ data: Object.values(data.q1_family_status), backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40', '#c9cbcf'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: labelOptions } } }); }
@@ -988,7 +993,7 @@
         if (title.includes("1. บ้านที่พักอาศัย")) mapping = { "บ้านตนเอง": "1.1 บ้านตนเอง", "อาศัยผู้อื่น": "1.2 อาศัยอยู่กับผู้อื่น", "หอพัก": "1.3 หอพัก", "วัด": "1.4 วัด/มูลนิธิ" };
         else if (title.includes("2. ลักษณะบ้าน")) mapping = { "ชั้นเดียว": "2.1 บ้านชั้นเดียว", "สองชั้น": "2.2 บ้านสองชั้น", "ตึกแถว": "2.3 ตึกแถว/อาคารพาณิชย์" };
         else if (title.includes("3. สภาพแวดล้อม")) mapping = { "ปลอดภัยดี": "3.1 ปลอดภัยดี", "พอใช้": "3.2 พอใช้", "เสี่ยง/ไม่ดี": "3.3 มีความเสี่ยง" };
-        else if (title.includes("4. อาศัยอยู่กับ")) mapping = { "พ่อ/แม่": "4.1 อยู่ร่วมกับ บิดา-มารดา", "แม่": "4.2 อยู่กับมารดา", "พ่อ": "4.3 อยู่กับบิดา", "อยู่ลำพัง": "4.4 อยู่ตามลำพัง", "ญาติ": "4.5 อยู่กับญาติ", "ปู่ย่า": "4.5 อยู่กับปู่ย่า", "ตายาย": "4.5 อยู่กับตายาย", "ผู้อุปการะ/นายจ้าง": "4.5 อยู่กับผู้อื่น" };
+        else if (title.includes("4. อาศัยอยู่กับ")) mapping = { "พ่อ/แม่": "4.1 อยู่ร่วมกับ บิดา-มารดา", "แม่": "4.2 อยู่กับมารดา", "พ่อ": "4.3 อยู่กับบิดา", "อยู่ลำพัง": "4.4 อยู่ตามลำพัง", "ญาติ": "4.5 อยู่กับญาติ", "ปู่ย่า": "4.6 อยู่กับปู่ย่า", "ตายาย": "4.7 อยู่กับตายาย", "ผู้อุปการะ/นายจ้าง": "4.8 อยู่กับผู้อื่น" };
         else if (title.includes("5. อาชีพผู้ปกครอง")) mapping = { "เกษตรกร": "5.1 เกษตรกร", "ค้าขาย": "5.2 ค้าขาย", "รับราชการ/รัฐวิสาหกิจ": "5.3 รับราชการ", "รับจ้างทั่วไป": "5.4 รับจ้าง", "พนักงานบริษัท": "5.4 พนักงานบริษัท", "ธุรกิจส่วนตัว": "5.5 ธุรกิจส่วนตัว", "อื่นๆ": "5.5 อื่นๆ" };
         else if (title.includes("6. ที่ทำงาน")) mapping = { "ในอำเภอเดียวกัน": "1. อยู่อำเภอเดียวกัน", "ต่างอำเภอในจังหวัด": "2. ต่างอำเภอ", "ต่างจังหวัด": "3. ต่างจังหวัด", "ต่างประเทศ": "4. ต่างประเทศ" };
         else if (title.includes("9. ความสัมพันธ์")) mapping = { "อบอุ่น": "1. อบอุ่นดี", "เฉยๆ": "2. เฉยๆ", "ห่างเหิน": "3. ห่างเหิน" };
@@ -1027,9 +1032,7 @@
         XLSX.writeFile(wb, `สรุปเยี่ยมบ้าน_${cls}_เทอม${sem}_${year}.xlsx`);
     };
 
-    // =============================================================
-    // 7. Status Monitor Functions (Global)
-    // =============================================================
+    // --- Status Functions ---
     async function loadClassStatus() {
         const cls = document.getElementById('status-class-select').value;
         const sem = document.getElementById('status-sem').value;
@@ -1111,6 +1114,7 @@
   </script>
 </body>
 </html>
+
 
 
 
