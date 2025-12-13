@@ -1048,7 +1048,91 @@
     }
 
     function formatDateForInput(ds) { if(!ds)return''; if(/^\d{4}-\d{2}-\d{2}$/.test(ds))return ds; const d=new Date(ds); if(isNaN(d.getTime()))return''; return d.toISOString().split('T')[0]; }
-    function prefillForm(m, v) { if(!m){return;} document.getElementById('s1-name').innerText=`${m.Prefix||''} ${m.FirstName} ${m.LastName}`; document.getElementById('s1-class').innerText=m.Class; document.getElementById('s1-citizenid').innerText=m.CitizenID||'N/A'; const sv = (val) => (val===undefined||val===null)?"":val; document.getElementById('Q1_GuardianFirstName').value = sv((v&&v.Q1_GuardianFirstName)||m.DefaultGuardianName); document.getElementById('Q1_GuardianPhone').value = sv((v&&v.Q1_GuardianPhone)||m.DefaultGuardianPhone); if(document.getElementById('Q1_StudentPhone')) document.getElementById('Q1_StudentPhone').value = sv((v&&v.Q1_StudentPhone)||m.Phone); if(document.getElementById('Q1_StudentNickname')) document.getElementById('Q1_StudentNickname').value = sv((v&&v.Q1_StudentNickname)||m.Nickname); if(document.getElementById('Q1_FatherName')) document.getElementById('Q1_FatherName').value = sv((v&&v.Q1_FatherName)||m.FatherName); if(document.getElementById('Q1_FatherPhone')) document.getElementById('Q1_FatherPhone').value = sv((v&&v.Q1_FatherPhone)||m.FatherPhone); if(document.getElementById('Q1_FatherJob')) document.getElementById('Q1_FatherJob').value = sv((v&&v.Q1_FatherJob)||m.FatherJob); if(document.getElementById('Q1_MotherName')) document.getElementById('Q1_MotherName').value = sv((v&&v.Q1_MotherName)||m.MotherName); if(document.getElementById('Q1_MotherPhone')) document.getElementById('Q1_MotherPhone').value = sv((v&&v.Q1_MotherPhone)||m.MotherPhone); if(document.getElementById('Q1_MotherJob')) document.getElementById('Q1_MotherJob').value = sv((v&&v.Q1_MotherJob)||m.MotherJob); if(document.getElementById('Q1_StudentDOB')) { const dob = (v&&v.Q1_StudentDOB)||m.DOB; document.getElementById('Q1_StudentDOB').value = formatDateForInput(dob); } if(v) { const f = document.getElementById('visit-form'); for(const k in v) { const inp = f.elements[k]; if(inp) { if(k==='Q1_StudentDOB') continue; if(inp.type==='checkbox') inp.checked = (String(v[k]).toUpperCase() === 'TRUE'); else if(inp.length>0 && inp[0].type==='radio') { const r=f.querySelector(`input[name="${k}"][value="${v[k]}"]`); if(r) r.checked=true; } else if(inp.type==='hidden' && k.includes('PhotoURL')) { inp.value=v[k]; if(v[k]) { const img=document.getElementById(`preview_${k}`); if(img){img.src=v[k]; img.style.display='block';} const wrap=document.getElementById(`wrapper_${k}`); if(wrap)wrap.style.display='inline-block'; const del=wrap?wrap.querySelector('.btn-delete-img'):null; if(del)del.style.display='block'; } } else if(inp.type!=='file') inp.value=v[k]; if(['Q3_1_DependencyStatus','Q3_4_AgricultureStatus','Q1_LivesWith','Q3_StudentIncome_Has'].includes(k)) { const el = document.getElementsByName(k)[0] || document.getElementById(k); if(el) el.dispatchEvent(new Event('change')); } if(['Q11_IsAtRisk','Q11_Risk_Behavior'].includes(k)) { const el = document.getElementById(k); if(el) el.dispatchEvent(new Event('change')); } } } } }
+// =========================================================
+    // 🟡 FIXED: prefillForm (แก้ให้โชว์รูปภาพส่วนที่ 7 ด้วย)
+    // =========================================================
+    function prefillForm(m, v) { 
+        if (!m) return;
+        
+        // 1. เติมข้อมูลส่วนนักเรียน (Static Data)
+        document.getElementById('s1-name').innerText = `${m.Prefix||''} ${m.FirstName} ${m.LastName}`; 
+        document.getElementById('s1-class').innerText = m.Class; 
+        document.getElementById('s1-citizenid').innerText = m.CitizenID || 'N/A'; 
+        
+        // ฟังก์ชันช่วยเช็คค่าว่าง
+        const sv = (val) => (val === undefined || val === null) ? "" : val; 
+
+        // เติมข้อมูลลง Input ต่างๆ (เฉพาะที่มี ID ตรงกับข้อมูลหลัก)
+        if(document.getElementById('Q1_GuardianFirstName')) document.getElementById('Q1_GuardianFirstName').value = sv((v&&v.Q1_GuardianFirstName)||m.DefaultGuardianName); 
+        if(document.getElementById('Q1_GuardianPhone')) document.getElementById('Q1_GuardianPhone').value = sv((v&&v.Q1_GuardianPhone)||m.DefaultGuardianPhone); 
+        if(document.getElementById('Q1_StudentPhone')) document.getElementById('Q1_StudentPhone').value = sv((v&&v.Q1_StudentPhone)||m.Phone); 
+        if(document.getElementById('Q1_StudentNickname')) document.getElementById('Q1_StudentNickname').value = sv((v&&v.Q1_StudentNickname)||m.Nickname); 
+        
+        // ข้อมูลพ่อแม่ (ถ้ามี)
+        const parentMap = {
+            'Q1_FatherName': m.FatherName, 'Q1_FatherPhone': m.FatherPhone, 'Q1_FatherJob': m.FatherJob,
+            'Q1_MotherName': m.MotherName, 'Q1_MotherPhone': m.MotherPhone, 'Q1_MotherJob': m.MotherJob
+        };
+        for (const [pid, pval] of Object.entries(parentMap)) {
+            if(document.getElementById(pid)) document.getElementById(pid).value = sv((v && v[pid]) || pval);
+        }
+
+        // วันเกิด
+        if(document.getElementById('Q1_StudentDOB')) { 
+            const dob = (v && v.Q1_StudentDOB) || m.DOB; 
+            document.getElementById('Q1_StudentDOB').value = formatDateForInput(dob); 
+        } 
+
+        // 2. เติมข้อมูลการเยี่ยมบ้าน (Dynamic Visit Data)
+        if (v) { 
+            const f = document.getElementById('visit-form'); 
+            for (const k in v) { 
+                const inp = f.elements[k]; 
+                
+                // กรณี: รูปภาพ (เช็คทุกฟิลด์ที่มีคำว่า PhotoURL ในชื่อ)
+                // 🟢 แก้ไข: ใช้ includes('Photo') เพื่อให้ครอบคลุม Q7_Photo1_URL, Q7_Photo2_URL
+                if (k.includes('Photo') && k.includes('URL')) { 
+                     const hiddenInput = document.getElementById(k);
+                     if(hiddenInput) {
+                         hiddenInput.value = v[k]; // ใส่ค่า URL ลง Hidden Input
+                         
+                         if(v[k] && v[k] !== "") {
+                             // แสดงรูป Preview
+                             const img = document.getElementById(`preview_${k}`);
+                             const wrap = document.getElementById(`wrapper_${k}`);
+                             const del = wrap ? wrap.querySelector('.btn-delete-img') : null;
+                             
+                             if (img) { img.src = v[k]; img.style.display = 'block'; }
+                             if (wrap) wrap.style.display = 'inline-block';
+                             if (del) del.style.display = 'block';
+                         }
+                     }
+                     continue; // ทำเสร็จแล้วข้ามไปตัวถัดไป
+                }
+
+                if (!inp) continue; 
+                if (k === 'Q1_StudentDOB') continue; // ข้ามเพราะทำไปแล้ว
+
+                // กรณี: Checkbox / Radio
+                if (inp.type === 'checkbox') {
+                    inp.checked = (String(v[k]).toUpperCase() === 'TRUE'); 
+                } else if (inp.length > 0 && inp[0].type === 'radio') { 
+                    const r = f.querySelector(`input[name="${k}"][value="${v[k]}"]`); 
+                    if (r) r.checked = true; 
+                } else if (inp.type !== 'file') { 
+                    // กรณี: Input ทั่วไป
+                    inp.value = v[k]; 
+                } 
+
+                // Trigger Event สำหรับฟิลด์ที่มีผลซ่อน/แสดง
+                if (['Q3_1_DependencyStatus', 'Q3_4_AgricultureStatus', 'Q1_LivesWith', 'Q3_StudentIncome_Has', 'Q11_IsAtRisk', 'Q11_Risk_Behavior'].includes(k)) { 
+                    const el = document.getElementsByName(k)[0] || document.getElementById(k); 
+                    if (el) el.dispatchEvent(new Event('change')); 
+                } 
+            } 
+        } 
+    }
+    
     // =========================================================
     // 🟡 FIXED: ปุ่มกลับ (ฉบับแก้ไข: บังคับกลับหน้าแรกเสมอ)
     // =========================================================
@@ -1761,6 +1845,7 @@ window.exportTableToExcel = function() {
 </html>
 </body>
 </html>
+
 
 
 
