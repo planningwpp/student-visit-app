@@ -54,6 +54,11 @@
       display: none; 
     }
     .img-preview { max-height: 150px; display: none; border: 1px solid #ddd; padding: 2px; border-radius: 4px; }
+    /* --- เพิ่มโค้ดนี้เพื่อจัดหัวตารางให้อยู่ตรงกลาง --- */
+    .table thead th {
+        text-align: center !important;   /* จัดกึ่งกลางแนวนอน */
+        vertical-align: middle !important; /* จัดกึ่งกลางแนวตั้ง (กรณีบรรทัดเยื้อง) */
+    }
   </style>
 </head>
 
@@ -1845,6 +1850,7 @@ window.exportTableToExcel = function() {
 </html>
 </body>
 </html>
+
 
 
 
